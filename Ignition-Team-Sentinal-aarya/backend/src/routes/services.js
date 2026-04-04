@@ -4,10 +4,11 @@ import mongoose from "mongoose";
 import { Service } from "../models/Service.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { encryptSecret } from "../utils/encrypt.js";
+import { canonicalWalletAddress, sameWallet } from "../utils/userWallet.js";
 
 const router = Router();
 
-const AI_PROVIDERS = ["groq", "openai", "anthropic"];
+const AI_PROVIDERS = ["groq", "openai", "anthropic", "together"];
 
 export function toPublicService(doc) {
   const o =
@@ -55,7 +56,8 @@ router.post(
   requireRole("creator"),
   body("title").isString().trim().notEmpty(),
   body("description").optional().isString(),
-  body("price").isFloat({ min: 0 }),
+  body("pricePerThousandTokens").isFloat({ min: 0 }),
+  body("minimumChargeAlgo").isFloat({ min: 0.000001 }),
   body("aiProvider").isIn(AI_PROVIDERS),
   body("providerApiKey").isString().trim().notEmpty(),
   body("modelName").isString().trim().notEmpty(),
@@ -67,12 +69,13 @@ router.post(
     const {
       title,
       description = "",
-      price,
+      pricePerThousandTokens,
+      minimumChargeAlgo,
       aiProvider,
       providerApiKey,
       modelName,
     } = req.body;
-    const creatorWallet = req.user.walletAddress;
+    const creatorWallet = canonicalWalletAddress(req.user.walletAddress);
     let encryptedApiKey;
     try {
       encryptedApiKey = encryptSecret(String(providerApiKey).trim());
@@ -84,7 +87,8 @@ router.post(
     const service = await Service.create({
       title,
       description,
-      price,
+      pricePerThousandTokens: Number(pricePerThousandTokens),
+      minimumChargeAlgo: Number(minimumChargeAlgo),
       creatorWallet,
       aiProvider,
       encryptedApiKey,
@@ -106,7 +110,8 @@ router.patch(
   param("id").isMongoId(),
   body("title").optional().isString().trim().notEmpty(),
   body("description").optional().isString(),
-  body("price").optional().isFloat({ min: 0 }),
+  body("pricePerThousandTokens").optional().isFloat({ min: 0 }),
+  body("minimumChargeAlgo").optional().isFloat({ min: 0.000001 }),
   body("modelName").optional().isString().trim().notEmpty(),
   body("aiProvider").optional().isIn(AI_PROVIDERS),
   body("providerApiKey").optional().isString().trim().notEmpty(),
@@ -118,13 +123,14 @@ router.patch(
     }
     const service = await Service.findById(req.params.id);
     if (!service) return res.status(404).json({ error: "Not found" });
-    if (service.creatorWallet !== req.user.walletAddress) {
+    if (!sameWallet(service.creatorWallet, req.user.walletAddress)) {
       return res.status(403).json({ error: "Forbidden" });
     }
     const {
       title,
       description,
-      price,
+      pricePerThousandTokens,
+      minimumChargeAlgo,
       modelName,
       aiProvider,
       providerApiKey,
@@ -132,7 +138,12 @@ router.patch(
     } = req.body;
     if (title !== undefined) service.title = title;
     if (description !== undefined) service.description = description;
-    if (price !== undefined) service.price = price;
+    if (pricePerThousandTokens !== undefined) {
+      service.pricePerThousandTokens = Number(pricePerThousandTokens);
+    }
+    if (minimumChargeAlgo !== undefined) {
+      service.minimumChargeAlgo = Number(minimumChargeAlgo);
+    }
     if (modelName !== undefined) service.modelName = modelName;
     if (aiProvider !== undefined) service.aiProvider = aiProvider;
     if (isPaused !== undefined) service.isPaused = isPaused;
@@ -162,7 +173,7 @@ router.delete(
     }
     const service = await Service.findById(req.params.id);
     if (!service) return res.status(404).json({ error: "Not found" });
-    if (service.creatorWallet !== req.user.walletAddress) {
+    if (!sameWallet(service.creatorWallet, req.user.walletAddress)) {
       return res.status(403).json({ error: "Forbidden" });
     }
     await Service.deleteOne({ _id: service._id });

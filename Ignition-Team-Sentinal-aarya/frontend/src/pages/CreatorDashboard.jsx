@@ -12,7 +12,7 @@ export default function CreatorDashboard() {
   const [loading, setLoading] = useState(true);
 
   const apiBase = getPublicApiBase();
-  const proxyExample = `${apiBase}/api/mock/v1/chat/completions`;
+  const proxyExample = `${apiBase}/api/use`;
 
   async function load() {
     try {
@@ -103,11 +103,17 @@ export default function CreatorDashboard() {
           <p className="text-on-surface-variant">Loading…</p>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
               <div className="bg-white border border-surface-variant p-6 rounded-md">
                 <p className="text-xs text-on-surface-variant uppercase tracking-wide">Total revenue</p>
                 <p className="font-headline text-2xl text-primary mt-2">
                   {(stats?.totalRevenue ?? 0).toFixed(4)} ALGO
+                </p>
+              </div>
+              <div className="bg-white border border-surface-variant p-6 rounded-md">
+                <p className="text-xs text-on-surface-variant uppercase tracking-wide">Tokens served</p>
+                <p className="font-headline text-2xl text-primary mt-2">
+                  {(stats?.totalTokensServed ?? 0).toLocaleString()}
                 </p>
               </div>
               <div className="bg-white border border-surface-variant p-6 rounded-md">
@@ -124,7 +130,7 @@ export default function CreatorDashboard() {
               <p className="text-xs text-on-surface-variant uppercase tracking-wide mb-1">User-facing proxy URL</p>
               <p className="font-mono text-xs break-all text-secondary">{proxyExample}</p>
               <p className="text-xs text-on-surface-variant mt-2">
-                Users attach their Sentinel proxy key; requests hit your configured model with their prepaid balance.
+                Totals below are from successful paid calls (per-token billing, after on-chain payment).
               </p>
             </div>
 
@@ -159,9 +165,15 @@ export default function CreatorDashboard() {
                         <p className="text-xs text-on-surface-variant mt-1 line-clamp-2">{s.description}</p>
                       </div>
                       <div className="text-left sm:text-right text-sm font-mono shrink-0">
-                        <p className="text-secondary">{Number(s.price).toFixed(4)} ALGO / call</p>
+                        <p className="text-secondary font-mono text-xs">
+                          {Number(s.pricePerThousandTokens ?? 0).toFixed(6)} ALGO / 1k tokens
+                        </p>
+                        <p className="text-on-surface-variant text-xs mt-1 font-mono">
+                          min/call {Number(s.minimumChargeAlgo ?? 0).toFixed(6)} ALGO
+                        </p>
                         <p className="text-on-surface-variant text-xs mt-1">
-                          calls {s.totalUses ?? 0} · revenue {(s.totalRevenue ?? 0).toFixed(4)}
+                          calls {s.logCalls ?? 0} · {(s.logEarnedAlgo ?? 0).toFixed(4)} ALGO ·{" "}
+                          {(s.logTokensServed ?? 0).toLocaleString()} tokens
                         </p>
                       </div>
                     </div>
@@ -196,16 +208,43 @@ export default function CreatorDashboard() {
                 {usage.map((row) => (
                   <li
                     key={row.id}
-                    className="bg-white border border-surface-variant rounded-md px-4 py-3 flex flex-col sm:flex-row sm:justify-between gap-1"
+                    className="bg-white border border-surface-variant rounded-md px-4 py-3 flex flex-col gap-2 text-sm"
                   >
-                    <span>
-                      {row.serviceTitle} ·{" "}
-                      <span className="font-mono text-xs">{row.userWallet?.slice(0, 12)}…</span>
-                    </span>
-                    <span className="font-mono">{Number(row.amountAlgo).toFixed(4)} ALGO</span>
-                    <span className="text-xs text-on-surface-variant">
-                      {row.createdAt ? new Date(row.createdAt).toLocaleString() : ""}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2 justify-between">
+                      <span>
+                        <span className="font-medium">{row.serviceTitle}</span> ·{" "}
+                        <span className="font-mono text-xs">{row.userWallet?.slice(0, 12)}…</span>
+                      </span>
+                      <span
+                        className={
+                          row.success === false
+                            ? "text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-900"
+                            : "text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-800"
+                        }
+                      >
+                        {row.success === false ? "Paid on-chain · AI failed" : "Completed"}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-4 text-xs text-on-surface-variant">
+                      <span className="font-mono text-secondary">
+                        charge {Number(row.chargeAlgo ?? row.amountAlgo).toFixed(6)} ALGO
+                      </span>
+                      <span>
+                        tokens in/out: {row.promptTokens ?? "—"}/{row.completionTokens ?? "—"} (Σ{" "}
+                        {row.totalTokens ?? "—"})
+                      </span>
+                      <span>{row.createdAt ? new Date(row.createdAt).toLocaleString() : ""}</span>
+                      {(row.paymentTxId || row.payoutTxId) && (
+                        <a
+                          href={`https://testnet.algoexplorer.io/tx/${row.paymentTxId || row.payoutTxId}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-secondary underline font-mono"
+                        >
+                          Payment tx
+                        </a>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>

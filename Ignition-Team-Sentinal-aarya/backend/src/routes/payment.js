@@ -13,6 +13,7 @@ import {
   normalizeAlgoAddress,
   parsePaymentFromIndexer,
 } from "../services/algorandService.js";
+import { canonicalWalletAddress, sameWallet } from "../utils/userWallet.js";
 
 const router = Router();
 
@@ -38,20 +39,21 @@ router.post(
         error: "Service creator wallet is not a valid Algorand address. Update the service with a valid TestNet address.",
       });
     }
-    if (receiver === String(req.user.walletAddress).trim()) {
+    if (sameWallet(receiver, req.user.walletAddress)) {
       return res.status(400).json({ error: "Cannot pay for your own service" });
     }
-    const price = Number(service.price);
-    if (!Number.isFinite(price) || price < 0) {
-      return res.status(400).json({ error: "Invalid service price" });
+    const minCharge = Number(service.minimumChargeAlgo);
+    if (!Number.isFinite(minCharge) || minCharge <= 0) {
+      return res.status(400).json({ error: "Invalid service minimum charge" });
     }
-    const amountMicroAlgos = algoToMicroAlgos(price);
+    const amountMicroAlgos = algoToMicroAlgos(minCharge);
     const paymentIntentId = crypto.randomUUID();
+    const userWallet = canonicalWalletAddress(req.user.walletAddress);
     try {
       await Transaction.create({
-        userWallet: String(req.user.walletAddress),
+        userWallet,
         serviceId: service._id,
-        amount: price,
+        amount: minCharge,
         status: "pending",
         paymentIntentId,
       });
@@ -73,7 +75,7 @@ router.post(
       paymentIntentId,
       receiver,
       amountMicroAlgos,
-      amountAlgo: service.price,
+      amountAlgo: minCharge,
       note: `sentinal:${paymentIntentId}`,
       algodServer:
         process.env.ALGOD_SERVER ||
@@ -101,13 +103,14 @@ router.post(
       return res.status(409).json({ error: "Transaction already used" });
     }
 
+    const userWallet = canonicalWalletAddress(req.user.walletAddress);
     const pending = await Transaction.findOne({ paymentIntentId });
-    if (!pending || pending.userWallet !== req.user.walletAddress) {
+    if (!pending || !sameWallet(pending.userWallet, userWallet)) {
       return res.status(404).json({ error: "Payment intent not found" });
     }
     if (pending.status === "verified") {
       const tokenDoc = await AccessToken.findOne({
-        userWallet: req.user.walletAddress,
+        userWallet,
         serviceId: pending.serviceId,
       }).sort({ createdAt: -1 });
       return res.json({
@@ -136,10 +139,10 @@ router.post(
     const service = await Service.findById(pending.serviceId);
     if (!service) return res.status(404).json({ error: "Service missing" });
 
-    const expectedMicro = algoToMicroAlgos(Number(service.price));
+    const expectedMicro = algoToMicroAlgos(Number(service.minimumChargeAlgo));
     const senderN = normalizeAlgoAddress(sender);
     const receiverN = normalizeAlgoAddress(receiver);
-    const userN = normalizeAlgoAddress(req.user.walletAddress);
+    const userN = normalizeAlgoAddress(userWallet);
     const creatorN = normalizeAlgoAddress(service.creatorWallet);
 
     if (senderN !== userN) {
@@ -166,12 +169,12 @@ router.post(
     pending.status = "verified";
     await pending.save();
 
-    service.totalRevenue = Number(service.totalRevenue) + Number(service.price);
+    service.totalRevenue = Number(service.totalRevenue) + Number(service.minimumChargeAlgo);
     await service.save();
 
     const apiKey = `sk-sentinel-${crypto.randomBytes(32).toString("hex")}`;
     await AccessToken.create({
-      userWallet: req.user.walletAddress,
+      userWallet,
       serviceId: service._id,
       key: apiKey,
       isUsed: false,

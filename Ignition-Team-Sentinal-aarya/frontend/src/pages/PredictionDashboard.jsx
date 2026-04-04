@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import UserLiveWalletBar from "../components/UserLiveWalletBar.jsx";
 
 // ── Inline bar chart (no external dep) ───────────────────────────────────────
 const CHART_H = 160; // px — must match the container height below
@@ -178,10 +179,7 @@ export default function PredictionDashboard() {
           </span>
         </div>
         <div className="flex items-center gap-6">
-          <div className="bg-surface-container-low border border-outline-variant/30 rounded px-3 py-1.5 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px] text-secondary">account_balance_wallet</span>
-            <span className="text-sm font-mono truncate max-w-[180px] text-primary">{user?.walletAddress}</span>
-          </div>
+          <UserLiveWalletBar walletAddress={user?.walletAddress} />
           <button
             type="button"
             onClick={() => { logout(); window.location.href = "/"; }}

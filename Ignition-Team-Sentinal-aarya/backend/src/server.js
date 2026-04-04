@@ -9,9 +9,8 @@ import servicesRoutes from "./routes/services.js";
 import paymentRoutes from "./routes/payment.js";
 import accessRoutes from "./routes/access.js";
 import creatorRoutes from "./routes/creator.js";
-import mockAiRoutes from "./routes/mockAi.js";
+import useRoutes from "./routes/use.js";
 import predictionRoutes from "./routes/prediction.js";
-import walletRoutes from "./routes/wallet.js";
 import userRoutes from "./routes/user.js";
 
 const app = express();
@@ -29,14 +28,22 @@ app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
+app.get("/api/public/network", (_req, res) => {
+  res.json({
+    algodServer:
+      process.env.ALGOD_SERVER ||
+      process.env.ALGORAND_NODE ||
+      "https://testnet-api.algonode.cloud",
+  });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/services", servicesRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/access", accessRoutes);
 app.use("/api/creator", creatorRoutes);
-app.use("/api/mock", mockAiRoutes);
+app.use("/api/use", useRoutes);
 app.use("/api/prediction", predictionRoutes);
-app.use("/api/wallet", walletRoutes);
 app.use("/api/user", userRoutes);
 
 app.use((err, _req, res, _next) => {
