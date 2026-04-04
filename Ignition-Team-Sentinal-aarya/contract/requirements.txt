@@ -1,0 +1,4 @@
+algopy>=0.5.0
+puyapy>=4.0.0
+py-algorand-sdk>=2.6.0
+python-dotenv>=1.0.0

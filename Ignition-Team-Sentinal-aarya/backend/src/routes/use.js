@@ -22,6 +22,7 @@ import { registerPending, consumePending } from "../services/pendingUseCache.js"
 import { forwardChatCompletion } from "../services/aiProxy.js";
 import { decryptSecret } from "../utils/encrypt.js";
 import { canonicalWalletAddress } from "../utils/userWallet.js";
+import { submitProofOfIntelligence } from "../services/proofOfIntelligence.js";
 
 const router = Router();
 
@@ -49,6 +50,29 @@ function buildAiBody(reqBody) {
     return { messages: [{ role: "user", content: prompt.trim() }], ...rest };
   }
   return null;
+}
+
+function extractPromptTextFromAiBody(aiBody) {
+  if (!aiBody?.messages?.length) return "";
+  return aiBody.messages
+    .map((m) => {
+      const c = m?.content;
+      if (typeof c === "string") return c;
+      if (Array.isArray(c)) return c.map((x) => x?.text || "").join("");
+      return String(c ?? "");
+    })
+    .join("\n")
+    .trim();
+}
+
+function extractResponseTextFromAi(ar) {
+  const c = ar?.choices?.[0]?.message?.content;
+  if (typeof c === "string") return c;
+  try {
+    return JSON.stringify(ar ?? {});
+  } catch {
+    return "";
+  }
 }
 
 function isUuid(s) {
@@ -142,6 +166,8 @@ async function invokeFlow(req, res) {
     }
 
     const paymentRef = crypto.randomUUID();
+    const promptText = extractPromptTextFromAiBody(aiBody);
+    const responseText = extractResponseTextFromAi(aiResponse);
     registerPending(paymentRef, {
       paymentRef,
       aiResponse,
@@ -158,6 +184,8 @@ async function invokeFlow(req, res) {
       developerWallet: creatorWallet,
       aiProvider: service.aiProvider,
       modelName: service.modelName,
+      promptText,
+      responseText,
     });
 
     return res.json({
@@ -292,7 +320,7 @@ async function completeFlow(req, res) {
     service.totalRevenue = Number(service.totalRevenue || 0) + chargeAlgo;
     await service.save();
 
-    await ApiUsageLog.create({
+    const logDoc = await ApiUsageLog.create({
       userWallet,
       serviceId: service._id,
       accessTokenId: token._id,
@@ -309,6 +337,26 @@ async function completeFlow(req, res) {
       chargeAlgo,
       pricePerThousandTokens: pending.pricePerThousandTokens,
     });
+
+    const ts = logDoc.createdAt ? new Date(logDoc.createdAt) : new Date();
+    const promptSnap = String(pending.promptText ?? "");
+    const responseSnap = String(pending.responseText ?? "");
+    void (async () => {
+      try {
+        const proofTxId = await submitProofOfIntelligence({
+          promptText: promptSnap,
+          responseText: responseSnap,
+          userWallet,
+          serviceId: String(service._id),
+          timestamp: ts.toISOString(),
+        });
+        if (proofTxId) {
+          await ApiUsageLog.updateOne({ _id: logDoc._id }, { $set: { proofTxId } });
+        }
+      } catch (err) {
+        console.error("[use] proof-of-intelligence async", err?.message || err);
+      }
+    })();
   } catch (logErr) {
     if (logErr?.code === 11000) {
       return res.status(409).json({

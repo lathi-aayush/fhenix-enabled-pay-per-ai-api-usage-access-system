@@ -32,6 +32,8 @@ const apiUsageLogSchema = new mongoose.Schema(
     chargeAlgo: { type: Number },
     /** Snapshot of developer rate at time of call */
     pricePerThousandTokens: { type: Number },
+    /** Optional on-chain proof-of-intelligence log tx */
+    proofTxId: { type: String },
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );

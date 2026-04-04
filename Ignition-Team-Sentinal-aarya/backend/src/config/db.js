@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { Transaction } from "../models/Transaction.js";
+import { TopUpIntent } from "../models/TopUpIntent.js";
 import { migrateServicePricing } from "../migrations/servicePricing.js";
 
 export async function connectDb() {
@@ -12,5 +13,10 @@ export async function connectDb() {
     await Transaction.syncIndexes();
   } catch (e) {
     console.warn("Transaction.syncIndexes:", e?.message);
+  }
+  try {
+    await TopUpIntent.syncIndexes();
+  } catch (e) {
+    console.warn("TopUpIntent.syncIndexes:", e?.message);
   }
 }

@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext.jsx";
 import { connectPera, reconnectPera } from "../wallet/pera.js";
 import { useEffect, useState } from "react";
+import ContractStats from "../components/ContractStats.jsx";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -170,6 +171,8 @@ export default function Home() {
             Both flows start by connecting your Pera Wallet.
           </p>
         </section>
+
+        <ContractStats />
       </main>
 
       <footer className="bg-surface border-t border-surface-variant py-12 px-8 mt-24">

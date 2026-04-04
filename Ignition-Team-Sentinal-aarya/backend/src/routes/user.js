@@ -1,4 +1,5 @@
 import { Router } from "express";
+import mongoose from "mongoose";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { AccessToken } from "../models/AccessToken.js";
 import { ApiUsageLog } from "../models/ApiUsageLog.js";
@@ -51,6 +52,79 @@ router.get("/proxy-keys", requireAuth, requireRole("user"), async (req, res) => 
       : null,
   }));
   res.json(out);
+});
+
+router.get("/transactions", requireAuth, requireRole("user"), async (req, res) => {
+  try {
+    const userWallet = canonicalWalletAddress(req.user.walletAddress);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 100, 1), 500);
+    const serviceId = String(req.query.serviceId || "").trim();
+    const startDate = req.query.startDate ? new Date(String(req.query.startDate)) : null;
+    const endDateRaw = req.query.endDate ? new Date(String(req.query.endDate)) : null;
+    const sortBy = String(req.query.sortBy || "newest").trim();
+
+    const filter = { userWallet };
+    if (serviceId && mongoose.Types.ObjectId.isValid(serviceId)) {
+      filter.serviceId = new mongoose.Types.ObjectId(serviceId);
+    }
+    const createdRange = {};
+    if (startDate && !Number.isNaN(startDate.getTime())) {
+      createdRange.$gte = startDate;
+    }
+    if (endDateRaw && !Number.isNaN(endDateRaw.getTime())) {
+      const end = new Date(endDateRaw);
+      end.setHours(23, 59, 59, 999);
+      createdRange.$lte = end;
+    }
+    if (Object.keys(createdRange).length > 0) {
+      filter.createdAt = createdRange;
+    }
+
+    let sort = { createdAt: -1 };
+    if (sortBy === "oldest") sort = { createdAt: 1 };
+    if (sortBy === "charge_desc" || sortBy === "highest_charge") sort = { amountAlgo: -1 };
+    if (sortBy === "charge_asc" || sortBy === "lowest_charge") sort = { amountAlgo: 1 };
+
+    const logs = await ApiUsageLog.find(filter)
+      .sort(sort)
+      .limit(limit)
+      .populate("serviceId", "title")
+      .lean();
+
+    const items = logs.map((l) => ({
+      id: l._id,
+      createdAt: l.createdAt,
+      serviceTitle: l.serviceId?.title ?? null,
+      serviceId: l.serviceId?._id ?? l.serviceId,
+      promptTokens: l.promptTokens ?? null,
+      completionTokens: l.completionTokens ?? null,
+      totalTokens: l.totalTokens ?? null,
+      amountAlgo: l.amountAlgo,
+      chargeAlgo: l.chargeAlgo ?? l.amountAlgo,
+      proofTxId: l.proofTxId ?? null,
+      success: l.success !== false,
+      paymentTxId: l.paymentTxId ?? null,
+    }));
+
+    const totalCalls = items.length;
+    const totalTokensConsumed = items.reduce(
+      (s, x) => s + (Number(x.totalTokens) || 0),
+      0
+    );
+    const totalAlgoSpent = items.reduce((s, x) => s + Number(x.amountAlgo || 0), 0);
+
+    return res.json({
+      items,
+      summary: {
+        totalCalls,
+        totalTokensConsumed,
+        totalAlgoSpent,
+      },
+    });
+  } catch (e) {
+    console.error("[user/transactions]", e?.message || e);
+    return res.status(500).json({ error: "Could not load transactions" });
+  }
 });
 
 router.get("/usage", requireAuth, requireRole("user"), async (req, res) => {

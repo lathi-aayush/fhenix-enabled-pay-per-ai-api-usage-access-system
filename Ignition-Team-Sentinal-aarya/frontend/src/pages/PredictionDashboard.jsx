@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import UserLiveWalletBar from "../components/UserLiveWalletBar.jsx";
+import { useTokenEstimate } from "../hooks/useTokenEstimate.js";
 
 // ── Inline bar chart (no external dep) ───────────────────────────────────────
 const CHART_H = 160; // px — must match the container height below
@@ -139,6 +140,10 @@ export default function PredictionDashboard() {
   const [forecastMonths, setForecastMonths] = useState(3);
   const [historyMonths, setHistoryMonths] = useState(6);
   const [walletFilter, setWalletFilter] = useState("all"); // "all" | "mine"
+  const [costPreviewText, setCostPreviewText] = useState("");
+  const DEMO_PPT = 0.01;
+  const DEMO_MIN = 0.001;
+  const { estimatedAlgo, minApplies } = useTokenEstimate(costPreviewText, DEMO_PPT, DEMO_MIN);
 
   async function fetchData() {
     setLoading(true);
@@ -200,24 +205,49 @@ export default function PredictionDashboard() {
           <span className="material-symbols-outlined">storefront</span>
           <span>Marketplace</span>
         </Link>
+        <Link to="/user/dashboard" className="flex items-center space-x-3 px-6 py-3 text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors">
+          <span className="material-symbols-outlined">key</span>
+          <span>Keys &amp; usage</span>
+        </Link>
         <Link to="/user/analytics" className="flex items-center space-x-3 px-6 py-3 text-primary font-semibold border-r-2 border-primary bg-surface-container">
           <span className="material-symbols-outlined">insights</span>
           <span>Usage Analytics</span>
+        </Link>
+        <Link to="/user/transactions" className="flex items-center space-x-3 px-6 py-3 text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors">
+          <span className="material-symbols-outlined">receipt_long</span>
+          <span>Transaction history</span>
         </Link>
       </aside>
 
       {/* ── Main ── */}
       <main className="md:pl-64 pt-24 px-6 pb-16 max-w-6xl">
 
-        {/* Page title + controls */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
+        {/* Page title + cost preview + controls */}
+        <div className="flex flex-col gap-6 mb-8">
           <div>
             <h1 className="font-headline text-2xl font-semibold text-primary">Usage Analytics</h1>
             <p className="text-sm text-on-surface-variant mt-1">AI-powered spend forecasting & wallet recommendations</p>
           </div>
 
-          {/* Controls */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col lg:flex-row gap-4 lg:items-start lg:justify-between">
+            <div className="w-full lg:max-w-md border border-outline-variant rounded-md p-4 bg-white">
+              <p className="text-xs font-medium text-primary mb-2">Live cost preview (illustrative 0.01 ALGO / 1k tok)</p>
+              <textarea
+                className="w-full border border-outline-variant rounded px-2 py-1.5 text-sm min-h-[72px]"
+                placeholder="Type sample prompt text…"
+                value={costPreviewText}
+                onChange={(e) => setCostPreviewText(e.target.value)}
+              />
+              <p className="text-xs text-on-surface-variant mt-2">
+                Estimated cost{" "}
+                <span className="font-mono font-semibold text-secondary">{estimatedAlgo.toFixed(6)} ALGO</span>
+                {minApplies && (
+                  <span className="block text-amber-800 mt-1">Minimum charge applies ({DEMO_MIN} ALGO).</span>
+                )}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2 items-center">
             {/* Wallet scope */}
             <select
               value={walletFilter}
@@ -263,6 +293,7 @@ export default function PredictionDashboard() {
               <span className="material-symbols-outlined text-[14px]">refresh</span>
               Refresh
             </button>
+            </div>
           </div>
         </div>
 

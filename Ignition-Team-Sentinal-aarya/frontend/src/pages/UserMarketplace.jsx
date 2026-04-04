@@ -5,11 +5,19 @@ import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import UserLiveWalletBar from "../components/UserLiveWalletBar.jsx";
 import { chargeForTokens } from "../utils/tokenPricing.js";
+import { useTokenEstimate } from "../hooks/useTokenEstimate.js";
 
 function MarketplaceCard({ s }) {
   const [estWords, setEstWords] = useState("300");
   const ppt = Number(s.pricePerThousandTokens);
   const minC = Number(s.minimumChargeAlgo);
+
+  const syntheticForHook = useMemo(() => {
+    const w = Math.min(8000, Math.max(0, parseInt(estWords, 10) || 0));
+    return "word ".repeat(w);
+  }, [estWords]);
+
+  const { estimatedAlgo: hookEst, minApplies: hookMin } = useTokenEstimate(syntheticForHook, ppt, minC);
 
   const tokensFromWords = useMemo(() => {
     const w = parseFloat(estWords);
@@ -66,6 +74,11 @@ function MarketplaceCard({ s }) {
             </span>
           )}
         </div>
+        <p className="text-[11px] text-on-surface-variant mt-2">
+          Estimated cost{" "}
+          <span className="font-mono text-secondary font-semibold">{hookEst.toFixed(6)} ALGO</span>
+          {hookMin && <span className="block text-amber-800">Minimum charge applies.</span>}
+        </p>
       </div>
     </Link>
   );
@@ -144,6 +157,13 @@ export default function UserMarketplace() {
         >
           <span className="material-symbols-outlined">insights</span>
           <span>Usage Analytics</span>
+        </Link>
+        <Link
+          to="/user/transactions"
+          className="flex items-center space-x-3 px-6 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+        >
+          <span className="material-symbols-outlined">receipt_long</span>
+          <span>Transaction history</span>
         </Link>
       </aside>
 

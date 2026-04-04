@@ -12,6 +12,8 @@ import creatorRoutes from "./routes/creator.js";
 import useRoutes from "./routes/use.js";
 import predictionRoutes from "./routes/prediction.js";
 import userRoutes from "./routes/user.js";
+import contractRoutes from "./routes/contract.js";
+import walletRoutes from "./routes/wallet.js";
 
 const app = express();
 const origin =
@@ -45,6 +47,8 @@ app.use("/api/creator", creatorRoutes);
 app.use("/api/use", useRoutes);
 app.use("/api/prediction", predictionRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/contract", contractRoutes);
+app.use("/api/wallet", walletRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);

@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { chargeForTokens } from "../utils/tokenPricing.js";
+import { useTokenEstimate } from "../hooks/useTokenEstimate.js";
 
 const PROVIDERS = [
   { id: "groq", label: "Groq (OpenAI-compatible)" },
@@ -28,9 +29,15 @@ export default function CreateService() {
 
   const [providerCostPerThousand, setProviderCostPerThousand] = useState("");
   const [profitMarginPercent, setProfitMarginPercent] = useState("30");
+  const [samplePromptText, setSamplePromptText] = useState("");
 
   const pptNum = parseFloat(pricePerThousandTokens);
   const minNum = parseFloat(minimumChargeAlgo);
+  const { estimatedAlgo, minApplies } = useTokenEstimate(
+    samplePromptText,
+    Number.isFinite(pptNum) ? pptNum : 0,
+    Number.isFinite(minNum) ? minNum : 0
+  );
 
   const suggestedPrice = useMemo(() => {
     const cost = parseFloat(providerCostPerThousand);
@@ -244,6 +251,23 @@ export default function CreateService() {
             />
             <p className="text-xs text-on-surface-variant mt-1">
               Covers tiny prompts so fees don&apos;t exceed the payment.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-primary mb-1">Sample user prompt (live cost preview)</label>
+            <textarea
+              className="w-full border border-outline-variant rounded-md px-3 py-2 text-sm min-h-[88px]"
+              value={samplePromptText}
+              onChange={(e) => setSamplePromptText(e.target.value)}
+              placeholder="Type text as if a user were calling your API — estimate updates as you type."
+            />
+            <p className="text-xs text-on-surface-variant mt-2">
+              Estimated cost{" "}
+              <span className="font-mono font-semibold text-secondary">{estimatedAlgo.toFixed(6)} ALGO</span>
+              {minApplies && (
+                <span className="block text-amber-800 mt-1">Minimum charge applies.</span>
+              )}
             </p>
           </div>
 

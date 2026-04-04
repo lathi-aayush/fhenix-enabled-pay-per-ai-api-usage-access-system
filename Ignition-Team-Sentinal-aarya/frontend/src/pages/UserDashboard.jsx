@@ -81,6 +81,13 @@ export default function UserDashboard() {
           <span className="material-symbols-outlined">insights</span>
           Usage Analytics
         </Link>
+        <Link
+          to="/user/transactions"
+          className="flex items-center gap-3 px-6 py-3 text-slate-500 hover:bg-slate-100"
+        >
+          <span className="material-symbols-outlined">receipt_long</span>
+          Transaction history
+        </Link>
       </aside>
 
       <main className="md:pl-64 pt-24 px-6 pb-16 max-w-4xl">

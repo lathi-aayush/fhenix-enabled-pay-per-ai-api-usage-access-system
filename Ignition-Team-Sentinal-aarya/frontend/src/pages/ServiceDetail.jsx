@@ -13,6 +13,7 @@ import {
   signAndSendPayment,
 } from "../wallet/pera.js";
 import { chargeForTokens, wordsToApproxTokens } from "../utils/tokenPricing.js";
+import { useTokenEstimate } from "../hooks/useTokenEstimate.js";
 
 const EXPLORER_TX = "https://testnet.algoexplorer.io/tx/";
 
@@ -57,6 +58,8 @@ export default function ServiceDetail() {
     if (localInputTokenEstimate <= 0) return null;
     return chargeForTokens(localInputTokenEstimate, ppt, minC);
   }, [service, ppt, minC, localInputTokenEstimate]);
+
+  const { estimatedAlgo, minApplies } = useTokenEstimate(prompt, ppt, minC);
 
   useEffect(() => {
     let cancelled = false;
@@ -310,8 +313,19 @@ curl -sS "${apiBase}/api/use" \\
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Ask something…"
               />
+              {Number.isFinite(ppt) && Number.isFinite(minC) && (
+                <p className="text-xs text-on-surface-variant mt-2">
+                  Estimated cost{" "}
+                  <span className="font-mono font-semibold text-secondary">{estimatedAlgo.toFixed(6)} ALGO</span>
+                  {minApplies && (
+                    <span className="block mt-1 text-amber-800">
+                      Minimum charge applies (your estimate is below the per-call floor).
+                    </span>
+                  )}
+                </p>
+              )}
               {localEstimateAlgo != null && promptWordCount > 0 && (
-                <p className="text-xs text-on-surface-variant bg-surface-container-low/50 border border-outline-variant/50 rounded-md px-3 py-2">
+                <p className="text-xs text-on-surface-variant bg-surface-container-low/50 border border-outline-variant/50 rounded-md px-3 py-2 mt-2">
                   Rough pre-flight: ~{localInputTokenEstimate} tokens from your prompt (~{promptWordCount} words × 4/3) → at
                   least <span className="font-mono text-secondary font-semibold">{localEstimateAlgo.toFixed(6)} ALGO</span>{" "}
                   (min floor; final bill includes the assistant reply).

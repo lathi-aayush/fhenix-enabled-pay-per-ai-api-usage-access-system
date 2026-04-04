@@ -7,6 +7,7 @@ import CreatorDashboard from "./pages/CreatorDashboard.jsx";
 import CreateService from "./pages/CreateService.jsx";
 import PredictionDashboard from "./pages/PredictionDashboard.jsx";
 import UserDashboard from "./pages/UserDashboard.jsx";
+import TransactionHistory from "./pages/TransactionHistory.jsx";
 
 function Guard({ role, children }) {
   const { user, loading } = useAuth();
@@ -51,6 +52,14 @@ export default function App() {
         element={
           <Guard role="user">
             <UserDashboard />
+          </Guard>
+        }
+      />
+      <Route
+        path="/user/transactions"
+        element={
+          <Guard role="user">
+            <TransactionHistory />
           </Guard>
         }
       />
