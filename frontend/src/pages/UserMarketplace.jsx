@@ -1,8 +1,75 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import UserLiveWalletBar from "../components/UserLiveWalletBar.jsx";
+import { chargeForTokens } from "../utils/tokenPricing.js";
+
+function MarketplaceCard({ s }) {
+  const [estWords, setEstWords] = useState("300");
+  const ppt = Number(s.pricePerThousandTokens);
+  const minC = Number(s.minimumChargeAlgo);
+
+  const tokensFromWords = useMemo(() => {
+    const w = parseFloat(estWords);
+    if (!Number.isFinite(w) || w <= 0) return 0;
+    return Math.ceil(w * (4 / 3));
+  }, [estWords]);
+
+  const estAlgo = useMemo(() => {
+    if (!Number.isFinite(ppt) || !Number.isFinite(minC) || tokensFromWords <= 0) return null;
+    return chargeForTokens(tokensFromWords, ppt, minC);
+  }, [ppt, minC, tokensFromWords]);
+
+  const example400 = useMemo(() => {
+    if (!Number.isFinite(ppt) || !Number.isFinite(minC)) return null;
+    return chargeForTokens(400, ppt, minC);
+  }, [ppt, minC]);
+
+  return (
+    <Link
+      to={`/user/services/${s._id}`}
+      className="block bg-white border border-surface-variant rounded-md p-6 hover:border-secondary transition-colors editorial-shadow"
+    >
+      <h2 className="font-headline font-semibold text-primary text-lg">{s.title}</h2>
+      <p className="text-sm text-on-surface-variant mt-2 line-clamp-3">{s.description}</p>
+      <p className="mt-2 text-xs text-on-surface-variant">
+        {(s.aiProvider || "—") + " · " + (s.modelName || "—")}
+      </p>
+      <p className="mt-2 text-xs text-on-surface-variant">Calls: {s.totalUses ?? 0}</p>
+      <p className="mt-3 text-secondary font-mono text-sm font-semibold">
+        {Number.isFinite(ppt) ? ppt.toFixed(6) : "—"} ALGO / 1k tokens
+      </p>
+      <p className="mt-1 text-xs text-on-surface-variant font-mono">
+        Min/call: {Number.isFinite(minC) ? `${minC.toFixed(6)} ALGO` : "—"}
+      </p>
+      {example400 != null && (
+        <p className="mt-3 text-xs text-on-surface-variant border-t border-surface-variant pt-3">
+          Example: ~100 word prompt + ~200 word reply ≈ 400 tokens → ~{" "}
+          <span className="font-mono text-secondary font-semibold">{example400.toFixed(6)} ALGO</span>
+        </p>
+      )}
+      <div className="mt-3 pt-3 border-t border-surface-variant" onClick={(e) => e.stopPropagation()}>
+        <label className="text-xs text-on-surface-variant">Estimate total words (prompt + expected reply)</label>
+        <div className="flex gap-2 mt-1 items-center">
+          <input
+            type="number"
+            min="1"
+            className="w-28 border border-outline-variant rounded px-2 py-1 text-xs font-mono"
+            value={estWords}
+            onChange={(e) => setEstWords(e.target.value)}
+          />
+          {estAlgo != null && (
+            <span className="text-xs font-mono text-secondary">
+              ≈ {tokensFromWords} tok → ~{estAlgo.toFixed(6)} ALGO
+            </span>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 export default function UserMarketplace() {
   const { user, logout } = useAuth();
@@ -38,14 +105,7 @@ export default function UserMarketplace() {
           </nav>
         </div>
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-md border border-slate-100 dark:border-slate-700">
-            <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-[18px]">
-              account_balance_wallet
-            </span>
-            <span className="font-mono font-medium text-slate-900 dark:text-slate-100 text-xs truncate max-w-[140px]">
-              {user?.walletAddress}
-            </span>
-          </div>
+          <UserLiveWalletBar walletAddress={user?.walletAddress} />
           <button
             type="button"
             onClick={() => {
@@ -75,8 +135,8 @@ export default function UserMarketplace() {
           to="/user/dashboard"
           className="flex items-center space-x-3 px-6 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
         >
-          <span className="material-symbols-outlined">account_balance_wallet</span>
-          <span>Wallet &amp; keys</span>
+          <span className="material-symbols-outlined">key</span>
+          <span>Keys &amp; usage</span>
         </Link>
         <Link
           to="/user/analytics"
@@ -89,7 +149,9 @@ export default function UserMarketplace() {
 
       <main className="md:pl-64 pt-24 px-6 pb-16 max-w-5xl">
         <h1 className="font-headline text-2xl font-semibold text-primary mb-2">Marketplace</h1>
-        <p className="text-on-surface-variant text-sm mb-8">Browse AI APIs and pay per use in ALGO.</p>
+        <p className="text-on-surface-variant text-sm mb-8">
+          Browse AI APIs. Pricing is per thousand tokens consumed (with a per-call minimum).
+        </p>
 
         {loading ? (
           <p className="text-on-surface-variant">Loading services…</p>
@@ -98,21 +160,7 @@ export default function UserMarketplace() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {services.map((s) => (
-              <Link
-                key={s._id}
-                to={`/user/services/${s._id}`}
-                className="block bg-white border border-surface-variant rounded-md p-6 hover:border-secondary transition-colors editorial-shadow"
-              >
-                <h2 className="font-headline font-semibold text-primary text-lg">{s.title}</h2>
-                <p className="text-sm text-on-surface-variant mt-2 line-clamp-3">{s.description}</p>
-                <p className="mt-2 text-xs text-on-surface-variant">
-                  {(s.aiProvider || "—") + " · " + (s.modelName || "—")}
-                </p>
-                <p className="mt-2 text-xs text-on-surface-variant">Calls: {s.totalUses ?? 0}</p>
-                <p className="mt-3 text-secondary font-mono text-sm font-semibold">
-                  {Number(s.price).toFixed(4)} ALGO / call
-                </p>
-              </Link>
+              <MarketplaceCard key={s._id} s={s} />
             ))}
           </div>
         )}

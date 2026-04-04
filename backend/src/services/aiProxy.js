@@ -26,11 +26,13 @@ export async function forwardChatCompletion({ provider, apiKey, model, body }) {
   const maxTokens = body.max_tokens ?? 1024;
   const temperature = body.temperature;
 
-  if (provider === "groq" || provider === "openai") {
+  if (provider === "groq" || provider === "openai" || provider === "together") {
     const url =
       provider === "groq"
         ? "https://api.groq.com/openai/v1/chat/completions"
-        : "https://api.openai.com/v1/chat/completions";
+        : provider === "together"
+          ? "https://api.together.xyz/v1/chat/completions"
+          : "https://api.openai.com/v1/chat/completions";
     const payload = {
       model: model || body.model,
       messages,

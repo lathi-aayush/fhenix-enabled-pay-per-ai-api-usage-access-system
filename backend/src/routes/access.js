@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { AccessToken } from "../models/AccessToken.js";
 import { Service } from "../models/Service.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
+import { canonicalWalletAddress } from "../utils/userWallet.js";
 
 const router = Router();
 
@@ -20,8 +21,9 @@ router.post(
     const { serviceId } = req.body;
     const service = await Service.findById(serviceId);
     if (!service) return res.status(404).json({ error: "Service not found" });
+    const userWallet = canonicalWalletAddress(req.user.walletAddress);
     const existing = await AccessToken.findOne({
-      userWallet: req.user.walletAddress,
+      userWallet,
       serviceId,
     }).sort({ createdAt: -1 });
     if (existing) {
@@ -29,7 +31,7 @@ router.post(
     }
     const key = `sk-sentinel-${crypto.randomBytes(32).toString("hex")}`;
     const doc = await AccessToken.create({
-      userWallet: req.user.walletAddress,
+      userWallet,
       serviceId,
       key,
       isUsed: false,
@@ -47,8 +49,9 @@ router.get(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
+    const userWallet = canonicalWalletAddress(req.user.walletAddress);
     const tokens = await AccessToken.find({
-      userWallet: req.user.walletAddress,
+      userWallet,
       serviceId: req.params.serviceId,
     })
       .sort({ createdAt: -1 })
