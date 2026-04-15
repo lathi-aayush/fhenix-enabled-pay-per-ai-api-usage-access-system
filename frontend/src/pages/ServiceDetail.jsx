@@ -14,6 +14,7 @@ import {
 } from "../wallet/pera.js";
 import { chargeForTokens, wordsToApproxTokens } from "../utils/tokenPricing.js";
 import { useTokenEstimate } from "../hooks/useTokenEstimate.js";
+import { getBurnerWallet } from "../wallet/burner.js";
 
 const EXPLORER_TX = "https://testnet.algoexplorer.io/tx/";
 
@@ -176,19 +177,39 @@ curl -sS "${apiBase}/api/use" \\
       setQuotedCharge(charge);
       setPayStage("sign");
 
-      let active = await reconnectPera();
-      if (!active) active = await connectPera();
-      if (!active || !(await addressesEqual(active, sessionWallet))) {
-        throw new Error("Pera account must match your signed-in wallet");
+      const burnerWallet = getBurnerWallet();
+      const algosdk = (await import("algosdk")).default;
+      const algod = new algosdk.Algodv2("", algodServer.trim(), "");
+      let burnerBalanceInfo;
+      try {
+        burnerBalanceInfo = await algod.accountInformation(burnerWallet.addr).do();
+      } catch (e) {
+        throw new Error("Burner wallet has zero balance. Please click 'Manage' > 'Fund' in the top bar.");
       }
 
-      const { txId } = await signAndSendPayment({
-        from: active,
-        to,
-        amountMicroAlgos: micro,
-        noteStr: quote.paymentRef,
-        algodServer,
+      const params = await algod.getTransactionParams().do();
+      const txFee = Number(params.fee) || 1000;
+      
+      if (Number(burnerBalanceInfo.amount) < micro + txFee) {
+        throw new Error(`Burner wallet does not have enough funds for this request. Required: ${(micro + txFee) / 1000000} ALGO. Please click 'Manage' > 'Fund' in the top bar.`);
+      }
+
+      const note = new TextEncoder().encode(quote.paymentRef);
+      const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+        sender: burnerWallet.addr,
+        receiver: to,
+        amount: Math.round(micro),
+        note,
+        suggestedParams: params,
       });
+
+      const signedTxn = txn.signTxn(burnerWallet.sk);
+      const submitted = await algod.sendRawTransaction(signedTxn).do();
+      const txId = submitted?.txid ?? submitted?.txId;
+      if (!txId) {
+        throw new Error("Network did not return a transaction id after submit.");
+      }
+      await algosdk.waitForConfirmation(algod, txId, 4);
 
       setLastTxId(txId);
       setPayStage("confirming_chain");

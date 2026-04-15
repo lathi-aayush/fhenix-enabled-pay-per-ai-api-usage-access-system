@@ -295,9 +295,7 @@ async function completeFlow(req, res) {
   const userN = normalizeAlgoAddress(userWallet);
   const creatorN = normalizeAlgoAddress(creatorWallet);
 
-  if (senderN !== userN) {
-    return res.status(400).json({ error: "Payment sender does not match this API key's wallet" });
-  }
+  // Allow any sender (like a Burner Wallet) to fund the AI request, as long as it matches the paymentRef UUID.
   if (receiverN !== creatorN) {
     return res.status(400).json({ error: "Payment receiver does not match the service developer wallet" });
   }
