@@ -1,0 +1,19 @@
+# Render Blueprint: one Web Service serves the Vite build + Express API (same origin).
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: sentinel
+    runtime: node
+    plan: free
+    buildCommand: npm install --prefix frontend && NODE_OPTIONS=--max-old-space-size=4096 npm run build --prefix frontend && npm install --prefix backend
+    startCommand: NODE_ENV=production node backend/src/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true

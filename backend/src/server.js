@@ -1,4 +1,6 @@
 import "dotenv/config";
+import path from "path";
+import { fileURLToPath } from "url";
 import express from "express";
 import "express-async-errors";
 import cors from "cors";
@@ -15,9 +17,15 @@ import userRoutes from "./routes/user.js";
 import contractRoutes from "./routes/contract.js";
 import walletRoutes from "./routes/wallet.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 const origin =
-  process.env.FRONTEND_ORIGIN || process.env.FRONTEND_URL || "http://localhost:5173";
+  process.env.FRONTEND_ORIGIN ||
+  process.env.FRONTEND_URL ||
+  process.env.RENDER_EXTERNAL_URL ||
+  "http://localhost:5173";
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(
@@ -49,6 +57,21 @@ app.use("/api/prediction", predictionRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/contract", contractRoutes);
 app.use("/api/wallet", walletRoutes);
+
+app.use("/api", (_req, res) => {
+  res.status(404).json({ error: "Not found" });
+});
+
+if (process.env.NODE_ENV === "production") {
+  const dist = path.join(__dirname, "..", "..", "frontend", "dist");
+  app.use(express.static(dist, { index: false }));
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api")) return next();
+    res.sendFile(path.join(dist, "index.html"), (err) => {
+      if (err) next(err);
+    });
+  });
+}
 
 app.use((err, _req, res, _next) => {
   console.error(err);
