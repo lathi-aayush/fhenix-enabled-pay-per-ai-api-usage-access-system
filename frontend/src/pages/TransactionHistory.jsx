@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import UserLiveWalletBar from "../components/UserLiveWalletBar.jsx";
+import ProfileDropdown from "../components/ProfileDropdown.jsx";
 
 const EXPLORER_TX = "https://testnet.algoexplorer.io/tx/";
 
@@ -59,10 +60,8 @@ export default function TransactionHistory() {
           <span className="font-headline font-semibold text-primary">Transaction history</span>
         </div>
         <div className="flex items-center gap-4">
-          <UserLiveWalletBar walletAddress={user?.walletAddress} />
-          <button type="button" onClick={() => logout()} className="text-slate-500 text-sm">
-            Sign out
-          </button>
+          {user?.walletAddress && <UserLiveWalletBar walletAddress={user.walletAddress} />}
+          <ProfileDropdown />
         </div>
       </header>
 

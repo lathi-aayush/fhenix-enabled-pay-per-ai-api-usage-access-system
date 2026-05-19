@@ -5,6 +5,7 @@ import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { chargeForTokens } from "../utils/tokenPricing.js";
 import { useTokenEstimate } from "../hooks/useTokenEstimate.js";
+import ProfileDropdown from "../components/ProfileDropdown.jsx";
 
 const PROVIDERS = [
   { id: "groq", label: "Groq (OpenAI-compatible)" },
@@ -107,10 +108,9 @@ export default function CreateService() {
         <Link to="/creator" className="text-sm text-secondary">
           ← Dashboard
         </Link>
-        <span className="font-mono text-xs truncate max-w-[200px]">{user?.walletAddress}</span>
-        <button type="button" onClick={() => logout()} className="text-sm text-on-surface-variant">
-          Sign out
-        </button>
+        <div className="flex items-center gap-4">
+          <ProfileDropdown />
+        </div>
       </header>
 
       <main className="pt-24 px-6 max-w-xl mx-auto pb-16">

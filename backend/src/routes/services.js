@@ -75,7 +75,16 @@ router.post(
       providerApiKey,
       modelName,
     } = req.body;
-    const creatorWallet = canonicalWalletAddress(req.user.walletAddress);
+    
+    let creatorWallet;
+    try {
+      creatorWallet = canonicalWalletAddress(req.user.walletAddress);
+    } catch (e) {
+      return res.status(400).json({
+        error: "Creator wallet address is required to publish a service. Please click your profile avatar at the top right, scan your Pera Wallet to link it, then try again."
+      });
+    }
+
     let encryptedApiKey;
     try {
       encryptedApiKey = encryptSecret(String(providerApiKey).trim());

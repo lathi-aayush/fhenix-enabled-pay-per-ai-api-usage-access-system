@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import UserLiveWalletBar from "../components/UserLiveWalletBar.jsx";
+import ProfileDropdown from "../components/ProfileDropdown.jsx";
 import { useTokenEstimate } from "../hooks/useTokenEstimate.js";
 
 // ── Inline bar chart (no external dep) ───────────────────────────────────────
@@ -183,15 +184,9 @@ export default function PredictionDashboard() {
             Analytics
           </span>
         </div>
-        <div className="flex items-center gap-6">
-          <UserLiveWalletBar walletAddress={user?.walletAddress} />
-          <button
-            type="button"
-            onClick={() => { logout(); window.location.href = "/"; }}
-            className="text-sm text-on-surface-variant hover:text-on-surface transition-colors"
-          >
-            Sign out
-          </button>
+        <div className="flex items-center gap-4">
+          {user?.walletAddress && <UserLiveWalletBar walletAddress={user.walletAddress} />}
+          <ProfileDropdown />
         </div>
       </header>
 

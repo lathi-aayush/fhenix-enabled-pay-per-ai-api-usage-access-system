@@ -1,3 +1,4 @@
+// Trigger reload to load new creator wallet validation route changes
 import "dotenv/config";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -16,6 +17,7 @@ import predictionRoutes from "./routes/prediction.js";
 import userRoutes from "./routes/user.js";
 import contractRoutes from "./routes/contract.js";
 import walletRoutes from "./routes/wallet.js";
+import profileRoutes from "./routes/profile.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,6 +59,7 @@ app.use("/api/prediction", predictionRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/contract", contractRoutes);
 app.use("/api/wallet", walletRoutes);
+app.use("/api/profile", profileRoutes);
 
 app.use("/api", (_req, res) => {
   res.status(404).json({ error: "Not found" });

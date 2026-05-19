@@ -27,10 +27,41 @@ function Guard({ role, children }) {
   return children;
 }
 
+function ProfileGuard({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0F172A] font-body text-slate-400">
+        Loading…
+      </div>
+    );
+  }
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+}
+
+function ProfileRedirect() {
+  const { user } = useAuth();
+  if (user?.role === "creator") {
+    return <Navigate to="/creator" replace />;
+  }
+  return <Navigate to="/user/marketplace" replace />;
+}
+
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route
+        path="/profile"
+        element={
+          <ProfileGuard>
+            <ProfileRedirect />
+          </ProfileGuard>
+        }
+      />
       <Route
         path="/user/marketplace"
         element={

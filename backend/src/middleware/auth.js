@@ -10,11 +10,11 @@ export function requireAuth(req, res, next) {
     const secret = process.env.JWT_SECRET;
     if (!secret) throw new Error("JWT_SECRET missing");
     const payload = jwt.verify(token, secret);
-    if (!payload.walletAddress || !payload.role) {
+    if (!payload.role) {
       return res.status(401).json({ error: "Invalid token payload" });
     }
     req.user = {
-      walletAddress: payload.walletAddress,
+      walletAddress: payload.walletAddress || null,
       role: payload.role,
       userId: payload.sub,
     };

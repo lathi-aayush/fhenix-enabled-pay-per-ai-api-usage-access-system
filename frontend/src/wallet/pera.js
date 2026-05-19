@@ -40,12 +40,43 @@ export async function reconnectPera() {
 
 export async function connectPera() {
   const peraWallet = await getPeraWallet();
-  const accounts = await peraWallet.connect();
-  if (!accounts?.length) throw new Error("No accounts returned from Pera.");
-  const addr = normalizeAccountAddress(accounts[0]);
-  if (!addr) throw new Error("Could not read wallet address from Pera.");
-  _connectedAddress = addr;
-  return _connectedAddress;
+  try {
+    const accounts = await peraWallet.connect();
+    if (!accounts?.length) throw new Error("No accounts returned from Pera.");
+    const addr = normalizeAccountAddress(accounts[0]);
+    if (!addr) throw new Error("Could not read wallet address from Pera.");
+    _connectedAddress = addr;
+    return _connectedAddress;
+  } catch (e) {
+    if (
+      e?.message?.includes("Session currently connected") || 
+      e?.name === "PeraWalletConnectError" ||
+      e?.message?.includes("already connected")
+    ) {
+      console.log("[Pera Connect] Catching active session, attempting reconnection...");
+      try {
+        const accounts = await peraWallet.reconnectSession();
+        if (accounts && accounts.length > 0) {
+          const addr = normalizeAccountAddress(accounts[0]);
+          if (addr) {
+            _connectedAddress = addr;
+            return _connectedAddress;
+          }
+        }
+      } catch (reconErr) {
+        console.warn("[Pera Connect] Reconnection failed, forcing reset...", reconErr);
+      }
+      
+      // Force disconnect and retry fresh connection
+      await disconnectPera();
+      const retryAccounts = await peraWallet.connect();
+      if (!retryAccounts?.length) throw new Error("No accounts returned from Pera.");
+      const addr = normalizeAccountAddress(retryAccounts[0]);
+      _connectedAddress = addr;
+      return _connectedAddress;
+    }
+    throw e;
+  }
 }
 
 /** Compare two Algorand addresses (handles casing / encoding differences). */

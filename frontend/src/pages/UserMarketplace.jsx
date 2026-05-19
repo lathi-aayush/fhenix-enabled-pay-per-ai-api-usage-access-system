@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import UserLiveWalletBar from "../components/UserLiveWalletBar.jsx";
+import ProfileDropdown from "../components/ProfileDropdown.jsx";
 import { chargeForTokens } from "../utils/tokenPricing.js";
 import { useTokenEstimate } from "../hooks/useTokenEstimate.js";
 
@@ -118,17 +119,8 @@ export default function UserMarketplace() {
           </nav>
         </div>
         <div className="flex items-center space-x-4">
-          <UserLiveWalletBar walletAddress={user?.walletAddress} />
-          <button
-            type="button"
-            onClick={() => {
-              logout();
-              window.location.href = "/";
-            }}
-            className="text-slate-500 hover:text-slate-900 text-sm"
-          >
-            Sign out
-          </button>
+          {user?.walletAddress && <UserLiveWalletBar walletAddress={user.walletAddress} />}
+          <ProfileDropdown />
         </div>
       </header>
 

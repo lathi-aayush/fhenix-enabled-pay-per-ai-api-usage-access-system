@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import UserLiveWalletBar from "../components/UserLiveWalletBar.jsx";
+import ProfileDropdown from "../components/ProfileDropdown.jsx";
 
 export default function UserDashboard() {
   const { user, logout } = useAuth();
@@ -46,17 +47,10 @@ export default function UserDashboard() {
             Sentinal
           </Link>
         </div>
-        <UserLiveWalletBar walletAddress={user?.walletAddress} />
-        <button
-          type="button"
-          onClick={() => {
-            logout();
-            window.location.href = "/";
-          }}
-          className="text-slate-500 text-sm shrink-0"
-        >
-          Sign out
-        </button>
+        <div className="flex items-center gap-4">
+          {user?.walletAddress && <UserLiveWalletBar walletAddress={user.walletAddress} />}
+          <ProfileDropdown />
+        </div>
       </header>
 
       <aside className="fixed left-0 top-16 bottom-0 w-64 bg-slate-50 border-r border-slate-100 flex-col py-8 text-[0.875rem] overflow-y-auto max-md:hidden md:flex">

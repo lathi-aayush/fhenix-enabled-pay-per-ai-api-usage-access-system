@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getPublicApiBase } from "../utils/apiBase.js";
+import ProfileDropdown from "../components/ProfileDropdown.jsx";
 
 export default function CreatorDashboard() {
   const { user, logout } = useAuth();
@@ -67,21 +68,8 @@ export default function CreatorDashboard() {
             Creator
           </span>
         </div>
-        <div className="flex items-center gap-6">
-          <div className="bg-surface-container-low border border-outline-variant/30 rounded px-3 py-1.5 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px] text-secondary">account_balance_wallet</span>
-            <span className="text-sm font-mono truncate max-w-[180px] text-primary">{user?.walletAddress}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              logout();
-              window.location.href = "/";
-            }}
-            className="text-sm text-on-surface-variant"
-          >
-            Sign out
-          </button>
+        <div className="flex items-center gap-4">
+          <ProfileDropdown />
         </div>
       </header>
 

@@ -5,6 +5,7 @@ import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getPublicApiBase } from "../utils/apiBase.js";
 import UserLiveWalletBar, { shortenWallet } from "../components/UserLiveWalletBar.jsx";
+import ProfileDropdown from "../components/ProfileDropdown.jsx";
 import {
   addressesEqual,
   connectPera,
@@ -270,10 +271,10 @@ curl -sS "${apiBase}/api/use" \\
         <Link to="/user/marketplace" className="text-sm text-secondary hover:underline shrink-0">
           ← Marketplace
         </Link>
-        <UserLiveWalletBar walletAddress={user?.walletAddress} />
-        <button type="button" onClick={() => logout()} className="text-sm text-on-surface-variant shrink-0">
-          Sign out
-        </button>
+        <div className="flex items-center gap-4">
+          {user?.walletAddress && <UserLiveWalletBar walletAddress={user.walletAddress} />}
+          <ProfileDropdown />
+        </div>
       </nav>
 
       <div className="pt-24 px-6 max-w-3xl mx-auto pb-24">
