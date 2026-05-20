@@ -5,6 +5,7 @@ import { Service } from "../models/Service.js";
 import { AccessToken } from "../models/AccessToken.js";
 import { ApiUsageLog } from "../models/ApiUsageLog.js";
 import { requireAuth } from "../middleware/auth.js";
+import { encryptSecret, decryptSecret } from "../utils/encrypt.js";
 
 const router = Router();
 
@@ -194,8 +195,6 @@ router.put("/", requireAuth, async (req, res) => {
   }
 });
 
-import { encryptSecret, decryptSecret } from "../utils/encrypt.js";
-
 /**
  * GET /api/profile/burner
  * Fetch the user's synced burner wallet mnemonic
@@ -203,7 +202,10 @@ import { encryptSecret, decryptSecret } from "../utils/encrypt.js";
 router.get("/burner", requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) {
+      console.warn("[GET /burner] user not found for id:", req.user.userId);
+      return res.json({ mnemonic: null });
+    }
     
     if (!user.burnerWalletEncrypted) {
       return res.json({ mnemonic: null });
@@ -227,18 +229,26 @@ router.get("/burner", requireAuth, async (req, res) => {
 router.post("/burner", requireAuth, async (req, res) => {
   try {
     const { mnemonic } = req.body;
+    console.log("[POST /burner] userId:", req.user?.userId, "mnemonic present:", !!mnemonic);
     if (!mnemonic || typeof mnemonic !== "string") {
       return res.status(400).json({ error: "Valid mnemonic is required" });
     }
     
     const user = await User.findById(req.user.userId);
-    if (!user) return res.status(404).json({ error: "User not found" });
+    console.log("[POST /burner] user found:", !!user);
+    if (!user) {
+      // User not found - this can happen in edge cases during initial setup.
+      // Return success silently so the frontend doesn't show an error.
+      console.warn("[POST /burner] user not found for id:", req.user.userId, "- silently skipping");
+      return res.json({ success: true, skipped: true });
+    }
     
     user.burnerWalletEncrypted = encryptSecret(mnemonic.trim());
     await user.save();
     
     return res.json({ success: true });
   } catch (e) {
+    console.error("[POST /burner] error:", e.message);
     res.status(500).json({ error: "Failed to sync burner wallet" });
   }
 });

@@ -14,7 +14,7 @@ import {
   incrementBlogUsage,
   ensureUsageMonth,
 } from "../services/blog.service.js";
-import { publishingQueue } from "../queues/publishingQueue.js";
+import { getPublishingQueue } from "../queues/publishingQueue.js";
 
 // --- Blog ---
 
@@ -215,8 +215,15 @@ export async function postBlogSchedule(req, res) {
     });
   }
 
+  const queue = getPublishingQueue();
+  if (!queue) {
+    return res.status(503).json({
+      error: "Background publishing queue is currently unavailable. Please ensure Redis is running.",
+    });
+  }
+
   for (const platform of allowed.length ? allowed : []) {
-    await publishingQueue.add(
+    await queue.add(
       "publish",
       { blogPostId: post._id.toString(), platform, userId: req.user.userId.toString() },
       { removeOnComplete: true }

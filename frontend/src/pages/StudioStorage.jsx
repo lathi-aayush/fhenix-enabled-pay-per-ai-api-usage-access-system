@@ -1,3 +1,4 @@
+import React from "react";
 export default function StudioStorage() {
   return (
     <div className="pt-6 max-w-5xl">

@@ -2,32 +2,86 @@ import { useState, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth, api } from './AuthContext';
+import './style.css';
 
+/* ── SVG helpers ── */
+const IconShield = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2L3 7v6c0 5.25 3.75 10.15 9 11.35C17.25 23.15 21 18.25 21 13V7l-9-5z" />
+  </svg>
+);
+const IconPlus = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{width:14,height:14}}>
+    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+const IconChat = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+  </svg>
+);
+const IconExternalLink = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{width:10,height:10}}>
+    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
+  </svg>
+);
+const IconLogout = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{width:16,height:16}}>
+    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+  </svg>
+);
+const IconSend = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor">
+    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+  </svg>
+);
+const IconCheck = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+const IconBot = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="10" rx="2" />
+    <circle cx="12" cy="7" r="3" />
+    <line x1="8" y1="16" x2="8" y2="16" strokeWidth={3} />
+    <line x1="12" y1="16" x2="12" y2="16" strokeWidth={3} />
+    <line x1="16" y1="16" x2="16" y2="16" strokeWidth={3} />
+  </svg>
+);
+
+/* ─────────────────────────────────────────────
+   LOGIN SCREEN
+───────────────────────────────────────────── */
 function LoginScreen() {
   const { loginWithGoogle, isAuthenticated } = useAuth();
-  
-  if (isAuthenticated) {
-    return <Navigate to="/" replace />;
-  }
-  
+  if (isAuthenticated) return <Navigate to="/" replace />;
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900 px-4">
-      <div className="max-w-md w-full bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 text-center">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Sentinal Chat</h1>
-        <p className="text-slate-500 dark:text-slate-400 mb-8">Login with your Sentinal profile to continue</p>
-        
-        <button 
-          onClick={loginWithGoogle}
-          className="w-full flex items-center justify-center gap-3 bg-white dark:bg-slate-700 text-slate-700 dark:text-white border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 font-medium py-3 px-4 rounded-xl transition-colors shadow-sm"
-        >
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
+    <div className="login-screen">
+      <div className="login-card">
+        <div className="login-logo">
+          <IconShield />
+        </div>
+        <h1 className="login-title">Sentinel Chat</h1>
+        <p className="login-sub">Sign in with your Sentinel profile to start chatting. Every message is paid automatically via your Burner Wallet on Algorand.</p>
+
+        <button onClick={loginWithGoogle} className="btn-google">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
           Continue with Google
         </button>
+
+        <p className="login-footer">
+          Powered by the <a href="http://localhost:5173" target="_blank" rel="noopener noreferrer">Sentinel Marketplace</a> · Algorand TestNet
+        </p>
       </div>
     </div>
   );
 }
 
+/* ─────────────────────────────────────────────
+   CHAT INTERFACE
+───────────────────────────────────────────── */
 function ChatInterface() {
   const { user, logout } = useAuth();
   const [conversations, setConversations] = useState([]);
@@ -37,190 +91,172 @@ function ChatInterface() {
   const [loading, setLoading] = useState(false);
   const [burnerBalance, setBurnerBalance] = useState(null);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
-  useEffect(() => {
-    fetchConversations();
-    fetchBurnerInfo();
-  }, []);
-
-  useEffect(() => {
-    if (activeConvo) fetchMessages(activeConvo._id);
-  }, [activeConvo]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  useEffect(() => { fetchConversations(); fetchBurnerInfo(); }, []);
+  useEffect(() => { if (activeConvo) fetchMessages(activeConvo._id); }, [activeConvo]);
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   async function fetchBurnerInfo() {
     try {
       const res = await api.get('/user-info');
       setBurnerBalance(res.data.balance);
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   }
 
   async function fetchConversations() {
     try {
       const res = await api.get('/conversations');
       setConversations(res.data);
-      if (res.data.length > 0 && !activeConvo) {
-        setActiveConvo(res.data[0]);
-      }
-    } catch (e) {
-      console.error(e);
-    }
+      if (res.data.length > 0 && !activeConvo) setActiveConvo(res.data[0]);
+    } catch (e) { console.error(e); }
   }
 
   async function fetchMessages(convoId) {
     try {
       const res = await api.get(`/conversations/${convoId}/messages`);
       setMessages(res.data);
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   }
 
-  async function handleNewChat() {
+  function handleNewChat() {
     setActiveConvo(null);
     setMessages([]);
+    setTimeout(() => inputRef.current?.focus(), 50);
   }
 
   async function sendMessage(e) {
     e.preventDefault();
     if (!input.trim() || loading) return;
-
     const userMessage = input.trim();
     setInput('');
     setLoading(true);
-    
-    // Optimistic UI
     setMessages(prev => [...prev, { role: 'user', content: userMessage, _id: Date.now() }]);
 
     try {
-      const res = await api.post('/chat', {
-        conversationId: activeConvo?._id,
-        content: userMessage
-      });
-      
+      const res = await api.post('/chat', { conversationId: activeConvo?._id, content: userMessage });
       setMessages(prev => [...prev, res.data.message]);
-      
       if (!activeConvo) {
-        // Find the newly created convo in the backend
         fetchConversations();
-        setActiveConvo({ _id: res.data.conversationId, title: userMessage.slice(0, 30) });
+        setActiveConvo({ _id: res.data.conversationId, title: userMessage.slice(0, 32) });
       }
-      // Refresh burner balance after payment
       fetchBurnerInfo();
-    } catch (err) {
-      console.error(err);
-      // Revert optimistic message on error or show error
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, there was an error processing your request. Ensure your Burner Wallet has sufficient ALGO on the Sentinal website.', _id: Date.now(), isError: true }]);
+    } catch {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'An error occurred. Please make sure your Burner Wallet has sufficient ALGO on the Sentinel website.',
+        _id: Date.now(),
+        isError: true,
+      }]);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="flex h-screen bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-sans antialiased">
-      {/* Sidebar */}
-      <div className="w-64 bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col h-full">
-        <div className="p-4">
-          <button 
-            onClick={handleNewChat}
-            className="w-full flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-4 py-2.5 transition-colors shadow-sm text-sm font-medium"
-          >
-            New Chat
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+    <div className="app-shell">
+      {/* ── Sidebar ── */}
+      <aside className="sidebar">
+        <div className="sidebar-header">
+          {/* Logo */}
+          <a href="http://localhost:5173" target="_blank" rel="noopener noreferrer" className="sidebar-logo" style={{textDecoration:'none'}}>
+            <div className="sidebar-logo-mark"><IconShield /></div>
+            <div>
+              <div className="sidebar-logo-text">Sentinel</div>
+              <div className="sidebar-logo-sub">AI Chat</div>
+            </div>
+          </a>
+
+          <button onClick={handleNewChat} className="btn-new-chat">
+            New conversation
+            <IconPlus />
           </button>
         </div>
-        
-        <div className="flex-1 overflow-y-auto px-3 space-y-1 mt-2">
+
+        {/* Conversation list */}
+        <nav className="convo-list" aria-label="Conversations">
+          {conversations.length === 0 && (
+            <p style={{fontSize:12, color:'var(--clr-text-faint)', padding:'12px 10px', margin:0}}>No conversations yet</p>
+          )}
           {conversations.map(c => (
             <button
               key={c._id}
               onClick={() => setActiveConvo(c)}
-              className={`w-full text-left truncate px-3 py-2 rounded-lg text-sm transition-colors ${activeConvo?._id === c._id ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900'}`}
+              className={`convo-item ${activeConvo?._id === c._id ? 'active' : ''}`}
+              title={c.title}
             >
-              {c.title}
+              {c.title || 'Untitled'}
             </button>
           ))}
-        </div>
-        
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-4">
-          <div className="bg-slate-100 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Burner Wallet</span>
-              <span className="text-xs font-mono font-medium text-blue-600 dark:text-blue-400">{burnerBalance !== null ? `${burnerBalance.toFixed(2)} ALGO` : '...'}</span>
+        </nav>
+
+        {/* Footer */}
+        <div className="sidebar-footer">
+          {/* Burner wallet card */}
+          <div className="burner-card">
+            <div className="burner-card-row">
+              <span className="burner-label">Burner Wallet</span>
+              <span className="burner-amount">
+                {burnerBalance !== null ? `${burnerBalance.toFixed(4)} ALGO` : '—'}
+              </span>
             </div>
-            <a href="http://localhost:5173/wallet" target="_blank" rel="noopener noreferrer" className="text-[11px] flex items-center gap-1 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors mt-2">
-              Manage on Sentinal 
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+            <a href="http://localhost:5173/dashboard/home" target="_blank" rel="noopener noreferrer" className="burner-link">
+              Top up on Sentinel <IconExternalLink />
             </a>
           </div>
 
-          <div className="flex items-center gap-3">
-            {user?.photoURL ? (
-              <img src={user.photoURL} alt="User" className="w-8 h-8 rounded-full" />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-slate-300 dark:bg-slate-700" />
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.displayName}</p>
-            </div>
-            <button onClick={logout} className="text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" /></svg>
+          {/* User row */}
+          <div className="user-row">
+            {user?.photoURL
+              ? <img src={user.photoURL} alt="User" className="user-avatar" />
+              : <div className="user-avatar-placeholder" />}
+            <span className="user-name">{user?.displayName || user?.email}</span>
+            <button onClick={logout} className="btn-logout" title="Sign out" aria-label="Sign out">
+              <IconLogout />
             </button>
           </div>
         </div>
-      </div>
+      </aside>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col h-full relative">
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
+      {/* ── Main area ── */}
+      <main className="chat-main">
+        <div className="messages-area">
           {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto">
-              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-              </div>
-              <h2 className="text-2xl font-semibold mb-2">How can I help you today?</h2>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">Powered by Sentinal Marketplace APIs. Usage is automatically paid using your connected Burner Wallet.</p>
+            <div className="empty-state">
+              <div className="empty-icon"><IconChat /></div>
+              <h2 className="empty-title">How can I help you?</h2>
+              <p className="empty-sub">
+                Powered by the Sentinel AI marketplace. Each response is automatically paid using your Burner Wallet on Algorand TestNet — no manual signing needed.
+              </p>
             </div>
           ) : (
-            <div className="max-w-3xl mx-auto space-y-6 pb-24">
+            <div className="messages-list">
               {messages.map((m, i) => (
-                <div key={m._id || i} className={`flex gap-4 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div key={m._id || i} className={`msg-row ${m.role}`}>
                   {m.role === 'assistant' && (
-                    <div className="w-8 h-8 rounded-full bg-blue-600 flex-shrink-0 flex items-center justify-center text-white mt-1">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" /></svg>
-                    </div>
+                    <div className="msg-avatar"><IconBot /></div>
                   )}
-                  <div className={`px-5 py-3.5 rounded-2xl max-w-[85%] ${
-                    m.role === 'user' 
-                      ? 'bg-blue-600 text-white rounded-br-sm' 
-                      : m.isError 
-                        ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/30 rounded-bl-sm'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-bl-sm shadow-sm border border-slate-200/50 dark:border-slate-700/50'
-                  }`}>
-                    <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
+                  <div className={`msg-bubble ${m.role === 'user' ? 'user' : m.isError ? 'error' : 'assistant'}`}>
+                    <p>{m.content}</p>
                     {m.paymentTxId && (
-                      <div className="mt-3 pt-2 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center gap-1.5 text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        Paid via Burner
+                      <div className="msg-receipt">
+                        <IconCheck />
+                        Paid via Burner · tx {m.paymentTxId.slice(0, 8)}…
                       </div>
                     )}
                   </div>
                 </div>
               ))}
+
               {loading && (
-                <div className="flex gap-4 justify-start">
-                  <div className="w-8 h-8 rounded-full bg-blue-600 flex-shrink-0 flex items-center justify-center text-white mt-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" /></svg>
-                  </div>
-                  <div className="px-5 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 rounded-bl-sm shadow-sm border border-slate-200/50 dark:border-slate-700/50 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="msg-row assistant">
+                  <div className="msg-avatar"><IconBot /></div>
+                  <div className="msg-bubble assistant">
+                    <div className="typing-dots">
+                      <div className="dot" />
+                      <div className="dot" />
+                      <div className="dot" />
+                    </div>
                   </div>
                 </div>
               )}
@@ -229,40 +265,51 @@ function ChatInterface() {
           )}
         </div>
 
-        {/* Input Area */}
-        <div className="absolute bottom-0 w-full bg-gradient-to-t from-white via-white to-transparent dark:from-slate-900 dark:via-slate-900 pt-10 pb-6 px-4">
-          <div className="max-w-3xl mx-auto">
-            <form onSubmit={sendMessage} className="relative flex items-center">
+        {/* Input bar */}
+        <div className="input-bar">
+          <div className="input-inner">
+            <form onSubmit={sendMessage} className="input-form">
               <input
+                ref={inputRef}
                 type="text"
+                className="input-field"
                 value={input}
                 onChange={e => setInput(e.target.value)}
-                placeholder="Message Sentinal Chat..."
-                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl pl-6 pr-14 py-4 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow"
+                placeholder="Message Sentinel Chat…"
                 disabled={loading}
+                autoComplete="off"
               />
-              <button 
+              <button
                 type="submit"
+                className="btn-send"
                 disabled={!input.trim() || loading}
-                className="absolute right-2 p-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:dark:bg-slate-700 text-white disabled:text-slate-400 rounded-xl transition-colors"
+                aria-label="Send message"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clipRule="evenodd" /></svg>
+                <IconSend />
               </button>
             </form>
-            <p className="text-center text-[11px] text-slate-400 dark:text-slate-500 mt-3 font-medium">Sentinal Chat can make mistakes. Consider verifying important information.</p>
+            <p className="input-hint">
+              Sentinel Chat may make mistakes. Verify important information independently.
+            </p>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
 
+/* ─────────────────────────────────────────────
+   ROUTING
+───────────────────────────────────────────── */
 function MainLayout() {
   const { loading, isAuthenticated } = useAuth();
-  
-  if (loading) return <div className="h-screen w-screen flex items-center justify-center bg-slate-900 text-white font-medium">Loading...</div>;
+  if (loading) return (
+    <div className="loading-screen">
+      <div className="loading-spinner" />
+      <span className="loading-text">Loading Sentinel Chat…</span>
+    </div>
+  );
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  
   return <ChatInterface />;
 }
 
@@ -270,7 +317,18 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Toaster position="top-center" toastOptions={{ style: { background: '#1e293b', color: '#fff' } }} />
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            style: {
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 13,
+              background: '#031634',
+              color: '#fff',
+              borderRadius: 8,
+            },
+          }}
+        />
         <Routes>
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/" element={<MainLayout />} />

@@ -1,3 +1,4 @@
+import React from "react";
 import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
 import Home from "./pages/Home.jsx";

@@ -54,8 +54,8 @@ export async function submitProofOfIntelligence({
     const amount = 1000;
 
     const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-      from: addr,
-      to: proofAddr,
+      sender: addr,
+      receiver: proofAddr,
       amount,
       note,
       suggestedParams: sp,

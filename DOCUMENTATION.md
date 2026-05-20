@@ -11,7 +11,7 @@
 
 ## Table of Contents
 
-1. [Project Overview](#1-project-overview)
+1. [Project Overview & Business Model](#1-project-overview--business-model)
 2. [Architecture Diagram](#2-architecture-diagram)
 3. [Repository Structure](#3-repository-structure)
 4. [Technical Glossary](#4-technical-glossary)
@@ -37,76 +37,87 @@
    - [Deployment Script](#72-deployment-script)
    - [Compiled Artifacts](#73-compiled-artifacts)
 8. [Core Flows — Step-by-Step](#8-core-flows--step-by-step)
-   - [User Login Flow](#81-user-login-flow)
+   - [User Login Flow (Firebase / Google)](#81-user-login-flow-firebase--google)
    - [Service Creation Flow (Creator)](#82-service-creation-flow-creator)
    - [Pay-Per-Use AI API Call Flow](#83-pay-per-use-ai-api-call-flow)
-   - [Direct Payment & Access Token Flow](#84-direct-payment--access-token-flow)
-   - [Top-Up (Contract) Flow](#85-top-up-contract-flow)
-   - [Proof-of-Intelligence Flow](#86-proof-of-intelligence-flow)
-9. [Environment Variables Reference](#9-environment-variables-reference)
-10. [API Reference (All Endpoints)](#10-api-reference-all-endpoints)
-11. [Security Mechanisms](#11-security-mechanisms)
-12. [Prediction & Analytics Engine](#12-prediction--analytics-engine)
+   - [Burner Wallet Flow](#84-burner-wallet-flow)
+   - [Chatbot Flow](#85-chatbot-flow)
+   - [Direct Payment & Access Token Flow](#86-direct-payment--access-token-flow)
+   - [Top-Up (Contract) Flow](#87-top-up-contract-flow)
+   - [Proof-of-Intelligence Flow](#88-proof-of-intelligence-flow)
+9. [Chatbot System](#9-chatbot-system)
+10. [Agent Context JSON](#10-agent-context-json)
+11. [x402 Payment Protocol (Roadmap)](#11-x402-payment-protocol-roadmap)
+12. [Environment Variables Reference](#12-environment-variables-reference)
+13. [API Reference (All Endpoints)](#13-api-reference-all-endpoints)
+14. [Security Mechanisms](#14-security-mechanisms)
+15. [Prediction & Analytics Engine](#15-prediction--analytics-engine)
 
 ---
 
-## 1. Project Overview
+## 1. Project Overview & Business Model
 
 Sentinel is a **decentralized pay-per-use AI API marketplace** built on the **Algorand blockchain**. It solves the problem of trust and cost transparency in AI API access:
 
-- **Creators** (AI service providers) publish AI services — wrapping models from providers like **Groq, OpenAI, Anthropic, or Together AI** — and set **per-token ALGO pricing**.
-- **Users** (consumers) discover services on the marketplace, pay **on-chain in ALGO** (Algorand's native currency) for each API call, and receive AI responses only after verified payment.
-- The platform acts as a **secure proxy** — the creator's provider API key is **never exposed** to users. It is stored AES-256-GCM encrypted in the database and only decrypted server-side at the moment of proxying.
-- Each payment is a direct, **peer-to-peer Algorand transaction** from user wallet → creator wallet. There is no custodial intermediary holding funds.
-- An optional **Algorand smart contract** tracks global platform stats (total purchases, total ALGO processed) on-chain.
+- **Creators** (AI service providers) publish AI services — wrapping models from **Groq, OpenAI, Anthropic, or Together AI** — and set **per-token ALGO pricing**.
+- **Users** (consumers) discover services on the marketplace, pay **on-chain in ALGO** for each API call, and receive AI responses only after verified payment.
+- The platform acts as a **secure proxy** — the creator's provider API key is **never exposed**. It is stored AES-256-GCM encrypted and only decrypted server-side at call time.
+- Each payment is a direct, **peer-to-peer Algorand transaction** from user wallet → creator wallet. No custodial intermediary holds funds.
+- An optional **Algorand smart contract** (`SentinelContract`) tracks global platform stats on-chain.
+
+### Business Model
+
+| Participant | Role | Revenue mechanism |
+|-------------|------|-------------------|
+| **Creators** | Publish AI services, set pricing | Receive 100% of user payments directly to their Algorand wallet |
+| **Users** | Consume AI services | Pay per call in ALGO — no subscription needed |
+| **Platform** | Runs the marketplace + Studio | Studio subscription fees (Creator 5 ALGO/mo · Pro 15 · Enterprise 40); 0.001 ALGO proof-of-intelligence log fee per call |
+
+**Key design properties:**
+- Zero platform cut on marketplace transactions — all ALGO flows creator → user directly.
+- The **Burner Wallet** lets users pre-fund a hot wallet so the chatbot (and future AI agents) can pay automatically without a manual Pera Wallet signature per message.
+- The **Agent Context JSON** endpoint allows any external AI assistant to read the live service catalog and recommend APIs — positioning Sentinel as a **machine-native marketplace**.
+- The planned **x402 protocol** endpoint will allow AI agents to call Sentinel services using the emerging HTTP 402 payment standard, without any Sentinel-specific client code.
 
 ---
 
 ## 2. Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         FRONTEND (React + Vite)                      │
-│                                                                     │
-│   Home ──► Login (Pera Wallet) ──► Role Selection (User / Creator)  │
-│      │                                                              │
-│      ├─ User Flow:                                                  │
-│      │   Marketplace ──► Service Detail ──► Send Prompt ──►         │
-│      │   Receive Quote ──► Sign ALGO Txn (Pera) ──► Get AI Result   │
-│      │   Dashboard / Transaction History / Usage Analytics          │
-│      │                                                              │
-│      └─ Creator Flow:                                               │
-│          Dashboard + Stats ──► Create Service ──► Manage Services    │
-└────────────────────────────────┬────────────────────────────────────┘
-                                 │ Vite Dev Proxy: /api → :5001
-                                 ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                     BACKEND (Express.js + MongoDB)                    │
-│                                                                     │
-│   /api/auth/login     ─ JWT wallet-based auth                       │
-│   /api/services       ─ CRUD for AI services (marketplace)          │
-│   /api/payment        ─ Payment intent create / on-chain verify     │
-│   /api/access         ─ Generate API access tokens post-payment     │
-│   /api/use            ─ Metered AI calls (quote → pay → complete)   │
-│   /api/creator        ─ Creator dashboard stats & usage logs        │
-│   /api/user           ─ User dashboard, balance, transaction history│
-│   /api/wallet         ─ Contract top-up create / verify             │
-│   /api/contract       ─ On-chain contract stats (cached)            │
-│   /api/prediction     ─ ML-powered usage prediction & forecasting   │
-└───────┬──────────────────────────┬──────────────────────────────────┘
-        │                          │
-        ▼                          ▼
-┌──────────────┐     ┌───────────────────────────────────────┐
-│   MongoDB    │     │       Algorand TestNet                 │
-│  (Atlas)     │     │                                       │
-│              │     │  Algod Node: testnet-api.algonode.cloud│
-│  Users       │     │  Indexer:    testnet-idx.algonode.cloud│
-│  Services    │     │                                       │
-│  Transactions│     │  Peer-to-Peer Payments (ALGO)         │
-│  AccessTokens│     │  Smart Contract (SentinelContract)    │
-│  ApiUsageLogs│     │  Proof-of-Intelligence Txns           │
-│  TopUpIntents│     │                                       │
-└──────────────┘     └───────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│              FRONTENDS                                                │
+│                                                                      │
+│  Main SPA (React + Vite :5173)          Chat UI (React + Vite :5555) │
+│  Home ──► Firebase Login ──► Role       Sidebar (conversations)      │
+│  Marketplace ──► Service Detail         ChatWindow ──► Messages      │
+│  Dashboard (Agent Context JSON panel)                                │
+│  Studio (blog, projects, platforms)                                  │
+└────────────┬─────────────────────────────────┬───────────────────────┘
+             │ Vite Proxy /api → :5000          │ Fetch → :4000
+             ▼                                 ▼
+┌─────────────────────────┐      ┌──────────────────────────────────────┐
+│  MAIN BACKEND (:5000)   │      │  CHAT BACKEND (:4000)                │
+│  Express + MongoDB      │◄─────│  Express + MongoDB (conversations)   │
+│                         │      │                                      │
+│  /api/auth              │      │  GET  /conversations                 │
+│  /api/services          │      │  GET  /user-info (burner balance)    │
+│    └─ /agent-context ◄──┼──────┼─ public catalog for AI agents        │
+│  /api/use (quote+claim) │      │  POST /chat                          │
+│  /api/profile/burner    │      │    1. Fetch burner mnemonic           │
+│  /api/access/generate   │      │    2. Get/generate proxy key          │
+│  /api/payment           │      │    3. Quote from /api/use            │
+│  /api/creator           │      │    4. Pay via burner wallet          │
+│  /api/studio            │      │    5. Claim AI response              │
+│  /api/prediction        │      │  GET  /messages/:convoId             │
+└──────────┬──────────────┘      └──────────────────────────────────────┘
+           │
+     ┌─────┴───────────────────────────────────┐
+     │         DATA & CHAIN                    │
+     │                                         │
+     │  MongoDB (Atlas)  Redis (BullMQ)         │
+     │  Algorand TestNet (algod + indexer)      │
+     │  Groq / OpenAI / Anthropic / Together    │
+     └─────────────────────────────────────────┘
 ```
 
 ---
@@ -791,9 +802,182 @@ After a successful metered AI call:
 5. This creates an immutable on-chain record of the AI interaction
 ```
 
+### 8.7 Burner Wallet Flow
+
+The Burner Wallet is a hot Algorand wallet stored locally (mnemonic in `localStorage`) and optionally synced to the backend encrypted in MongoDB. It allows automatic payments without manual Pera Wallet signing per transaction.
+
+```
+1. On first load, frontend checks localStorage for "burner_wallet_mnemonic"
+2. If absent, algosdk.generateAccount() creates a new account; mnemonic stored in localStorage
+3. POST /api/profile/burner { mnemonic } syncs the encrypted mnemonic to the user's MongoDB profile
+4. GET  /api/profile/burner retrieves the mnemonic (decrypted server-side) for other services
+5. User funds the burner wallet by sending ALGO to its address from Pera Wallet
+6. The chatbot (and future x402 clients) sign transactions using burner.sk directly — no user prompt
+7. On logout or manual reset, the burner wallet can refund remaining ALGO back to Pera via closeRemainderTo
+```
+
+### 8.8 Chatbot Flow
+
+See also [Section 9: Chatbot System](#9-chatbot-system) for architecture details.
+
+```
+User types a message in chat-front → POST /chat (chat-backend)
+
+1. chat-backend auth: JWT verified with shared JWT_SECRET
+2. Fetch/create Conversation document in chat MongoDB
+3. Save user Message document
+4. GET /api/profile/burner → retrieve encrypted burner mnemonic from main backend
+5. GET /api/user/proxy-keys → find or generate an official Sentinel service key
+   - If none exists: POST /api/access/generate for the official Sentinel Chat service
+6. POST /api/use { messages } with proxy key → receive paymentRef + expectedMicroAlgos + developerWallet
+7. Build + sign Algorand payment from burner wallet (no user interaction needed)
+8. Submit transaction to Algorand TestNet; wait for confirmation
+9. POST /api/use { txId, paymentRef } → receive AI response
+10. Save AI Message document with paymentTxId
+11. Return { conversationId, message, receipt } to chat-front
+```
+
 ---
 
-## 9. Environment Variables Reference
+## 9. Chatbot System
+
+**Files:** `chatbot/chat-backend/` (Express, port 4000) · `chatbot/chat-front/` (Vite + React, port 5555)
+
+The chatbot is a standalone first-party consumer of the Sentinel marketplace, demonstrating the full pay-per-use flow with automatic burner wallet payments.
+
+### Chat Backend Routes
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/health` | ❌ | Health check |
+| `GET` | `/conversations` | ✅ JWT | List user's conversations |
+| `GET` | `/messages/:conversationId` | ✅ JWT | Messages for a conversation |
+| `GET` | `/user-info` | ✅ JWT | Burner wallet address + ALGO balance |
+| `POST` | `/chat` | ✅ JWT | Send message, auto-pay, return AI response |
+
+### Chat Backend Models
+
+**`Conversation`** — `{ userId, walletAddress, title, createdAt, updatedAt }`
+
+**`Message`** — `{ conversationId, role ("user" / "assistant"), content, paymentTxId, createdAt }`
+
+### Shared Secrets
+
+The chat backend validates the same Firebase-issued JWTs as the main backend. `JWT_SECRET` and `ENCRYPTION_KEY` **must be identical** in both `.env` files. The burner mnemonic is decrypted by the main backend using `ENCRYPTION_KEY` before being returned to the chat backend.
+
+### Chat Backend `.env`
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `JWT_SECRET` | ✅ | **Must match** main backend |
+| `ENCRYPTION_KEY` | ✅ | **Must match** main backend |
+| `SENTINAL_API_URL` | ✅ | Main backend URL (e.g. `http://localhost:5000`) |
+| `MONGODB_URI` | ✅ | Separate DB for conversations/messages |
+| `PORT` | ❌ | Default: 4000 |
+
+---
+
+## 10. Agent Context JSON
+
+**Endpoint:** `GET /api/services/agent-context` — public, no auth required.
+
+This endpoint returns a **live, machine-readable JSON document** describing every active, configured service on the Sentinel marketplace. It is designed to be pasted directly into any AI assistant (Claude, ChatGPT, Gemini, etc.) to help it recommend the best service for a user's specific use-case.
+
+### Response shape
+
+```json
+{
+  "sentinel_agent_context": true,
+  "version": "1.0",
+  "generated_at": "<ISO timestamp — always live>",
+  "network": "algorand-testnet",
+  "base_url": "http://localhost:5000",
+  "description": "...",
+  "instructions_for_ai_agent": "Compare services by model, provider, pricing...",
+  "total_active_services": 9,
+  "services": [
+    {
+      "id": "<mongodb_id>",
+      "name": "Sentinal AI Official Chat",
+      "description": "...",
+      "badge": "official",
+      "ai_provider": "groq",
+      "model": "llama-3.3-70b-versatile",
+      "pricing": {
+        "per_1k_tokens_algo": 0.005,
+        "minimum_charge_algo": 0.01,
+        "billing_notes": "Pay-per-use via Algorand Testnet..."
+      },
+      "usage": { "total_calls": 42, "total_revenue_algo": 0.21 },
+      "how_to_use": {
+        "step_1_generate_key": "POST /api/access/generate ...",
+        "step_2_call_api": "POST /api/use ...",
+        "step_3_pay": "Send microAlgos on Algorand Testnet...",
+        "step_4_claim": "POST /api/use { txId, paymentRef } ..."
+      },
+      "creator_wallet": "<algorand address>",
+      "last_updated": "<ISO timestamp>"
+    }
+  ]
+}
+```
+
+**Filtering:** Only services where `isPaused: false` AND `aiProvider` is set AND `encryptedApiKey` exists are included. Results are sorted by `totalUses` descending (most popular first).
+
+**Frontend panel:** The User Dashboard (`/dashboard/home`) includes an **Agent Context JSON** panel with:
+- Scrollable JSON preview
+- Live status pills (service count, network, generation time)
+- **Copy JSON** button (clipboard, with checkmark feedback)
+- **Download .json** button (saves `sentinel-agent-context-YYYY-MM-DD.json`)
+- Prompt tip: *"Here is the Sentinel marketplace JSON. Which service should I use for [task]?"*
+
+---
+
+## 11. x402 Payment Protocol (Roadmap)
+
+> **Status: Planned — not yet in production. The analysis and integration design is complete.**
+
+The [x402 protocol](https://x402.org) is an open standard that repurposes HTTP `402 Payment Required` to create a universal machine-readable payment challenge for AI agents.
+
+### Flow comparison
+
+| Step | Current Sentinel (custom 2-step) | x402 standard |
+|------|----------------------------------|----------------|
+| 1 | `POST /api/use` → quote | Client sends normal HTTP request |
+| 2 | Frontend pays on-chain manually | Server returns **HTTP 402** + `PAYMENT-REQUIRED` header (Base64 JSON) |
+| 3 | `POST /api/use` with `txId` → claim | `@x402/fetch` auto-constructs + signs Algorand txn |
+| 4 | AI response returned | Client retries with `X-PAYMENT` header → server verifies → 200 + resource |
+
+### Planned endpoint
+
+`POST /api/x402/use/:serviceId` — a parallel route wrapping existing services with `ExactAvmScheme` middleware from `@x402/avm`. The existing `/api/use` two-step flow remains unchanged.
+
+### Key packages
+
+| Package | Role |
+|---------|------|
+| `@x402/avm` | Server middleware (`ExactAvmServer`); emits 402 + verifies `X-PAYMENT` |
+| `@x402/fetch` | Client wrapper (`wrapFetchWithPayment`); intercepts 402, pays, retries |
+
+### Burner wallet ↔ x402 key format
+
+The `algosdk` burner mnemonic maps to the x402 `secretKeyB64` as:
+```js
+const account = algosdk.mnemonicToSecretKey(mnemonic);
+const secretKeyB64 = Buffer.concat([
+  Buffer.from(account.sk.slice(0, 32)),   // Ed25519 seed
+  Buffer.from(account.addr.publicKey),    // Public key
+]).toString('base64');
+const avmSigner = toClientAvmSigner(secretKeyB64);
+```
+
+### Pricing note
+
+x402's `ExactAvmScheme` uses a **fixed amount** set at the 402 response time. Sentinel's per-token dynamic pricing is incompatible with a single-round-trip x402 call. The planned x402 endpoint will use `minimumChargeAlgo` as a fixed price per call.
+
+---
+
+## 12. Environment Variables Reference
 
 ### Backend `.env`
 
@@ -837,6 +1021,7 @@ After a successful metered AI call:
 | `GET` | `/api/public/network` | ❌ | — | Returns Algod server URL |
 | `POST` | `/api/auth/login` | ❌ | — | Wallet-based JWT login |
 | `GET` | `/api/services` | ❌ | — | List all services |
+| `GET` | `/api/services/agent-context` | ❌ | — | Live AI-readable service catalog JSON (new) |
 | `GET` | `/api/services/:id` | ❌ | — | Get single service |
 | `POST` | `/api/services` | ✅ | `creator` | Create service |
 | `PATCH` | `/api/services/:id` | ✅ | `creator` | Update service |
@@ -845,7 +1030,7 @@ After a successful metered AI call:
 | `POST` | `/api/payment/verify` | ✅ | `user` | Verify on-chain payment |
 | `POST` | `/api/access/generate` | ✅ | `user` | Generate/retrieve API key |
 | `GET` | `/api/access/:serviceId` | ✅ | any | List access tokens |
-| `POST` | `/api/use` | 🔑 | — | Metered AI call (via API key) |
+| `POST` | `/api/use` | 🔑 | — | Metered AI call — quote (no txId) or claim (with txId) |
 | `GET` | `/api/creator/services` | ✅ | `creator` | Creator's services |
 | `GET` | `/api/creator/stats` | ✅ | `creator` | Aggregate creator stats |
 | `GET` | `/api/creator/usage` | ✅ | `creator` | Creator usage logs |
@@ -858,12 +1043,25 @@ After a successful metered AI call:
 | `GET` | `/api/contract/stats` | ❌ | — | On-chain contract stats |
 | `GET` | `/api/prediction/usage` | ❌ | — | Spending prediction |
 | `GET` | `/api/prediction/history` | ❌ | — | Raw monthly history |
+| `GET` | `/api/profile/burner` | ✅ | any | Retrieve encrypted burner mnemonic (new) |
+| `POST` | `/api/profile/burner` | ✅ | any | Sync burner mnemonic to profile (new) |
+| `GET` | `/api/profile/summary` | ✅ | any | Profile summary stats (new) |
 
-**Legend:** ✅ = JWT required, 🔑 = API key (X-API-Key header), ❌ = No auth
+**Chat Backend endpoints (port 4000):**
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/health` | ❌ | Health check |
+| `GET` | `/conversations` | ✅ JWT | List conversations |
+| `GET` | `/messages/:id` | ✅ JWT | Messages for a conversation |
+| `GET` | `/user-info` | ✅ JWT | Burner balance + address |
+| `POST` | `/chat` | ✅ JWT | Auto-pay AI chat message |
+
+**Legend:** ✅ = JWT required, 🔑 = API key (`Authorization: Bearer sk-sentinel-xxx`), ❌ = No auth
 
 ---
 
-## 11. Security Mechanisms
+## 14. Security Mechanisms
 
 | Mechanism | Implementation | Purpose |
 |-----------|---------------|---------|
@@ -882,7 +1080,7 @@ After a successful metered AI call:
 
 ---
 
-## 12. Prediction & Analytics Engine
+## 15. Prediction & Analytics Engine
 
 **File:** `backend/src/routes/prediction.js`
 
@@ -917,4 +1115,4 @@ The prediction system provides AI-based usage forecasting. It aggregates transac
 
 ---
 
-*Generated from codebase analysis on April 12, 2026.*
+*Last updated: May 2026. Reflects chatbot system, burner wallet sync, Agent Context JSON endpoint, and x402 roadmap.*

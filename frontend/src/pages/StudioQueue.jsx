@@ -1,3 +1,4 @@
+import React from "react";
 const queue = [
   { id: "job-201", project: "YouTube Shorts", state: "Queued", progress: 10, duration: "—" },
   { id: "job-198", project: "Podcast Clips", state: "Rendering", progress: 64, duration: "04:21" },

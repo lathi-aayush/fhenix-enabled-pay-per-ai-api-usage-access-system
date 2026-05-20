@@ -32,7 +32,7 @@ router.get("/user-info", requireAuth, async (req, res) => {
     const algod = new algosdk.Algodv2("", algodServer, "");
     
     const accountInfo = await algod.accountInformation(account.addr).do();
-    const balanceAlgos = accountInfo.amount / 1000000;
+    const balanceAlgos = Number(accountInfo.amount) / 1000000;
     
     res.json({ balance: balanceAlgos, address: account.addr });
   } catch (err) {

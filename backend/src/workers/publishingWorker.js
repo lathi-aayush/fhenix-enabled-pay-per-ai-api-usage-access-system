@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import { BlogPost } from "../models/BlogPost.js";
 import { ConnectedPlatform } from "../models/ConnectedPlatform.js";
 import { decryptSecret } from "../utils/encrypt.js";
-import { redisConnection } from "../queues/publishingQueue.js";
+import { getRedisConnection } from "../queues/publishingQueue.js";
 
 /**
  * Platform publishing: queue-only. Replace publishToPlatform with real API calls.
@@ -29,6 +29,14 @@ function markdownToHtml(md) {
 export function startPublishingWorker() {
   if (process.env.STUDIO_DISABLE_WORKER === "1") {
     console.log("[publishingWorker] disabled via STUDIO_DISABLE_WORKER");
+    return null;
+  }
+
+  let redis;
+  try {
+    redis = getRedisConnection();
+  } catch (e) {
+    console.warn("[publishingWorker] Redis unavailable, worker skipped:", e.message);
     return null;
   }
 
@@ -92,7 +100,7 @@ export function startPublishingWorker() {
         throw e;
       }
     },
-    { connection: redisConnection, concurrency: 2 }
+    { connection: redis, concurrency: 2 }
   );
 
   worker.on("failed", (job, err) => {
