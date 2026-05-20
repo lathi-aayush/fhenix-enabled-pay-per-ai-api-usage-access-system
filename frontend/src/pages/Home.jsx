@@ -9,6 +9,7 @@ import ContractStats from "../components/ContractStats.jsx";
 import ProfileDropdown from "../components/ProfileDropdown.jsx";
 import { connectPera } from "../wallet/pera.js";
 import { api } from "../api/client.js";
+import HowItWorks from "../components/HowItWorks.jsx";
 
 export default function Home() {
   const isConfigured = !!import.meta.env.VITE_FIREBASE_API_KEY;
@@ -210,15 +211,24 @@ export default function Home() {
             Sentinal
           </Link>
           <nav className="hidden md:flex items-center gap-8">
-            <span className="text-[#5A5A5A] dark:text-[#A0A0A0] text-sm font-medium font-body">
+            <a
+              href="#how-it-works"
+              className="text-[#5A5A5A] dark:text-[#A0A0A0] text-sm font-medium font-body hover:text-[#031634] dark:hover:text-white transition-colors cursor-pointer"
+            >
               How It Works
-            </span>
-            <span className="text-[#5A5A5A] dark:text-[#A0A0A0] text-sm font-medium font-body">
+            </a>
+            <a
+              href="#marketplace"
+              className="text-[#5A5A5A] dark:text-[#A0A0A0] text-sm font-medium font-body hover:text-[#031634] dark:hover:text-white transition-colors cursor-pointer"
+            >
               Marketplace
-            </span>
-            <span className="text-[#5A5A5A] dark:text-[#A0A0A0] text-sm font-medium font-body">
+            </a>
+            <a
+              href="#studio"
+              className="text-[#5A5A5A] dark:text-[#A0A0A0] text-sm font-medium font-body hover:text-[#031634] dark:hover:text-white transition-colors cursor-pointer"
+            >
               Studio
-            </span>
+            </a>
           </nav>
         </div>
         <div className="flex items-center gap-4">
@@ -233,7 +243,9 @@ export default function Home() {
       </header>
 
       <main>
-        <section className="max-w-[1100px] mx-auto px-8 pt-24 pb-16">
+        <HowItWorks enterWithGoogle={enterWithGoogle} />
+
+        <section className="max-w-[1100px] mx-auto px-8 pt-16 pb-16">
           <div className="flex flex-col gap-6">
             <span className="font-body text-[11px] font-bold tracking-[0.1em] text-secondary uppercase">
               BUILD AI PRODUCTS
@@ -264,7 +276,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="max-w-[1100px] mx-auto px-8 pb-4 grid gap-4 md:grid-cols-2">
+        <section id="marketplace" className="max-w-[1100px] mx-auto px-8 pb-4 grid gap-4 md:grid-cols-2 scroll-mt-20">
           <div className="bg-white border border-slate-200 rounded-2xl p-6">
             <p className="text-[10px] font-bold tracking-[0.15em] text-[#031634] uppercase">For Developers</p>
             <h3 className="font-headline text-2xl font-semibold text-slate-900 mt-2">Marketplace</h3>
@@ -295,7 +307,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="max-w-screen-2xl mx-auto px-8 py-12 flex flex-col items-center">
+        <section id="studio" className="max-w-screen-2xl mx-auto px-8 py-12 flex flex-col items-center scroll-mt-20">
           {/* Sleek Developer Mode Pill */}
           <div className="mb-10 w-full max-w-[680px] flex justify-center">
             <div className="inline-flex items-center gap-4 bg-white/60 dark:bg-[#1A1C1C]/60 backdrop-blur-md border border-slate-200/60 dark:border-slate-800/60 rounded-full py-2 px-3 shadow-sm hover:shadow-md transition-all duration-300">
@@ -350,7 +362,7 @@ export default function Home() {
                 </div>
                 
                 <div className="flex flex-col gap-2.5">
-                  <h3 className="font-headline text-2xl font-bold text-slate-900 dark:text-white group-hover:text-[#031634] dark:group-hover:text-emerald-400 transition-colors">Deploy & Earn</h3>
+                  <h3 className="font-headline text-2xl font-bold text-slate-900 dark:text-white group-hover:text-[#031634] dark:group-hover:text-emerald-400 transition-colors">Deploy &amp; Earn</h3>
                   <p className="font-body text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
                     Publish AI endpoints securely. Set your own token pricing, and track live Algorand earnings.
                   </p>
@@ -384,7 +396,7 @@ export default function Home() {
                 </div>
                 
                 <div className="flex flex-col gap-2.5">
-                  <h3 className="font-headline text-2xl font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Access & Pay</h3>
+                  <h3 className="font-headline text-2xl font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Access &amp; Pay</h3>
                   <p className="font-body text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
                     Browse the decentralized marketplace of AI APIs. Pay per request using Pera Wallet instantly.
                   </p>
