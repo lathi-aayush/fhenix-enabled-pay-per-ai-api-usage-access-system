@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 const AuthContext = createContext(null);
 
 const STORAGE_KEY = "sentinal_chat_token";
-const SENTINAL_API_URL = import.meta.env.VITE_SENTINEL_API_URL || import.meta.env.VITE_API_URL || "http://localhost:5000";
+const SENTINAL_API_URL = import.meta.env.VITE_SENTINEL_API_URL || (import.meta.env.DEV ? "http://localhost:5000" : "https://sentinal-z3ue.onrender.com");
 
 // Chat backend API instance — uses /api (same-origin) in production
 export const api = axios.create({
