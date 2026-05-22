@@ -4,6 +4,7 @@ import { parseJwtPayload } from "../utils/jwt.js";
 import { signOut } from "firebase/auth";
 import { auth } from "../config/firebase.js";
 import { fetchBurnerWallet } from "../wallet/burner.js";
+import { reconnectPera } from "../wallet/pera.js";
 
 const AuthContext = createContext(null);
 
@@ -29,6 +30,10 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem(STORAGE_KEY));
   const [user, setUser] = useState(() => userFromToken(localStorage.getItem(STORAGE_KEY)));
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    reconnectPera().catch((err) => console.warn("Pera auto-reconnect failed:", err));
+  }, []);
 
   useEffect(() => {
     async function syncProfile() {

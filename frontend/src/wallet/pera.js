@@ -106,6 +106,19 @@ export async function signAndSendPayment({
 }) {
   const algosdk = (await import("algosdk")).default;
 
+  if (!peraWallet.isConnected) {
+    console.log("[Pera signAndSendPayment] Not connected. Attempting reconnection...");
+    try {
+      await reconnectPera();
+    } catch (err) {
+      console.warn("Auto-reconnect failed:", err);
+    }
+  }
+
+  if (!peraWallet.isConnected) {
+    throw new Error("Pera Wallet is not connected. Please connect your wallet in the navigation bar.");
+  }
+
   const signer =
     normalizeAccountAddress(from) ?? normalizeAccountAddress(_connectedAddress);
   const toAddr = normalizeAccountAddress(to);
