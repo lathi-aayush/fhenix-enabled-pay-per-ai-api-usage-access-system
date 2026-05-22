@@ -86,7 +86,7 @@ app.use("/api", (_req, res) => {
 if (process.env.NODE_ENV === "production") {
   const dist = path.join(__dirname, "..", "..", "frontend", "dist");
   app.use(express.static(dist, { index: false }));
-  app.get("*", (req, res, next) => {
+  app.get('/{*path}', (req, res, next) => {
     if (req.path.startsWith("/api")) return next();
     res.sendFile(path.join(dist, "index.html"), (err) => {
       if (err) next(err);

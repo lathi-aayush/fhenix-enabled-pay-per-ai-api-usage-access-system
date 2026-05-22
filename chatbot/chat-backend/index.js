@@ -71,7 +71,7 @@ app.use(express.static(distPath))
 
 // SPA catch-all — serve index.html for all non-API routes
 // This fixes 404 on /login, /dashboard, /settings etc.
-app.get('*', (req, res, next) => {
+app.get('/{*path}', (req, res, next) => {
   if (req.path.startsWith('/api')) {
     return next()
   }
