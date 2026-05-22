@@ -1,7 +1,8 @@
 // Pera may return accounts as plain strings OR { address: "..." } depending on version / web.
 // AlgSDK requires real Algorand address strings — otherwise you get "Address must not be null or undefined".
+import { PeraWalletConnect } from "@perawallet/connect";
 
-let _peraWallet = null;
+const peraWallet = new PeraWalletConnect({ chainId: 416002 });
 let _connectedAddress = null;
 
 export function normalizeAccountAddress(raw) {
@@ -17,17 +18,8 @@ export function normalizeAccountAddress(raw) {
   return null;
 }
 
-async function getPeraWallet() {
-  if (!_peraWallet) {
-    const { PeraWalletConnect } = await import("@perawallet/connect");
-    _peraWallet = new PeraWalletConnect({ chainId: 416002 });
-  }
-  return _peraWallet;
-}
-
 export async function reconnectPera() {
   try {
-    const peraWallet = await getPeraWallet();
     const accounts = await peraWallet.reconnectSession();
     const first = Array.isArray(accounts) ? accounts[0] : null;
     _connectedAddress = normalizeAccountAddress(first);
@@ -39,7 +31,6 @@ export async function reconnectPera() {
 }
 
 export async function connectPera() {
-  const peraWallet = await getPeraWallet();
   try {
     const accounts = await peraWallet.connect();
     if (!accounts?.length) throw new Error("No accounts returned from Pera.");
@@ -97,7 +88,6 @@ export async function addressesEqual(a, b) {
 
 export async function disconnectPera() {
   try {
-    const peraWallet = await getPeraWallet();
     await peraWallet.disconnect();
   } catch {
     /* ignore */
@@ -140,7 +130,6 @@ export async function signAndSendPayment({
     throw new Error("Algod URL missing.");
   }
 
-  const peraWallet = await getPeraWallet();
   const algod = new algosdk.Algodv2("", algodServer.trim(), "");
   const suggestedParams = await algod.getTransactionParams().do();
   const note = noteStr ? new TextEncoder().encode(noteStr) : undefined;
