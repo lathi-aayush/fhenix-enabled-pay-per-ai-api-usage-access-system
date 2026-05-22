@@ -1,22 +1,39 @@
 import admin from "firebase-admin";
-import fs from "fs";
-import path from "path";
 
-// Initialize Firebase Admin using the same service account as the main Sentinal backend
-// In a real production deployment, this would be injected via environment variables.
+let initialized = false;
 
-const serviceAccountPath = path.resolve(
-  "../backend/campusdo-1da53-firebase-adminsdk-fbsvc-2ad4b6917c.json"
-);
+/**
+ * Initializes Firebase Admin SDK using environment variables.
+ * Mirrors the same pattern used in the main Sentinel backend.
+ * Returns the admin instance, or null if credentials are unavailable.
+ */
+export function getFirebaseAdmin() {
+  if (initialized) return admin;
 
-try {
-  const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
-  console.log("Firebase Admin initialized for Chat Backend.");
-} catch (error) {
-  console.error("Failed to initialize Firebase Admin:", error.message);
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+
+  if (projectId || serviceAccountJson) {
+    try {
+      let credential;
+      if (serviceAccountJson) {
+        credential = admin.credential.cert(JSON.parse(serviceAccountJson));
+      }
+      admin.initializeApp({ projectId: projectId || undefined, credential });
+      initialized = true;
+      console.log("[Chat Firebase Admin] Initialized.");
+      return admin;
+    } catch (e) {
+      console.error("[Chat Firebase Admin] Initialization failed:", e.message);
+      return null;
+    }
+  }
+
+  console.warn("[Chat Firebase Admin] No credentials set — running in JWT-only mode.");
+  initialized = true;
+  return null;
 }
 
-export const auth = admin.auth();
+// Convenience: default export still exposes auth if initialized
+export const auth = { getFirebaseAdmin };
+

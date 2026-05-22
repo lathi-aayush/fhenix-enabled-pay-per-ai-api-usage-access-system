@@ -1,4 +1,6 @@
-# Render Blueprint: one Web Service serves the Vite build + Express API (same origin).
+# Render Blueprint: two Web Services.
+# 1. sentinel      — Express API + Vite frontend (main app)
+# 2. sentinel-chat — Chat backend + Chat Vite frontend (chatbot)
 # https://render.com/docs/blueprint-spec
 services:
   - type: web
@@ -17,3 +19,31 @@ services:
         generateValue: true
       - key: ENCRYPTION_KEY
         generateValue: true
+
+  - type: web
+    name: sentinel-chat
+    runtime: node
+    plan: free
+    buildCommand: >
+      npm install --prefix chatbot/chat-front &&
+      NODE_OPTIONS=--max-old-space-size=2048 npm run build --prefix chatbot/chat-front &&
+      npm install --prefix chatbot/chat-backend
+    startCommand: NODE_ENV=production node chatbot/chat-backend/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: SENTINAL_API_URL
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false

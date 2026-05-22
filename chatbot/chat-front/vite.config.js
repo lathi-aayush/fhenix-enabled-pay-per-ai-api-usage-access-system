@@ -14,4 +14,14 @@ export default defineConfig({
       plugins: [tailwindcss(), autoprefixer()],
     },
   },
+  server: {
+    port: 5555,
+    // In local dev, proxy /api → chat-backend:4000 to mirror same-origin production setup
+    proxy: {
+      '/api': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+    },
+  },
 })

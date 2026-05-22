@@ -9,9 +9,9 @@ const AuthContext = createContext(null);
 const STORAGE_KEY = "sentinal_chat_token";
 const SENTINAL_API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-// Chat backend API instance
+// Chat backend API instance — uses /api (same-origin) in production
 export const api = axios.create({
-  baseURL: "http://localhost:4000/api", // Chat Backend URL
+  baseURL: import.meta.env.VITE_CHAT_BACKEND_URL || (import.meta.env.DEV ? "http://localhost:4000/api" : "/api"),
 });
 
 export function AuthProvider({ children }) {

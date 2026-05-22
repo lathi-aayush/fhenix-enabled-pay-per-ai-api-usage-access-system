@@ -4,6 +4,9 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth, api } from './AuthContext';
 import './style.css';
 
+// Production URL of the main Sentinel marketplace
+const SENTINAL_MARKETPLACE_URL = import.meta.env.VITE_SENTINAL_MARKETPLACE_URL || 'http://localhost:5173';
+
 /* ── SVG helpers ── */
 const IconShield = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -72,7 +75,7 @@ function LoginScreen() {
         </button>
 
         <p className="login-footer">
-          Powered by the <a href="http://localhost:5173" target="_blank" rel="noopener noreferrer">Sentinel Marketplace</a> · Algorand TestNet
+          Powered by the <a href={SENTINAL_MARKETPLACE_URL} target="_blank" rel="noopener noreferrer">Sentinel Marketplace</a> · Algorand TestNet
         </p>
       </div>
     </div>
@@ -159,7 +162,7 @@ function ChatInterface() {
       <aside className="sidebar">
         <div className="sidebar-header">
           {/* Logo */}
-          <a href="http://localhost:5173" target="_blank" rel="noopener noreferrer" className="sidebar-logo" style={{textDecoration:'none'}}>
+          <a href={SENTINAL_MARKETPLACE_URL} target="_blank" rel="noopener noreferrer" className="sidebar-logo" style={{textDecoration:'none'}}>
             <div className="sidebar-logo-mark"><IconShield /></div>
             <div>
               <div className="sidebar-logo-text">Sentinel</div>
@@ -200,7 +203,7 @@ function ChatInterface() {
                 {burnerBalance !== null ? `${burnerBalance.toFixed(4)} ALGO` : '—'}
               </span>
             </div>
-            <a href="http://localhost:5173/dashboard/home" target="_blank" rel="noopener noreferrer" className="burner-link">
+            <a href={`${SENTINAL_MARKETPLACE_URL}/dashboard/home`} target="_blank" rel="noopener noreferrer" className="burner-link">
               Top up on Sentinel <IconExternalLink />
             </a>
           </div>
