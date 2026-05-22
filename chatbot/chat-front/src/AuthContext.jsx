@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import { auth, googleProvider } from "./firebase.js";
-import { signInWithPopup, signOut } from "firebase/auth";
+import { signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from "firebase/auth";
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -18,6 +18,39 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem(STORAGE_KEY));
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [redirectHandling, setRedirectHandling] = useState(true);
+
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          const idToken = await result.user.getIdToken();
+          
+          const res = await axios.post(`${SENTINAL_API_URL}/api/auth/firebase-login`, {
+            idToken,
+            role: "user"
+          });
+          
+          if (res.data.isNewUser) {
+            toast.error("Please create an account on the main Sentinel website first.");
+          } else {
+            const jwtToken = res.data.token;
+            localStorage.setItem(STORAGE_KEY, jwtToken);
+            setToken(jwtToken);
+            toast.success("Successfully logged in");
+          }
+        }
+      } catch (err) {
+        console.error("Redirect login failed:", err);
+        toast.error("Failed to login via redirect");
+      } finally {
+        setRedirectHandling(false);
+      }
+    };
+    
+    handleRedirectResult();
+  }, []);
 
   useEffect(() => {
     if (token) {
@@ -49,8 +82,11 @@ export function AuthProvider({ children }) {
       delete api.defaults.headers.common.Authorization;
       setUser(null);
     }
-    setLoading(false);
-  }, [token]);
+    
+    if (!redirectHandling) {
+      setLoading(false);
+    }
+  }, [token, redirectHandling]);
 
   const loginWithGoogle = useCallback(async () => {
     try {
@@ -64,7 +100,7 @@ export function AuthProvider({ children }) {
       });
       
       if (res.data.isNewUser) {
-        toast.error("Please create an account on the main Sentinal website first.");
+        toast.error("Please create an account on the main Sentinel website first.");
         return;
       }
       
@@ -74,7 +110,14 @@ export function AuthProvider({ children }) {
       toast.success("Successfully logged in");
     } catch (err) {
       console.error("Login failed:", err);
-      toast.error("Failed to login");
+      
+      // Fallback to redirect if popup is cancelled or blocked
+      if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') {
+         toast.loading("Popup blocked. Redirecting to login...", { duration: 2000 });
+         await signInWithRedirect(auth, googleProvider);
+      } else {
+         toast.error("Failed to login");
+      }
     }
   }, []);
 
