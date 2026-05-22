@@ -44,10 +44,10 @@ const allowedOrigins = [
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
-  // Firebase Google Sign-In popup requires same-origin-allow-popups so the
+  // Firebase Google Sign-In popup requires unsafe-none or false so the
   // popup can call window.opener to deliver the OAuth token back to the app.
   // Helmet's default "same-origin" silently blocks this and causes COOP errors.
-  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  crossOriginOpenerPolicy: { policy: "unsafe-none" },
 }));
 app.use(
   cors({

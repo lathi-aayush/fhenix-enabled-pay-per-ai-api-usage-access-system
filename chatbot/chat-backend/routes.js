@@ -27,12 +27,34 @@ router.get("/user-info", requireAuth, async (req, res) => {
       return res.json({ balance: 0, address: null });
     }
     
-    const account = algosdk.mnemonicToSecretKey(mnemonic);
-    const algodServer = "https://testnet-api.algonode.cloud";
+    let account;
+    try {
+      account = algosdk.mnemonicToSecretKey(mnemonic.trim());
+    } catch (e) {
+      console.warn("Invalid burner mnemonic synced:", e.message);
+      return res.json({ balance: 0, address: null });
+    }
+
+    const algodServer = process.env.ALGOD_SERVER || "https://testnet-api.algonode.cloud";
     const algod = new algosdk.Algodv2("", algodServer, "");
     
-    const accountInfo = await algod.accountInformation(account.addr).do();
-    const balanceAlgos = Number(accountInfo.amount) / 1000000;
+    let balanceAlgos = 0;
+    try {
+      const accountInfo = await algod.accountInformation(account.addr).do();
+      balanceAlgos = Number(accountInfo.amount) / 1000000;
+    } catch (err) {
+      if (
+        err?.status === 404 ||
+        err?.response?.status === 404 ||
+        err?.message?.includes("404") ||
+        err?.message?.includes("does not exist")
+      ) {
+        // Account does not exist on-chain yet (zero balance)
+        balanceAlgos = 0;
+      } else {
+        throw err;
+      }
+    }
     
     res.json({ balance: balanceAlgos, address: account.addr });
   } catch (err) {
@@ -71,11 +93,10 @@ router.get("/conversations/:id/messages", requireAuth, async (req, res) => {
  * Send payment from burner wallet to the developer wallet.
  */
 async function payWithBurnerWallet(mnemonic, receiverAddress, amountMicroAlgos, paymentRef) {
-  // Use public node for simplicity in Chat Backend
-  const algodServer = "https://testnet-api.algonode.cloud";
+  const algodServer = process.env.ALGOD_SERVER || "https://testnet-api.algonode.cloud";
   const algod = new algosdk.Algodv2("", algodServer, "");
   
-  const account = algosdk.mnemonicToSecretKey(mnemonic);
+  const account = algosdk.mnemonicToSecretKey(mnemonic.trim());
   const params = await algod.getTransactionParams().do();
   
   const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({

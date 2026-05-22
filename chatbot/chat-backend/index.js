@@ -19,7 +19,7 @@ const isProd = process.env.NODE_ENV === "production";
 
 // Fix Cross-Origin-Opener-Policy for Firebase Auth popups
 app.use((req, res, next) => {
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups')
+  res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none')
   res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none')
   next()
 })
