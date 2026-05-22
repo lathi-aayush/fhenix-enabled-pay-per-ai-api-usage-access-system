@@ -40,5 +40,27 @@ services:
         value: "22"
       - key: MONGO_URI
         sync: false
+      # Must match the JWT_SECRET of the main sentinel backend (set manually in Render dashboard)
       - key: JWT_SECRET
         sync: false
+      # URL of the main Sentinel backend - CRITICAL, must be set or all calls fail
+      - key: SENTINAL_API_URL
+        value: "https://sentinal-j4ox.onrender.com"
+      - key: GROQ_API_KEY
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: COST_PER_REQUEST
+        value: "0.01"
+      - key: ALGORAND_NODE
+        value: "https://testnet-api.algonode.cloud"
+      - key: ALGORAND_INDEXER
+        value: "https://testnet-idx.algonode.cloud"
+      - key: TREASURY_WALLET
+        sync: false
+      - key: FRONTEND_URL
+        value: "https://chat-front-blond.vercel.app"

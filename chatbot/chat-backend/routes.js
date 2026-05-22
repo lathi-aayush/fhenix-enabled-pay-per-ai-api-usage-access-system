@@ -19,25 +19,37 @@ router.get("/conversations", requireAuth, async (req, res) => {
 // Get user info and burner balance
 router.get("/user-info", requireAuth, async (req, res) => {
   try {
-    const profileRes = await sentinalApi.get("/api/profile/burner", {
-      headers: { Authorization: `Bearer ${req.token}` }
-    });
+    let profileRes;
+    try {
+      profileRes = await sentinalApi.get("/api/profile/burner", {
+        headers: { Authorization: `Bearer ${req.token}` }
+      });
+    } catch (err) {
+      const status = err.response?.status;
+      const detail = err.response?.data || err.message;
+      console.error("Failed to reach main backend /api/profile/burner:", status, detail);
+      return res.status(502).json({
+        error: "Could not connect to Sentinel main backend",
+        detail: `Status ${status}: ${JSON.stringify(detail)}`,
+      });
+    }
+
     const mnemonic = profileRes.data.mnemonic;
     if (!mnemonic) {
       return res.json({ balance: 0, address: null });
     }
-    
+
     const account = algosdk.mnemonicToSecretKey(mnemonic);
-    const algodServer = "https://testnet-api.algonode.cloud";
+    const algodServer = process.env.ALGORAND_NODE || "https://testnet-api.algonode.cloud";
     const algod = new algosdk.Algodv2("", algodServer, "");
-    
+
     const accountInfo = await algod.accountInformation(account.addr).do();
     const balanceAlgos = Number(accountInfo.amount) / 1000000;
-    
+
     res.json({ balance: balanceAlgos, address: account.addr });
   } catch (err) {
     console.error("Failed to fetch user info:", err.message);
-    res.status(500).json({ error: "Failed to fetch user info" });
+    res.status(500).json({ error: "Failed to fetch user info", detail: err.message });
   }
 });
 
