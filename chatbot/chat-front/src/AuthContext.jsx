@@ -11,7 +11,9 @@ const SENTINAL_API_URL = import.meta.env.VITE_SENTINEL_API_URL || (import.meta.e
 
 // Chat backend API instance — uses /api (same-origin) in production
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_CHAT_BACKEND_URL || (import.meta.env.DEV ? "http://localhost:4000/api" : "/api"),
+  baseURL: import.meta.env.VITE_CHAT_BACKEND_URL
+    ? (import.meta.env.VITE_CHAT_BACKEND_URL.endsWith('/api') ? import.meta.env.VITE_CHAT_BACKEND_URL : `${import.meta.env.VITE_CHAT_BACKEND_URL}/api`)
+    : (import.meta.env.DEV ? "http://localhost:4000/api" : "/api"),
 });
 
 export function AuthProvider({ children }) {
