@@ -17,8 +17,6 @@ export default defineConfig({
         manualChunks(id) {
           if (!id.includes("node_modules")) return;
           if (id.includes("algosdk")) return "algosdk";
-          if (id.includes("react-dom")) return "react-dom";
-          if (id.includes("react-router")) return "react-router";
           if (id.includes("@perawallet")) return "pera";
           return "vendor";
         },
