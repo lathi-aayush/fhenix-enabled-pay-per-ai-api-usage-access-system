@@ -28,6 +28,8 @@ app.use((req, res, next) => {
 const allowedOrigins = [
   process.env.ALLOWED_ORIGIN,
   'https://chat-front-blond.vercel.app',
+  'https://sentinal-vhat1.onrender.com',
+  'https://sentinal-chat1.onrender.com',
   'http://localhost:5555',
   'http://localhost:5173',
 ].filter(Boolean)
