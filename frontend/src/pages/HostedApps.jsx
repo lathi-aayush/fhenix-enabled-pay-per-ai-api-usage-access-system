@@ -1,12 +1,11 @@
 import React from "react";
-const CHATBOT_URL = import.meta.env.VITE_CHATBOT_URL || "http://localhost:5555";
 const HOSTED_APPS = [
   {
     id: "chat",
     title: "Sentinal Chat",
     description: "A fast, clean ChatGPT-like interface. Just paste your Sentinal API key and start talking.",
     icon: "forum",
-    url: CHATBOT_URL,
+    url: "http://localhost:5555",
   },
   {
     id: "image",

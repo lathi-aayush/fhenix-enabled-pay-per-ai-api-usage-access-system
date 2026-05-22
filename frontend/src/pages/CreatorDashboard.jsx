@@ -1,4 +1,5 @@
 import React from "react";
+import logo from "../assets/logo.png";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -62,8 +63,9 @@ export default function CreatorDashboard() {
     <div className="bg-surface font-body text-on-surface antialiased min-h-screen">
       <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-surface-container-high px-6 py-3 flex justify-between items-center h-16">
         <div className="flex items-center gap-4">
-          <Link to="/" className="font-headline font-semibold text-xl tracking-tighter text-primary">
-            Sentinal
+          <Link to="/" className="flex items-center gap-2 font-headline font-semibold text-xl tracking-tighter text-primary">
+            <img src={logo} alt="Sentinel Logo" className="w-8 h-8 rounded-lg object-contain bg-white p-0.5 border border-slate-200" />
+            <span>Sentinal</span>
           </Link>
           <span className="bg-primary text-white text-[10px] px-2 py-0.5 rounded-sm font-bold uppercase tracking-wider">
             Creator
