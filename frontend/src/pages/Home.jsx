@@ -304,7 +304,7 @@ export default function Home() {
             </div>
             
             <a 
-              href="https://chat-front-blond.vercel.app/" 
+              href={import.meta.env.VITE_CHATBOT_URL || "https://chat-front-blond.vercel.app/"} 
               target="_blank" 
               rel="noopener noreferrer"
               className="group flex items-center justify-center gap-3 bg-white text-[#031634] hover:bg-slate-100 px-8 py-5 rounded-2xl font-bold hover:scale-105 transition-all duration-300 shrink-0 z-10 shadow-[0_0_40px_rgba(255,255,255,0.1)] w-full md:w-auto text-lg"

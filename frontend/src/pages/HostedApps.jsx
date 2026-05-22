@@ -5,7 +5,7 @@ const HOSTED_APPS = [
     title: "Sentinal Chat",
     description: "A fast, clean ChatGPT-like interface. Just paste your Sentinal API key and start talking.",
     icon: "forum",
-    url: "http://localhost:5555",
+    url: import.meta.env.VITE_CHATBOT_URL || "http://localhost:5555",
   },
   {
     id: "image",
