@@ -1,4 +1,5 @@
 import React from "react";
+import logo from "../assets/logo.png";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -207,8 +208,9 @@ export default function Home() {
     <div className="bg-surface selection:bg-secondary-container selection:text-on-secondary-container min-h-screen">
       <header className="bg-[#F9F9F9] dark:bg-[#1A1C1C] flex justify-between items-center w-full px-8 h-16 max-w-screen-2xl mx-auto top-0 sticky z-50">
         <div className="flex items-center gap-12">
-          <Link to="/" className="text-xl font-semibold text-[#031634] dark:text-white tracking-tighter font-headline">
-            Sentinal
+          <Link to="/" className="flex items-center gap-2 text-xl font-semibold text-[#031634] dark:text-white tracking-tighter font-headline">
+            <img src={logo} alt="Sentinel Logo" className="w-8 h-8 rounded-lg object-contain bg-white p-0.5 border border-slate-200" />
+            <span>Sentinal</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
             <a
@@ -302,7 +304,7 @@ export default function Home() {
             </div>
             
             <a 
-              href={import.meta.env.VITE_CHAT_FRONTEND_URL || "http://localhost:5555"} 
+              href="https://chat-front-blond.vercel.app/" 
               target="_blank" 
               rel="noopener noreferrer"
               className="group flex items-center justify-center gap-3 bg-white text-[#031634] hover:bg-slate-100 px-8 py-5 rounded-2xl font-bold hover:scale-105 transition-all duration-300 shrink-0 z-10 shadow-[0_0_40px_rgba(255,255,255,0.1)] w-full md:w-auto text-lg"

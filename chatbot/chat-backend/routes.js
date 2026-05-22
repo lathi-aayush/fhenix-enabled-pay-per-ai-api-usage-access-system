@@ -53,6 +53,85 @@ router.get("/user-info", requireAuth, async (req, res) => {
   }
 });
 
+// TOP-UP BURNER WALLET (Instant Fund 10 ALGO)
+router.post("/topup", requireAuth, async (req, res) => {
+  try {
+    // 1. Retrieve the user's burner mnemonic from the Sentinel Main Backend
+    let burnerMnemonic = null;
+    let burnerAddress = null;
+    try {
+      const profileRes = await sentinalApi.get("/api/profile/burner", {
+        headers: { Authorization: `Bearer ${req.token}` }
+      });
+      burnerMnemonic = profileRes.data.mnemonic;
+    } catch (err) {
+      console.error("Failed to fetch burner mnemonic from Sentinel main backend:", err.message);
+      return res.status(500).json({ error: "Failed to communicate with Sentinel main backend" });
+    }
+
+    // 2. If the user doesn't have a burner wallet yet, generate a new burner wallet, sync it to the main backend, and proceed with funding
+    if (!burnerMnemonic) {
+      console.log("User has no burner wallet. Automatically generating one...");
+      const account = algosdk.generateAccount();
+      burnerMnemonic = algosdk.secretKeyToMnemonic(account.sk);
+      burnerAddress = account.addr;
+      
+      try {
+        await sentinalApi.post("/api/profile/burner", { mnemonic: burnerMnemonic }, {
+          headers: { Authorization: `Bearer ${req.token}` }
+        });
+        console.log("Successfully synced newly generated burner wallet to Sentinel main backend.");
+      } catch (err) {
+        console.error("Failed to sync newly generated burner wallet:", err.message);
+        return res.status(500).json({ error: "Failed to sync newly generated burner wallet to main backend" });
+      }
+    } else {
+      const account = algosdk.mnemonicToSecretKey(burnerMnemonic);
+      burnerAddress = account.addr;
+    }
+
+    // 3. Load DISPENSER_MNEMONIC from .env (with a default fallback)
+    const dispenserMnemonic = process.env.DISPENSER_MNEMONIC || "art brain subway volume usage wolf retreat camp produce submit frame idle garlic pink resource genre vast fly solve off right decorate destroy absent fee";
+    let dispenserAccount;
+    try {
+      dispenserAccount = algosdk.mnemonicToSecretKey(dispenserMnemonic);
+    } catch (err) {
+      console.error("Invalid DISPENSER_MNEMONIC:", err.message);
+      return res.status(500).json({ error: "Server dispenser wallet is misconfigured" });
+    }
+
+    // 4. Build and sign an Algorand TestNet transaction transferring 10 ALGO from dispenser to user's burner address
+    const algodServer = process.env.ALGORAND_NODE || "https://testnet-api.algonode.cloud";
+    const algod = new algosdk.Algodv2("", algodServer, "");
+    
+    const params = await algod.getTransactionParams().do();
+    // 2 ALGO = 2,000,000 microAlgos
+    const amountMicroAlgos = 2000000;
+
+    const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+      sender: dispenserAccount.addr,
+      receiver: burnerAddress,
+      amount: amountMicroAlgos,
+      suggestedParams: params,
+      note: new TextEncoder().encode("Sentinel Chatbot Burner Top-Up"),
+    });
+
+    const signedTxn = txn.signTxn(dispenserAccount.sk);
+    const sendResult = await algod.sendRawTransaction(signedTxn).do();
+    const txId = sendResult.txId || sendResult.txid;
+
+    res.json({
+      success: true,
+      txId,
+      address: burnerAddress,
+      amount: 2,
+    });
+  } catch (err) {
+    console.error("Top-up failed:", err);
+    res.status(500).json({ error: "Failed to top up burner wallet", detail: err.message });
+  }
+});
+
 // Create a new conversation
 router.post("/conversations", requireAuth, async (req, res) => {
   try {
