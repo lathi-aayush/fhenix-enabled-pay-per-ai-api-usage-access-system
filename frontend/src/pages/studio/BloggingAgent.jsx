@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import LinkExt from "@tiptap/extension-link";
+import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
@@ -77,7 +77,14 @@ export default function BloggingAgent() {
   const editor = useEditor({
     extensions: [
       StarterKit,
-      LinkExt.configure({ openOnClick: false }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        HTMLAttributes: {
+          rel: 'noopener noreferrer',
+          target: '_blank',
+        },
+      }),
       Placeholder.configure({ placeholder: "Your draft will stream here…" }),
     ],
     content: "",

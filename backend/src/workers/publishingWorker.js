@@ -41,7 +41,7 @@ export function startPublishingWorker() {
   }
 
   const worker = new Worker(
-    "publishing",
+    "publish",
     async (job) => {
       const { blogPostId, platform, userId } = job.data;
       const post = await BlogPost.findById(blogPostId);
@@ -102,6 +102,10 @@ export function startPublishingWorker() {
     },
     { connection: redis, concurrency: 2 }
   );
+
+  worker.on("error", (err) => {
+    console.error("[Worker] Redis connection error:", err.message);
+  });
 
   worker.on("failed", (job, err) => {
     console.error("[publishingWorker] job failed", job?.id, err);

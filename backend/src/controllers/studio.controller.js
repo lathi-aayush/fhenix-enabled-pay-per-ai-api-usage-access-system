@@ -222,13 +222,20 @@ export async function postBlogSchedule(req, res) {
     });
   }
 
-  for (const platform of allowed.length ? allowed : []) {
-    await queue.add(
-      "publish",
-      { blogPostId: post._id.toString(), platform, userId: req.user.userId.toString() },
-      { removeOnComplete: true }
-    );
-    post.status = post.scheduledFor ? "scheduled" : "publishing";
+  try {
+    for (const platform of allowed.length ? allowed : []) {
+      await queue.add(
+        "publish",
+        { blogPostId: post._id.toString(), platform, userId: req.user.userId.toString() },
+        { removeOnComplete: true }
+      );
+      post.status = post.scheduledFor ? "scheduled" : "publishing";
+    }
+  } catch (err) {
+    console.error('[Queue] Failed to add job:', err.message);
+    return res.status(503).json({
+      error: 'Publishing queue is currently unavailable. Please try again later.'
+    });
   }
 
   if (!scheduledFor && allowed.length) {

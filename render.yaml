@@ -38,3 +38,5 @@ services:
         sync: false
       - key: ALLOWED_ORIGIN
         sync: false
+      - key: REDIS_URL
+        sync: false
