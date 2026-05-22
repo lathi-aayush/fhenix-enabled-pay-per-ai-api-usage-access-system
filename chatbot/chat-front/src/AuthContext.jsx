@@ -13,7 +13,13 @@ const SENTINAL_API_URL = import.meta.env.VITE_SENTINEL_API_URL || (import.meta.e
 export const api = axios.create({
   baseURL: import.meta.env.VITE_CHAT_BACKEND_URL
     ? (import.meta.env.VITE_CHAT_BACKEND_URL.endsWith('/api') ? import.meta.env.VITE_CHAT_BACKEND_URL : `${import.meta.env.VITE_CHAT_BACKEND_URL}/api`)
-    : (import.meta.env.DEV ? "http://localhost:4000/api" : "/api"),
+    : (import.meta.env.DEV
+        ? "http://localhost:4000/api"
+        : (typeof window !== 'undefined' && window.location.origin.includes('sentinal-chat1')
+            ? "/api"
+            : "https://sentinal-chat1.onrender.com/api"
+          )
+      ),
 });
 
 export function AuthProvider({ children }) {
