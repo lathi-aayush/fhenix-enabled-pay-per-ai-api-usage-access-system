@@ -28,6 +28,7 @@ const app = express();
 const allowedOrigins = [
   process.env.FRONTEND_ORIGIN || "http://localhost:5173",
   process.env.FRONTEND_URL,
+  process.env.CHAT_FRONTEND_ORIGIN,   // chat-frontend: https://sentinal-vhat1.onrender.com
   process.env.RENDER_EXTERNAL_URL,
   "http://localhost:5174",
   "http://localhost:5175",
