@@ -1,0 +1,8 @@
+{
+  "name": "sentinel-chat",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd chat-front && npm install && npm run build && cd ../chat-backend && npm install",
+    "start": "node chat-backend/index.js"
+  }
+}

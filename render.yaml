@@ -2,14 +2,9 @@ services:
   - type: web
     name: sentinel-chat
     runtime: node
-    rootDir: chatbot/chat-backend
-    buildCommand: >
-      cd ../chat-front &&
-      yarn &&
-      yarn build &&
-      cd ../chat-backend &&
-      npm install
-    startCommand: node index.js
+    rootDir: chatbot
+    buildCommand: npm run build
+    startCommand: npm start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
