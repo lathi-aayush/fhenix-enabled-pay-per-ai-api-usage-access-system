@@ -82,6 +82,10 @@ app.use("/api/dev", devRoutes);
 app.use("/api/studio", studioRoutes);
 app.use("/api/x402", x402Routes);
 
+app.get("/x402-test", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "..", "frontend", "x402-test.html"));
+});
+
 app.use("/api", (_req, res) => {
   res.status(404).json({ error: "Not found" });
 });
