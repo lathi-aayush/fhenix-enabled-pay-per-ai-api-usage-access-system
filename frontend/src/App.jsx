@@ -29,6 +29,7 @@ const ServiceDetail = lazy(() => import("./pages/ServiceDetail.jsx"));
 const BloggingAgent = lazy(() => import("./pages/studio/BloggingAgent.jsx"));
 const ClipCraft = lazy(() => import("./pages/studio/ClipCraft.jsx"));
 const StudioAnalytics = lazy(() => import("./pages/studio/Analytics.jsx"));
+const PromptGenerator = lazy(() => import("./pages/studio/PromptGenerator.jsx"));
 const WorkflowStudioHub = lazy(() => import("./pages/WorkflowStudioHub.jsx"));
 const WorkflowBuilder = lazy(() => import("./pages/WorkflowBuilder.jsx"));
 const WorkflowTemplates = lazy(() => import("./pages/WorkflowTemplates.jsx"));
@@ -229,6 +230,14 @@ export default function App() {
           element={
             <StudioSuspense>
               <ClipCraft />
+            </StudioSuspense>
+          }
+        />
+        <Route
+          path="prompt-generator"
+          element={
+            <StudioSuspense>
+              <PromptGenerator />
             </StudioSuspense>
           }
         />

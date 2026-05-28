@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema(
       default: "free",
     },
     monthlyBlogsUsed: { type: Number, default: 0 },
+    monthlyPromptsUsed: { type: Number, default: 0 },
     usageResetAt: { type: Date },
   },
   { timestamps: { createdAt: true, updatedAt: true } }

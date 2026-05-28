@@ -118,6 +118,7 @@ export async function postSubscriptionUpgrade(req, res) {
   user.subscriptionTier = tierNorm;
   user.usageResetAt = usageResetAt;
   user.monthlyBlogsUsed = 0;
+  user.monthlyPromptsUsed = 0;
   await user.save();
 
   await TxRecord.create({
@@ -133,5 +134,6 @@ export async function postSubscriptionUpgrade(req, res) {
     tier: tierNorm,
     usageResetAt: user.usageResetAt,
     monthlyBlogsUsed: user.monthlyBlogsUsed,
+    monthlyPromptsUsed: user.monthlyPromptsUsed,
   });
 }

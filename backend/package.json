@@ -16,6 +16,7 @@
     "clipcraft:checklist": "node -e \"import('./src/studio/clipcraft/production/validationChecklist.js').then(m=>console.log(m.exportChecklistJson()))\""
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "algosdk": "^3.5.2",
     "axios": "^1.7.9",
     "bullmq": "^5.76.10",

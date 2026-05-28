@@ -16,10 +16,13 @@ export function buildCorsOrigins(env = process.env) {
 
   const defaults = [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://localhost:5175",
     "http://localhost:5176",
     "http://localhost:5177",
+    "https://sentinalai.com",
+    "https://www.sentinalai.com",
     "https://sentinalai.dev",
     "https://www.sentinalai.dev",
     "https://sentinal-j4ox.onrender.com",

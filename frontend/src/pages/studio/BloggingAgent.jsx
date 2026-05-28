@@ -7,7 +7,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
-import { api } from "../../api/client.js";
+import { api, getApiBase } from "../../api/client.js";
 
 const TONES = ["professional", "casual", "educational", "technical", "storytelling", "persuasive"];
 const PLATFORMS = [
@@ -19,7 +19,6 @@ const PLATFORMS = [
   { id: "sentinel-studio", label: "Sentinel Studio (internal)" },
 ];
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 function getToken() {
   return localStorage.getItem("sentinal_token");
@@ -229,7 +228,7 @@ export default function BloggingAgent() {
     setSocialSnippets({ linkedin: "", twitter: "" });
 
     const token = getToken();
-    const url = `${API_BASE || ""}/api/studio/blog/generate`;
+    const url = `${getApiBase()}/api/studio/blog/generate`;
     try {
       const res = await fetch(url, {
         method: "POST",

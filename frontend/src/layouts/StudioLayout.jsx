@@ -12,6 +12,12 @@ const nav = [
   { id: "studio-home", path: "/studio", label: "Studio Home", icon: "home" },
   { id: "workflows", path: "/studio/workflows", label: "Workflow Studio", icon: "account_tree" },
   { id: "blogging-agent", path: "/studio/blogging-agent", label: "Blogging Agent", icon: "article" },
+  {
+    id: "prompt-generator",
+    path: "/studio/prompt-generator",
+    label: "Advanced Prompt Generator",
+    icon: "auto_awesome",
+  },
   { id: "clipcraft", path: "/studio/clipcraft", label: "ClipCraft", icon: "movie_edit" },
   { id: "projects", path: "/studio/projects", label: "Projects", icon: "folder" },
   { id: "calendar", path: "/studio/calendar", icon: "calendar_month", label: "Calendar" },
@@ -50,7 +56,12 @@ export default function StudioLayout() {
 
   const limit = usage?.monthlyBlogLimit;
   const used = usage?.monthlyBlogsUsed ?? 0;
+  const promptLimit = usage?.monthlyPromptLimit;
+  const promptsUsed = usage?.monthlyPromptsUsed ?? 0;
   const pct = limit != null && limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+  const promptPct =
+    promptLimit != null && promptLimit > 0 ? Math.min(100, (promptsUsed / promptLimit) * 100) : 0;
+  const onPromptPage = pathname.startsWith("/studio/prompt-generator");
 
   return (
     <div className="antialiased min-h-screen bg-[#f9f9f9]">
@@ -108,23 +119,37 @@ export default function StudioLayout() {
         </nav>
         <div className="mt-auto px-4 pt-4 border-t border-slate-200 space-y-2">
           <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">
-            {usage?.tier || "free"} plan · blogs
+            {usage?.tier || "free"} plan · {onPromptPage ? "prompts" : "blogs"}
           </div>
           <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
             <motion.div
               className="h-full bg-[#031634]"
               initial={false}
-              animate={{ width: `${pct}%` }}
+              animate={{ width: `${onPromptPage ? promptPct : pct}%` }}
               transition={{ duration: 0.2 }}
             />
           </div>
           <p className="text-[11px] text-slate-600">
-            {used}
-            {limit != null ? ` of ${limit}` : ""} used this month
+            {onPromptPage ? (
+              <>
+                {promptsUsed}
+                {promptLimit != null ? ` of ${promptLimit}` : ""} prompts this month
+              </>
+            ) : (
+              <>
+                {used}
+                {limit != null ? ` of ${limit}` : ""} blogs this month
+              </>
+            )}
           </p>
-          {limit != null && used >= limit && (
+          {onPromptPage && promptLimit != null && promptsUsed >= promptLimit && (
             <p className="text-[10px] text-amber-800 bg-amber-50 border border-amber-100 rounded px-2 py-1.5">
-              Limit reached — upgrade to generate more blogs.
+              Prompt limit reached — upgrade for more.
+            </p>
+          )}
+          {!onPromptPage && limit != null && used >= limit && (
+            <p className="text-[10px] text-amber-800 bg-amber-50 border border-amber-100 rounded px-2 py-1.5">
+              Blog limit reached — upgrade for more.
             </p>
           )}
           <Link

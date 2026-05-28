@@ -26,6 +26,7 @@ const TIERS = [
     id: "free",
     name: "Free",
     blogs: "3 / month",
+    prompts: "10 / month",
     projects: "2",
     publishing: "Drafts only (no automated publish)",
     paid: false,
@@ -34,6 +35,7 @@ const TIERS = [
     id: "creator",
     name: "Creator",
     blogs: "50 / month",
+    prompts: "200 / month",
     projects: "10",
     publishing: "Medium + LinkedIn",
     paid: true,
@@ -42,6 +44,7 @@ const TIERS = [
     id: "pro",
     name: "Pro",
     blogs: "Unlimited",
+    prompts: "Unlimited",
     projects: "Unlimited",
     publishing: "All platforms",
     paid: true,
@@ -50,6 +53,7 @@ const TIERS = [
     id: "enterprise",
     name: "Enterprise",
     blogs: "Unlimited",
+    prompts: "Unlimited",
     projects: "Unlimited",
     publishing: "All platforms + white-label options",
     paid: true,
@@ -99,7 +103,10 @@ export default function StudioPlan() {
   const current = usage?.tier || "free";
   const limit = usage?.monthlyBlogLimit;
   const used = usage?.monthlyBlogsUsed ?? 0;
+  const promptLimit = usage?.monthlyPromptLimit;
+  const promptsUsed = usage?.monthlyPromptsUsed ?? 0;
   const atCap = limit != null && used >= limit;
+  const promptAtCap = promptLimit != null && promptsUsed >= promptLimit;
 
   const payUpgrade = useCallback(
     async (targetTier) => {
@@ -186,9 +193,16 @@ export default function StudioPlan() {
           {limit != null && (
             <>
               {" "}
-              · {used} of {limit} blogs used this cycle
+              · {used} of {limit} blogs
             </>
           )}
+          {promptLimit != null && (
+            <>
+              {" "}
+              · {promptsUsed} of {promptLimit} prompts
+            </>
+          )}
+          {promptLimit == null && promptsUsed > 0 && <> · {promptsUsed} prompts (unlimited)</>}
         </p>
         {!user?.walletAddress && (
           <p className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded px-3 py-2 mt-3">
@@ -203,10 +217,18 @@ export default function StudioPlan() {
         )}
       </div>
 
-      {atCap && (
+      {(atCap || promptAtCap) && (
         <div className="mb-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          You have reached this month&apos;s blog generation limit on the {current} plan. Upgrade to continue generating
-          with the Blogging Agent.
+          {atCap && (
+            <p>
+              Blog limit reached on the {current} plan. Upgrade to continue with the Blogging Agent.
+            </p>
+          )}
+          {promptAtCap && (
+            <p className={atCap ? "mt-2" : ""}>
+              Prompt Generator limit reached on the {current} plan. Upgrade to continue generating prompts.
+            </p>
+          )}
         </div>
       )}
 
@@ -240,6 +262,9 @@ export default function StudioPlan() {
               <ul className="mt-3 space-y-2 text-xs text-on-surface-variant flex-1">
                 <li>
                   <span className="font-medium text-slate-700">Blogs:</span> {t.blogs}
+                </li>
+                <li>
+                  <span className="font-medium text-slate-700">Prompt Generator:</span> {t.prompts}
                 </li>
                 <li>
                   <span className="font-medium text-slate-700">Projects:</span> {t.projects}
@@ -300,7 +325,7 @@ export default function StudioPlan() {
           <li>Link the same Pera address you will pay from (Profile menu).</li>
           <li>Click Pay X ALGO on Creator, Pro, or Enterprise.</li>
           <li>Sign the payment in Pera; we verify amount, receiver, and note on-chain.</li>
-          <li>Your subscription renews for 30 days and blog quota resets for the new cycle.</li>
+          <li>Your subscription renews for 30 days; blog and prompt quotas reset for the new cycle.</li>
         </ol>
         <Link
           to="/dashboard/home"

@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
-import { checkBlogQuota } from "../middleware/studioQuota.js";
+import { checkBlogQuota, checkPromptQuota } from "../middleware/studioQuota.js";
 import * as studio from "../controllers/studio.controller.js";
 import * as studioSubscription from "../controllers/studioSubscription.controller.js";
+import * as studioPrompt from "../controllers/studioPrompt.controller.js";
 import { workflowsRouter, runsRouter, templatesRouter } from "./workflows.js";
 import clipcraftRoutes from "../studio/clipcraft/routes/clipcraft.routes.js";
 
@@ -19,6 +20,12 @@ router.use("/workflow-runs", runsRouter);
 router.use("/workflow-templates", templatesRouter);
 router.get("/usage", studio.getUsage);
 router.post("/subscription/upgrade", studioSubscription.postSubscriptionUpgrade);
+
+router.post("/prompt/generate", checkPromptQuota, studioPrompt.postPromptGenerate);
+router.post("/prompt/enhance", checkPromptQuota, studioPrompt.postPromptEnhance);
+router.post("/prompt/improve", checkPromptQuota, studioPrompt.postPromptImprove);
+router.post("/prompt/analyze", checkPromptQuota, studioPrompt.postPromptAnalyze);
+router.post("/prompt/variations", checkPromptQuota, studioPrompt.postPromptVariations);
 
 router.post("/blog/generate", checkBlogQuota, studio.postGenerateStream);
 router.post("/blog/save", studio.postBlogSave);

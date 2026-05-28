@@ -19,3 +19,7 @@ if (!process.env.RECEIVER_WALLET?.trim() && process.env.TREASURY_WALLET?.trim())
 console.log("[env] .env path:", envPath);
 console.log("[env] RECEIVER_WALLET:", process.env.RECEIVER_WALLET ? "loaded" : "MISSING");
 console.log("[env] ALGO_INDEXER_URL:", process.env.ALGO_INDEXER_URL ? "loaded" : "MISSING");
+console.log(
+  "[env] GOOGLE_API_KEY:",
+  process.env.GOOGLE_API_KEY?.trim() || process.env.GEMINI_API_KEY?.trim() ? "loaded" : "MISSING (Prompt Generator disabled)"
+);

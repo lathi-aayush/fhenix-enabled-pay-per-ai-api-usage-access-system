@@ -8,13 +8,9 @@ import {
   generateTitleSuggestions,
   generateSocialSnippets,
 } from "../providers/groqProvider.js";
+import { STUDIO_TIER_LIMITS } from "../constants/studioLimits.js";
 
-const TIER_LIMITS = {
-  free: { blogsPerMonth: 3, maxProjects: 2 },
-  creator: { blogsPerMonth: 50, maxProjects: 10 },
-  pro: { blogsPerMonth: Infinity, maxProjects: Infinity },
-  enterprise: { blogsPerMonth: Infinity, maxProjects: Infinity },
-};
+const TIER_LIMITS = STUDIO_TIER_LIMITS;
 
 export async function ensureUsageMonth(userId) {
   const user = await User.findById(userId);
@@ -23,6 +19,7 @@ export async function ensureUsageMonth(userId) {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   if (!user.usageResetAt || user.usageResetAt < startOfMonth) {
     user.monthlyBlogsUsed = 0;
+    user.monthlyPromptsUsed = 0;
     user.usageResetAt = startOfMonth;
     await user.save();
   }
@@ -70,6 +67,23 @@ export async function assertBlogQuota(userId) {
 
 export async function incrementBlogUsage(userId) {
   await User.findByIdAndUpdate(userId, { $inc: { monthlyBlogsUsed: 1 } });
+}
+
+export async function assertPromptQuota(userId) {
+  const user = await ensureUsageMonth(userId);
+  const tier = user.subscriptionTier || "free";
+  const limit = TIER_LIMITS[tier]?.promptsPerMonth ?? 10;
+  if (limit === Infinity) return user;
+  if ((user.monthlyPromptsUsed || 0) >= limit) {
+    const err = new Error("Monthly prompt generator quota exceeded. Upgrade your Studio plan.");
+    err.status = 403;
+    throw err;
+  }
+  return user;
+}
+
+export async function incrementPromptUsage(userId) {
+  await User.findByIdAndUpdate(userId, { $inc: { monthlyPromptsUsed: 1 } });
 }
 
 function readingTimeMinutes(text) {

@@ -17,6 +17,7 @@ import {
 import { publishBlogPost, STUDIO_PLATFORM } from "../services/blogPublishService.js";
 import { PLATFORM_SETUP, verifyPlatformCredentials } from "../services/platformPublishers.js";
 import { parseScheduledFor } from "../utils/scheduleDate.js";
+import { limitForTier } from "../constants/studioLimits.js";
 
 // --- Blog ---
 
@@ -484,11 +485,12 @@ export async function listPublished(req, res) {
 export async function getUsage(req, res) {
   const user = await ensureUsageMonth(req.user.userId);
   const tier = user.subscriptionTier || "free";
-  const limits = { free: 3, creator: 50, pro: null, enterprise: null };
   res.json({
     tier,
     monthlyBlogsUsed: user.monthlyBlogsUsed || 0,
-    monthlyBlogLimit: limits[tier],
+    monthlyBlogLimit: limitForTier(tier, "blogsPerMonth"),
+    monthlyPromptsUsed: user.monthlyPromptsUsed || 0,
+    monthlyPromptLimit: limitForTier(tier, "promptsPerMonth"),
     usageResetAt: user.usageResetAt,
   });
 }
