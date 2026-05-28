@@ -10,6 +10,9 @@ const nm = (pkg) => `node_modules/${pkg}`;
 function manualChunks(id) {
   if (!id.includes("node_modules")) return;
 
+  // Keep with the lazy Studio Analytics route (avoids broken split + smaller initial vendor).
+  if (id.includes(nm("recharts")) || id.includes("/d3-") || id.includes("/d3/")) return;
+
   if (id.includes(nm("algosdk"))) return "algosdk";
   if (id.includes(nm("@perawallet"))) return "pera";
 
@@ -28,7 +31,7 @@ function manualChunks(id) {
 
   if (id.includes(nm("@xyflow")) || id.includes(nm("@reactflow")) || id.includes(nm("elkjs"))) return "xyflow";
   if (id.includes(nm("@tiptap")) || id.includes("prosemirror")) return "tiptap";
-  if (id.includes(nm("recharts")) || id.includes(nm("d3-"))) return "recharts";
+  // Do not split recharts/d3 — isolated chunks break lodash `_` interop (_ is not a function).
   if (id.includes(nm("framer-motion"))) return "motion";
   if (id.includes(nm("react-router"))) return "router";
   if (id.includes(nm("react-dom")) || id.includes(nm("react/")) || id.includes(nm("scheduler"))) return "react";
@@ -66,6 +69,7 @@ export default defineConfig({
     global: "globalThis",
   },
   optimizeDeps: {
+    include: ["recharts"],
     esbuildOptions: {
       define: {
         global: "globalThis",
