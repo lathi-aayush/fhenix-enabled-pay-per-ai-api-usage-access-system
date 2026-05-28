@@ -3,7 +3,6 @@ import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
 import Home from "./pages/Home.jsx";
 import UserMarketplace from "./pages/UserMarketplace.jsx";
-import ServiceDetail from "./pages/ServiceDetail.jsx";
 import CreatorDashboard from "./pages/CreatorDashboard.jsx";
 import CreateService from "./pages/CreateService.jsx";
 import PredictionDashboard from "./pages/PredictionDashboard.jsx";
@@ -19,16 +18,17 @@ import MarketplaceCreators from "./pages/MarketplaceCreators.jsx";
 import MarketplaceLayout from "./layouts/MarketplaceLayout.jsx";
 import StudioLayout from "./layouts/StudioLayout.jsx";
 import StudioHome from "./pages/studio/StudioHome.jsx";
-import BloggingAgent from "./pages/studio/BloggingAgent.jsx";
 import StudioProjects from "./pages/studio/Projects.jsx";
 import ProjectDetail from "./pages/studio/ProjectDetail.jsx";
 import StudioCalendar from "./pages/studio/Calendar.jsx";
 import StudioDrafts from "./pages/studio/Drafts.jsx";
 import StudioPublished from "./pages/studio/Published.jsx";
 import StudioPlatforms from "./pages/studio/Platforms.jsx";
-import StudioAnalytics from "./pages/studio/Analytics.jsx";
 import StudioPlan from "./pages/studio/StudioPlan.jsx";
-import ClipCraft from "./pages/studio/ClipCraft.jsx";
+const ServiceDetail = lazy(() => import("./pages/ServiceDetail.jsx"));
+const BloggingAgent = lazy(() => import("./pages/studio/BloggingAgent.jsx"));
+const ClipCraft = lazy(() => import("./pages/studio/ClipCraft.jsx"));
+const StudioAnalytics = lazy(() => import("./pages/studio/Analytics.jsx"));
 const WorkflowStudioHub = lazy(() => import("./pages/WorkflowStudioHub.jsx"));
 const WorkflowBuilder = lazy(() => import("./pages/WorkflowBuilder.jsx"));
 const WorkflowTemplates = lazy(() => import("./pages/WorkflowTemplates.jsx"));
@@ -143,7 +143,14 @@ export default function App() {
         <Route path="keys" element={<UserDashboard />} />
         <Route path="usage" element={<PredictionDashboard />} />
         <Route path="creators" element={<MarketplaceCreators />} />
-        <Route path="services/:id" element={<ServiceDetail />} />
+        <Route
+          path="services/:id"
+          element={
+            <Suspense fallback={<div className="p-8 text-sm text-slate-500">Loading service…</div>}>
+              <ServiceDetail />
+            </Suspense>
+          }
+        />
       </Route>
 
       <Route
@@ -209,15 +216,36 @@ export default function App() {
             </StudioSuspense>
           }
         />
-        <Route path="blogging-agent" element={<BloggingAgent />} />
-        <Route path="clipcraft" element={<ClipCraft />} />
+        <Route
+          path="blogging-agent"
+          element={
+            <StudioSuspense>
+              <BloggingAgent />
+            </StudioSuspense>
+          }
+        />
+        <Route
+          path="clipcraft"
+          element={
+            <StudioSuspense>
+              <ClipCraft />
+            </StudioSuspense>
+          }
+        />
         <Route path="projects" element={<StudioProjects />} />
         <Route path="projects/:id" element={<ProjectDetail />} />
         <Route path="calendar" element={<StudioCalendar />} />
         <Route path="drafts" element={<StudioDrafts />} />
         <Route path="published" element={<StudioPublished />} />
         <Route path="platforms" element={<StudioPlatforms />} />
-        <Route path="analytics" element={<StudioAnalytics />} />
+        <Route
+          path="analytics"
+          element={
+            <StudioSuspense>
+              <StudioAnalytics />
+            </StudioSuspense>
+          }
+        />
         <Route path="plan" element={<StudioPlan />} />
         <Route path="apps" element={<HostedApps />} />
         <Route path="queue" element={<StudioQueue />} />

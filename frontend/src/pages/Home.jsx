@@ -1,6 +1,6 @@
 import React from "react";
 import logo from "../assets/logo.png";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useEffect, useState } from "react";
@@ -9,9 +9,11 @@ import ProfileDropdown from "../components/ProfileDropdown.jsx";
 import { connectPera } from "../wallet/pera.js";
 import { api } from "../api/client.js";
 import HowItWorks from "../components/HowItWorks.jsx";
+import { goToHomeSection } from "../utils/scrollToSection.js";
 
 export default function Home() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, register, user, logout, isAuthenticated } = useAuth();
   const [busy, setBusy] = useState(false);
 
@@ -22,6 +24,16 @@ export default function Home() {
   const [nameAvailable, setNameAvailable] = useState(null);
   const [nameError, setNameError] = useState("");
   const [checkingName, setCheckingName] = useState(false);
+  const [regRedirect, setRegRedirect] = useState("/dashboard/home");
+
+  useEffect(() => {
+    if (!location.hash) return;
+    const id = location.hash.replace(/^#/, "");
+    const t = setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+    return () => clearTimeout(t);
+  }, [location.hash]);
 
   useEffect(() => {
     if (!regName || regName.trim().length < 3) {
@@ -67,7 +79,7 @@ export default function Home() {
       await register(regWallet, regRole, regName.trim());
       toast.success("Profile set up! Welcome to Sentinal.");
       setShowReg(false);
-      navigate(regRole === "creator" ? "/creator" : "/dashboard/home");
+      navigate(regRole === "creator" ? "/creator" : regRedirect || "/dashboard/home");
     } catch (err) {
       toast.error(err?.response?.data?.error || err?.message || "Registration failed");
     } finally {
@@ -75,13 +87,16 @@ export default function Home() {
     }
   }
 
-  async function enterWithPera(role) {
+  async function enterWithPera(role, options = {}) {
+    const afterLogin =
+      options.redirect || (role === "creator" ? "/creator" : "/dashboard/home");
+
     if (isAuthenticated && user && user.role !== role) {
       toast.error("Log out first, then enter as the other role.");
       return;
     }
     if (isAuthenticated && user && user.role === role) {
-      navigate(role === "creator" ? "/creator" : "/dashboard/home");
+      navigate(afterLogin);
       return;
     }
 
@@ -96,6 +111,7 @@ export default function Home() {
       if (res.needsProfile || res.isNewUser) {
         setRegWallet(addr);
         setRegRole(role);
+        setRegRedirect(afterLogin);
         setRegName("");
         setShowReg(true);
         toast.success("Wallet connected! Choose a display name to finish setup.", {
@@ -106,7 +122,7 @@ export default function Home() {
         toast.success(`Welcome back${res.user.displayName ? `, ${res.user.displayName}` : ""}!`, {
           id: "pera-login",
         });
-        navigate(role === "creator" ? "/creator" : "/dashboard/home");
+        navigate(afterLogin);
       }
     } catch (e) {
       console.error(e);
@@ -127,24 +143,27 @@ export default function Home() {
             <span>Sentinal</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
-            <a
-              href="#how-it-works"
+            <button
+              type="button"
+              onClick={() => goToHomeSection(navigate, "how-it-works")}
               className="text-[#5A5A5A] dark:text-[#A0A0A0] text-sm font-medium font-body hover:text-[#031634] dark:hover:text-white transition-colors cursor-pointer"
             >
               How It Works
-            </a>
-            <a
-              href="#marketplace"
+            </button>
+            <button
+              type="button"
+              onClick={() => goToHomeSection(navigate, "marketplace")}
               className="text-[#5A5A5A] dark:text-[#A0A0A0] text-sm font-medium font-body hover:text-[#031634] dark:hover:text-white transition-colors cursor-pointer"
             >
               Marketplace
-            </a>
-            <a
-              href="#studio"
+            </button>
+            <button
+              type="button"
+              onClick={() => goToHomeSection(navigate, "studio")}
               className="text-[#5A5A5A] dark:text-[#A0A0A0] text-sm font-medium font-body hover:text-[#031634] dark:hover:text-white transition-colors cursor-pointer"
             >
               Studio
-            </a>
+            </button>
           </nav>
         </div>
         <div className="flex items-center gap-4">
@@ -183,7 +202,9 @@ export default function Home() {
               </button>
               <button
                 type="button"
-                onClick={() => (isAuthenticated ? navigate("/studio") : enterWithPera("user"))}
+                onClick={() =>
+                  isAuthenticated ? navigate("/studio") : enterWithPera("user", { redirect: "/studio" })
+                }
                 className="px-5 py-2.5 border border-slate-300 rounded-md text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 Open Studio
@@ -215,7 +236,9 @@ export default function Home() {
             </p>
             <button
               type="button"
-              onClick={() => (isAuthenticated ? navigate("/studio") : enterWithPera("user"))}
+              onClick={() =>
+                isAuthenticated ? navigate("/studio") : enterWithPera("user", { redirect: "/studio" })
+              }
               className="mt-4 text-sm font-semibold text-indigo-600 underline"
             >
               Open Studio

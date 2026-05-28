@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
+import logo from "../assets/logo.png";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext.jsx";
 import UserLiveWalletBar from "../components/UserLiveWalletBar.jsx";
@@ -54,7 +55,14 @@ export default function StudioLayout() {
   return (
     <div className="antialiased min-h-screen bg-[#f9f9f9]">
       <header className="bg-white fixed top-0 left-0 right-0 z-50 w-full border-b border-slate-100 h-14 flex items-center px-4 md:pl-[240px]">
-        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider md:hidden">SentinelAI Studio</span>
+        <Link
+          to="/"
+          className="md:hidden flex items-center gap-2 text-[#031634] font-headline font-semibold text-sm"
+          title="Back to Sentinal home"
+        >
+          <img src={logo} alt="" className="w-7 h-7 rounded-md object-contain border border-slate-200" />
+          Sentinal
+        </Link>
         <div className="ml-auto flex items-center gap-3">
           {user?.walletAddress && <UserLiveWalletBar walletAddress={user.walletAddress} />}
           <ProfileDropdown />
@@ -62,9 +70,24 @@ export default function StudioLayout() {
       </header>
 
       <aside className="fixed left-0 top-0 bottom-0 w-[220px] bg-slate-50 border-r border-slate-100 flex flex-col pt-14 pb-6 text-[0.875rem] overflow-y-auto z-40 max-md:hidden">
-        <div className="px-5 mb-6">
-          <p className="font-headline font-semibold text-slate-900 text-sm">SentinelAI Studio</p>
-          <p className="text-slate-500 text-[10px] mt-0.5">Creator workspace</p>
+        <div className="px-4 mb-6">
+          <Link
+            to="/"
+            className="flex items-center gap-2.5 rounded-md p-2 -mx-2 hover:bg-slate-100 transition-colors group"
+            title="Back to Sentinal home"
+          >
+            <img
+              src={logo}
+              alt="Sentinal"
+              className="w-8 h-8 rounded-lg object-contain bg-white border border-slate-200 shrink-0"
+            />
+            <div className="min-w-0">
+              <p className="font-headline font-semibold text-slate-900 text-sm group-hover:text-[#031634]">
+                Sentinal
+              </p>
+              <p className="text-slate-500 text-[10px] mt-0.5 truncate">Studio · tap for home</p>
+            </div>
+          </Link>
         </div>
         <nav className="flex-1 px-2 space-y-0.5">
           {nav.map((item) => {

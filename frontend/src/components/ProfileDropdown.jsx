@@ -249,6 +249,14 @@ export default function ProfileDropdown() {
             ) : (
               <>
                 <Link
+                  to="/studio"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2 py-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white text-xs font-medium transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">movie_edit</span>
+                  AI Studio
+                </Link>
+                <Link
                   to="/dashboard/browse"
                   onClick={() => setIsOpen(false)}
                   className="flex items-center gap-2 py-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white text-xs font-medium transition-colors"

@@ -1,6 +1,14 @@
-import algosdk from "algosdk";
 import { signAndSendPayment } from "./pera.js";
 import { api } from "../api/client.js";
+
+/** Lazy-load algosdk (~370 kB) — only when burner wallet is used. */
+let algosdkModule = null;
+async function getAlgosdk() {
+  if (!algosdkModule) {
+    algosdkModule = (await import("algosdk")).default;
+  }
+  return algosdkModule;
+}
 
 const LEGACY_BURNER_KEY = "burner_wallet_mnemonic";
 const BURNER_KEY_PREFIX = "sentinal_burner_mnemonic:";
@@ -9,6 +17,19 @@ const BURNER_KEY_PREFIX = "sentinal_burner_mnemonic:";
 let activeUserId = null;
 /** @type {Promise<void> | null} */
 let initPromise = null;
+/** @type {Map<string, { addr: string, sk: Uint8Array }>} */
+const accountCache = new Map();
+
+async function cacheAccountForUser(userId) {
+  const mnemonic = readLocalMnemonic(userId);
+  if (!mnemonic) {
+    accountCache.delete(userId);
+    return null;
+  }
+  const acct = await mnemonicToAccount(mnemonic);
+  accountCache.set(userId, acct);
+  return acct;
+}
 
 export function getDefaultAlgodServer() {
   const fromEnv = import.meta.env.VITE_ALGOD_SERVER?.trim();
@@ -37,14 +58,16 @@ function writeLocalMnemonic(userId, mnemonic) {
   localStorage.setItem(storageKey(userId), mnemonic.trim());
 }
 
-function mnemonicToAccount(mnemonic) {
+async function mnemonicToAccount(mnemonic) {
+  const algosdk = await getAlgosdk();
   const acct = algosdk.mnemonicToSecretKey(mnemonic.trim());
   return { addr: acct.addr.toString(), sk: acct.sk };
 }
 
 async function balanceForMnemonic(mnemonic, algodServer) {
   try {
-    const { addr } = mnemonicToAccount(mnemonic);
+    const { addr } = await mnemonicToAccount(mnemonic);
+    const algosdk = await getAlgosdk();
     const algod = new algosdk.Algodv2("", algodServer.trim(), "");
     const info = await algod.accountInformation(addr).do();
     return Number(info.amount) || 0;
@@ -101,7 +124,7 @@ async function resolveBurnerMnemonic(userId, algodServer = getDefaultAlgodServer
  */
 export async function ensureBurnerWallet(userId, algodServer = getDefaultAlgodServer()) {
   if (!userId) return null;
-  if (activeUserId === userId && readLocalMnemonic(userId)) {
+  if (activeUserId === userId && accountCache.has(userId)) {
     return readLocalMnemonic(userId);
   }
   if (initPromise && activeUserId === userId) {
@@ -113,6 +136,7 @@ export async function ensureBurnerWallet(userId, algodServer = getDefaultAlgodSe
   initPromise = (async () => {
     let mnemonic = await resolveBurnerMnemonic(userId, algodServer);
     if (!mnemonic) {
+      const algosdk = await getAlgosdk();
       const newAccount = algosdk.generateAccount();
       mnemonic = algosdk.secretKeyToMnemonic(newAccount.sk);
       writeLocalMnemonic(userId, mnemonic);
@@ -122,6 +146,7 @@ export async function ensureBurnerWallet(userId, algodServer = getDefaultAlgodSe
 
   try {
     await initPromise;
+    await cacheAccountForUser(userId);
   } finally {
     initPromise = null;
   }
@@ -131,6 +156,7 @@ export async function ensureBurnerWallet(userId, algodServer = getDefaultAlgodSe
 export function clearActiveBurnerUser() {
   activeUserId = null;
   initPromise = null;
+  accountCache.clear();
 }
 
 /**
@@ -141,14 +167,8 @@ export function getBurnerWallet(userId = activeUserId) {
   if (!uid) {
     throw new Error("Burner wallet not ready — sign in and wait a moment, then retry.");
   }
-  const storedMnemonic = readLocalMnemonic(uid);
-  if (storedMnemonic) {
-    try {
-      return mnemonicToAccount(storedMnemonic);
-    } catch (e) {
-      console.warn("Invalid burner mnemonic; re-initializing…", e);
-    }
-  }
+  const cached = accountCache.get(uid);
+  if (cached) return cached;
   throw new Error("Burner wallet not initialized. Refresh the page after signing in.");
 }
 
@@ -179,6 +199,7 @@ export function getBurnerAddress(userId = activeUserId) {
  */
 export async function getBurnerBalance(algodServer = getDefaultAlgodServer(), userId = activeUserId) {
   const account = getBurnerWallet(userId);
+  const algosdk = await getAlgosdk();
   const algod = new algosdk.Algodv2("", algodServer.trim(), "");
 
   try {
@@ -207,6 +228,7 @@ export async function fundBurnerWallet(peraAddress, amountMicroAlgos, algodServe
 
 export async function sendBurnerPayment({ to, amountMicroAlgos, noteStr, algodServer = getDefaultAlgodServer() }) {
   const burner = getBurnerWallet();
+  const algosdk = await getAlgosdk();
   const algod = new algosdk.Algodv2("", algodServer.trim(), "");
   const params = await algod.getTransactionParams().do();
   const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
@@ -226,6 +248,7 @@ export async function sendBurnerPayment({ to, amountMicroAlgos, noteStr, algodSe
 
 export async function refundBurnerWallet(peraAddress, algodServer = getDefaultAlgodServer(), userId = activeUserId) {
   const burner = getBurnerWallet(userId);
+  const algosdk = await getAlgosdk();
   const algod = new algosdk.Algodv2("", algodServer.trim(), "");
 
   let accountInfo;

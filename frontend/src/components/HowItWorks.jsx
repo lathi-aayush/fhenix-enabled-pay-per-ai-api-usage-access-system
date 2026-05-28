@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import { api } from "../api/client.js";
 
 /* ── tiny hook: fires once when element enters viewport ── */
 function useInView(threshold = 0.15) {
@@ -19,22 +20,67 @@ function useInView(threshold = 0.15) {
   return [ref, visible];
 }
 
-/* ── animated counter ── */
+/* ── animated counter (re-runs when live stats update) ── */
 function Counter({ to, suffix = "", duration = 1800 }) {
   const [val, setVal] = useState(0);
   const [ref, visible] = useInView();
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || to <= 0) return;
     let start = null;
+    let raf = 0;
+    const from = val;
+    const delta = to - from;
     const step = (ts) => {
       if (!start) start = ts;
       const p = Math.min((ts - start) / duration, 1);
-      setVal(Math.floor(p * to));
-      if (p < 1) requestAnimationFrame(step);
+      const eased = 1 - (1 - p) ** 3;
+      setVal(Math.floor(from + delta * eased));
+      if (p < 1) raf = requestAnimationFrame(step);
+      else setVal(to);
     };
-    requestAnimationFrame(step);
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
   }, [visible, to, duration]);
-  return <span ref={ref}>{val.toLocaleString()}{suffix}</span>;
+  return (
+    <span ref={ref}>
+      {val.toLocaleString()}
+      {suffix}
+    </span>
+  );
+}
+
+const FALLBACK_STATS = [
+  { label: "APIs Available", value: 0, suffix: "+" },
+  { label: "On-chain Txns", value: 0, suffix: "+" },
+  { label: "Avg Latency", value: 42, suffix: "ms" },
+];
+
+function useLivePlatformStats() {
+  const [stats, setStats] = useState(FALLBACK_STATS);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const { data } = await api.get("/api/contract/stats");
+        const h = data?.homepage;
+        const apis = Math.max(0, Number(h?.apisAvailable) || 0);
+        const txns = Math.max(0, Number(h?.onChainTxns) || 0);
+        const ms = Math.max(1, Number(h?.avgLatencyMs) || 42);
+        setStats([
+          { label: "APIs Available", value: apis, suffix: "+" },
+          { label: "On-chain Txns", value: txns, suffix: "+" },
+          { label: "Avg Latency", value: ms, suffix: "ms" },
+        ]);
+      } catch {
+        /* keep last good values */
+      }
+    }
+    load();
+    const id = setInterval(load, 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  return stats;
 }
 
 /* ── Marketplace steps ── */
@@ -269,9 +315,11 @@ export default function HowItWorks({ enterWithPera }) {
 
   function goStudio() {
     if (isAuthenticated) navigate("/studio");
-    else if (enterWithPera) enterWithPera("user");
+    else if (enterWithPera) enterWithPera("user", { redirect: "/studio" });
     else navigate("/");
   }
+
+  const liveStats = useLivePlatformStats();
 
   const [sectionRef, sectionVisible] = useInView(0.05);
   const [marketRef, marketVisible] = useInView(0.1);
@@ -311,11 +359,7 @@ export default function HowItWorks({ enterWithPera }) {
           className="flex flex-wrap justify-center gap-8 mt-4 pt-6 border-t border-slate-100 w-full max-w-lg"
           style={{ opacity: sectionVisible ? 1 : 0, transition: "opacity 0.8s 0.4s" }}
         >
-          {[
-            { label: "APIs Available", value: 120, suffix: "+" },
-            { label: "On-chain Txns", value: 48300, suffix: "+" },
-            { label: "Avg Latency", value: 42, suffix: "ms" },
-          ].map((s) => (
+          {liveStats.map((s) => (
             <div key={s.label} className="flex flex-col items-center gap-1">
               <span className="font-headline text-2xl font-bold text-[#031634]">
                 <Counter to={s.value} suffix={s.suffix} />
