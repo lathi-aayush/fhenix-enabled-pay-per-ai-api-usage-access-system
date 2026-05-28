@@ -29,6 +29,7 @@ import StudioPlatforms from "./pages/studio/Platforms.jsx";
 import StudioAnalytics from "./pages/studio/Analytics.jsx";
 import StudioPlan from "./pages/studio/StudioPlan.jsx";
 import ClipCraft from "./pages/studio/ClipCraft.jsx";
+import X402Docs from "./pages/X402Docs.jsx";
 const WorkflowStudioHub = lazy(() => import("./pages/WorkflowStudioHub.jsx"));
 const WorkflowBuilder = lazy(() => import("./pages/WorkflowBuilder.jsx"));
 const WorkflowTemplates = lazy(() => import("./pages/WorkflowTemplates.jsx"));
@@ -144,6 +145,7 @@ export default function App() {
         <Route path="usage" element={<PredictionDashboard />} />
         <Route path="creators" element={<MarketplaceCreators />} />
         <Route path="services/:id" element={<ServiceDetail />} />
+        <Route path="x402" element={<X402Docs />} />
       </Route>
 
       <Route
