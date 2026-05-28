@@ -1,0 +1,30 @@
+# @filename: backend/src/studio/clipcraft/docker/docker-compose.example.yml
+# Example — run from repo root: docker compose -f backend/src/studio/clipcraft/docker/docker-compose.example.yml up
+
+services:
+  api:
+    build:
+      context: ../../../..
+      dockerfile: backend/src/studio/clipcraft/docker/Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      PORT: 5001
+      MONGO_URI: mongodb://mongo:27017/sentinel
+      CLIPCRAFT_ENABLED: "true"
+      CLIPCRAFT_PROVIDER_MODE: mock
+      CLIPCRAFT_MAX_CONCURRENT_JOBS: 4
+      CLIPCRAFT_RATE_LIMIT_PER_MIN: 30
+    depends_on:
+      - mongo
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/api/studio/clipcraft/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"

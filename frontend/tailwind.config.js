@@ -64,6 +64,21 @@ export default {
         label: ["DM Sans", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
+      colors: {
+        sentinel: {
+          bg: "#0a0a0f",
+          surface: "#12121a",
+          border: "#1e1e2e",
+          accent: "#6366f1",
+          glow: "#818cf8",
+          success: "#22d3ee",
+          danger: "#f43f5e",
+          warning: "#f59e0b",
+        },
+      },
+      backdropBlur: {
+        xs: "2px",
+      },
     },
   },
   plugins: [],

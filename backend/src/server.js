@@ -20,6 +20,10 @@ import profileRoutes from "./routes/profile.js";
 import devRoutes from "./routes/dev.js";
 import studioRoutes from "./routes/studio.routes.js";
 import { startPublishingWorker } from "./workers/publishingWorker.js";
+import { startScheduledPublishScheduler } from "./services/scheduledPublishScheduler.js";
+import { loadClipCraftConfig } from "./studio/clipcraft/config/loadConfig.js";
+import { getClipCraftRuntime } from "./studio/clipcraft/production/ClipCraftRuntime.js";
+import { registerClipCraftGracefulShutdown } from "./studio/clipcraft/production/gracefulShutdown.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,20 +32,14 @@ const app = express();
 const allowedOrigins = [
   process.env.FRONTEND_ORIGIN || "http://localhost:5173",
   process.env.FRONTEND_URL,
-  process.env.CHAT_FRONTEND_ORIGIN,   // chat-frontend: https://sentinal-vhat1.onrender.com
   process.env.RENDER_EXTERNAL_URL,
   "https://sentinal-j4ox.onrender.com",
   "https://sentinal-z3ue.onrender.com",
-  "https://sentinal-vhat1.onrender.com",
-  "https://sentinal-chat1.onrender.com",
   "https://pay-per-usage-ai-api-access-system-using-zrgu.onrender.com",
-  "https://chat-front-blond.vercel.app",
   "http://localhost:5174",
   "http://localhost:5175",
   "http://localhost:5176",
-  "http://localhost:5177",
-  "http://localhost:5555",
-  "http://localhost:4000"
+  "http://localhost:5177"
 ].filter(Boolean);
 
 app.use(helmet({
@@ -122,8 +120,29 @@ connectDb()
     } catch (e) {
       console.warn("[publishingWorker] failed to start:", e.message);
     }
+    try {
+      startScheduledPublishScheduler();
+    } catch (e) {
+      console.warn("[scheduler] failed to start:", e.message);
+    }
+    let clipcraftRuntime = null;
+    try {
+      const cc = loadClipCraftConfig();
+      if (cc.enabled) {
+        clipcraftRuntime = getClipCraftRuntime();
+        clipcraftRuntime.start();
+        console.log("[clipcraft] runtime started (provider:", cc.providerMode + ")");
+      }
+    } catch (e) {
+      console.warn("[clipcraft] runtime skip:", e.message);
+    }
+
     const server = app.listen(port, () => {
       console.log(`API listening on ${port}`);
+    });
+
+    registerClipCraftGracefulShutdown(server, clipcraftRuntime, {
+      timeoutMs: Number(process.env.CLIPCRAFT_SHUTDOWN_TIMEOUT_MS) || 30_000,
     });
     server.on("error", (err) => {
       if (err.code === "EADDRINUSE") {

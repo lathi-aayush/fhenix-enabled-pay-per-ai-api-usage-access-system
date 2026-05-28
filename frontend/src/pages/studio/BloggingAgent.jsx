@@ -1,10 +1,9 @@
 import React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import LinkExt from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
@@ -12,11 +11,12 @@ import { api } from "../../api/client.js";
 
 const TONES = ["professional", "casual", "educational", "technical", "storytelling", "persuasive"];
 const PLATFORMS = [
+  { id: "devto", label: "Dev.to" },
   { id: "medium", label: "Medium" },
   { id: "linkedin", label: "LinkedIn" },
-  { id: "devto", label: "Dev.to" },
   { id: "hashnode", label: "Hashnode" },
   { id: "wordpress", label: "WordPress" },
+  { id: "sentinel-studio", label: "Sentinel Studio (internal)" },
 ];
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
@@ -35,10 +35,20 @@ function readingTime(wc) {
   return Math.max(1, Math.ceil(wc / 200));
 }
 
+/** Format API date for `<input type="datetime-local" />` */
+function toDatetimeLocalValue(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export default function BloggingAgent() {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
-  const initialPostId = location.state?.postId;
+  const initialPostId = searchParams.get("post") || location.state?.postId;
 
   const [projectId, setProjectId] = useState("");
   const [topic, setTopic] = useState("");
@@ -48,7 +58,9 @@ export default function BloggingAgent() {
   const [targetAudience, setTargetAudience] = useState("");
   const [wordCountTarget, setWordCountTarget] = useState(1000);
   const [brandVoice, setBrandVoice] = useState("");
-  const [selectedPlatforms, setSelectedPlatforms] = useState([]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState(["devto"]);
+  const [publishError, setPublishError] = useState("");
+  const [publishedLinks, setPublishedLinks] = useState([]);
   const [scheduledFor, setScheduledFor] = useState("");
 
   const [postId, setPostId] = useState(initialPostId || null);
@@ -72,14 +84,23 @@ export default function BloggingAgent() {
     queryKey: ["studio-projects"],
     queryFn: async () => (await api.get("/api/studio/projects")).data,
   });
+  const { data: connectedRes } = useQuery({
+    queryKey: ["studio-platforms"],
+    queryFn: async () => (await api.get("/api/studio/platforms")).data,
+  });
   const projects = projectsRes?.projects ?? [];
+  const connectedSet = new Set((connectedRes?.platforms ?? []).map((p) => p.platform));
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      LinkExt.configure({ openOnClick: false }),
+  const editorExtensions = useMemo(
+    () => [
+      StarterKit.configure({ link: { openOnClick: false } }),
       Placeholder.configure({ placeholder: "Your draft will stream here…" }),
     ],
+    []
+  );
+
+  const editor = useEditor({
+    extensions: editorExtensions,
     content: "",
     editorProps: {
       attributes: {
@@ -111,6 +132,9 @@ export default function BloggingAgent() {
       setSocialSnippets(p.socialSnippets || { linkedin: "", twitter: "" });
       setSeoScore(p.seoScore ?? null);
       setStatus(p.status || "draft");
+      setScheduledFor(toDatetimeLocalValue(p.scheduledFor));
+      setPublishError(p.publishError || "");
+      setPublishedLinks(p.publishedPlatforms || []);
       if (p.projectId?._id) setProjectId(p.projectId._id);
       else if (p.projectId) setProjectId(p.projectId);
       const body = p.content || "";
@@ -134,8 +158,9 @@ export default function BloggingAgent() {
   );
 
   useEffect(() => {
-    if (initialPostId) loadPost(initialPostId);
-  }, [initialPostId, loadPost]);
+    const id = searchParams.get("post") || location.state?.postId;
+    if (id) loadPost(id);
+  }, [searchParams, location.state?.postId, loadPost]);
 
   useEffect(() => {
     const proj = projects.find((p) => p._id === projectId);
@@ -159,7 +184,7 @@ export default function BloggingAgent() {
   const saveDraft = async () => {
     if (!projectId) {
       toast.error("Select a project");
-      return;
+      return false;
     }
     const html = editor?.getHTML() ?? "";
     const plain = editor?.getText() ?? "";
@@ -176,7 +201,6 @@ export default function BloggingAgent() {
         hashtags,
         titleSuggestions,
         socialSnippets,
-        status: "draft",
         scheduledFor: scheduledFor || null,
       });
       const p = data.post;
@@ -184,8 +208,10 @@ export default function BloggingAgent() {
       setLastSaved(new Date());
       queryClient.invalidateQueries({ queryKey: ["studio-drafts"] });
       toast.success("Saved");
+      return true;
     } catch (e) {
       toast.error(e?.response?.data?.error || e.message);
+      return false;
     }
   };
 
@@ -290,21 +316,94 @@ export default function BloggingAgent() {
     }
   };
 
-  const scheduleOrPublish = async () => {
-    if (!postId) {
-      toast.error("Generate or save a post first");
-      return;
+  const externalSelected = selectedPlatforms.filter((p) => p !== "sentinel-studio");
+
+  const applyPublishResponse = (data) => {
+    setStatus(data.post?.status || "published");
+    setPublishError(data.post?.publishError || "");
+    setPublishedLinks(data.post?.publishedPlatforms || []);
+    if (data.errors?.length) {
+      toast.error(data.errors.map((e) => `${e.platform}: ${e.message}`).join("\n"));
     }
-    await saveDraft();
+    if (data.post?.status === "failed") {
+      toast.error(data.post.publishError || "Publish failed — check your API key on Platforms");
+    } else if (data.scheduled) {
+      toast.success(data.message || "Scheduled for external platforms");
+      queryClient.invalidateQueries({ queryKey: ["studio-calendar-week"] });
+    } else if ((data.published || []).length) {
+      toast.success(`Live on: ${data.published.map((p) => p.platform).join(", ")}`);
+      queryClient.invalidateQueries({ queryKey: ["studio-published"] });
+    } else if ((data.queued || []).length) {
+      toast.success(`Queued: ${data.queued.join(", ")}`);
+    } else if (data.errors?.length) {
+      /* toast already shown above */
+    }
+    queryClient.invalidateQueries({ queryKey: ["studio-drafts"] });
+    queryClient.invalidateQueries({ queryKey: ["studio-calendar"] });
+    queryClient.invalidateQueries({ queryKey: ["studio-calendar-week"] });
+  };
+
+  const publishToStudioOnly = async () => {
+    if (!postId) return toast.error("Generate or save a post first");
+    if (!(await saveDraft())) return;
     try {
       const { data } = await api.post("/api/studio/blog/schedule", {
         postId,
-        platforms: selectedPlatforms,
-        scheduledFor: scheduledFor || null,
+        platforms: ["sentinel-studio"],
+        publishToStudio: true,
+        scheduledFor: null,
       });
-      setStatus(data.post?.status || "scheduled");
-      toast.success(data.queued ? "Queued for publishing" : "Updated");
-      queryClient.invalidateQueries({ queryKey: ["studio-calendar-week"] });
+      applyPublishResponse(data);
+    } catch (e) {
+      toast.error(e?.response?.data?.error || e.message);
+    }
+  };
+
+  const publishToExternalNow = async () => {
+    if (!postId) return toast.error("Generate or save a post first");
+    if (!externalSelected.length) {
+      return toast.error("Select Dev.to, Medium, LinkedIn, etc. Connect them under Studio → Platforms first.");
+    }
+    const missing = externalSelected.filter((p) => !connectedSet.has(p));
+    if (missing.length) {
+      return toast.error(`Not connected: ${missing.join(", ")}. Go to Studio → Platforms.`);
+    }
+    if (!(await saveDraft())) return;
+    try {
+      const { data } = await api.post("/api/studio/blog/schedule", {
+        postId,
+        platforms: externalSelected,
+        publishToStudio: false,
+      });
+      applyPublishResponse(data);
+    } catch (e) {
+      toast.error(e?.response?.data?.error || e.message);
+    }
+  };
+
+  const scheduleExternal = async () => {
+    if (!postId) return toast.error("Generate or save a post first");
+    if (!scheduledFor) return toast.error("Pick a date and time to schedule");
+    const runAt = new Date(scheduledFor);
+    if (Number.isNaN(runAt.getTime()) || runAt.getTime() < Date.now() + 30_000) {
+      return toast.error("Choose a time at least 30 seconds in the future");
+    }
+    if (!externalSelected.length) {
+      return toast.error("Select platforms to schedule (Dev.to, Medium, …)");
+    }
+    const missing = externalSelected.filter((p) => !connectedSet.has(p));
+    if (missing.length) {
+      return toast.error(`Not connected: ${missing.join(", ")}`);
+    }
+    if (!(await saveDraft())) return;
+    try {
+      const { data } = await api.post("/api/studio/blog/schedule", {
+        postId,
+        platforms: externalSelected,
+        publishToStudio: false,
+        scheduledFor,
+      });
+      applyPublishResponse(data);
     } catch (e) {
       toast.error(e?.response?.data?.error || e.message);
     }
@@ -321,7 +420,9 @@ export default function BloggingAgent() {
     <div className="pt-6 max-w-[1400px]">
       <header className="mb-6">
         <h1 className="font-headline text-2xl font-semibold text-primary">Blogging Agent</h1>
-        <p className="text-sm text-on-surface-variant mt-1">Generate long-form posts with Groq, then refine and schedule publishing.</p>
+        <p className="text-sm text-on-surface-variant mt-1">
+          Generate posts, connect platforms under Studio → Platforms, then publish or schedule to Dev.to, Medium, LinkedIn, and more.
+        </p>
       </header>
 
       <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
@@ -424,7 +525,7 @@ export default function BloggingAgent() {
             />
           </div>
           <div>
-            <span className="text-xs font-semibold text-slate-600 block mb-1">Platforms</span>
+            <span className="text-xs font-semibold text-slate-600 block mb-1">Publish to</span>
             <div className="space-y-1">
               {PLATFORMS.map((p) => (
                 <label key={p.id} className="flex items-center gap-2 text-sm">
@@ -433,19 +534,34 @@ export default function BloggingAgent() {
                     checked={selectedPlatforms.includes(p.id)}
                     onChange={() => togglePlatform(p.id)}
                   />
-                  {p.label}
+                  <span>
+                    {p.label}
+                    {p.id !== "sentinel-studio" && (
+                      <span
+                        className={`ml-1 text-[9px] font-bold ${
+                          connectedSet.has(p.id) ? "text-emerald-600" : "text-amber-600"
+                        }`}
+                      >
+                        {connectedSet.has(p.id) ? "✓" : "connect"}
+                      </span>
+                    )}
+                  </span>
                 </label>
               ))}
             </div>
+            <Link to="/studio/platforms" className="text-[10px] text-secondary hover:underline mt-1 inline-block">
+              Manage platform API keys →
+            </Link>
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-600 block mb-1">Schedule (optional)</label>
+            <label className="text-xs font-semibold text-slate-600 block mb-1">Schedule publish</label>
             <input
               type="datetime-local"
               className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm"
               value={scheduledFor}
               onChange={(e) => setScheduledFor(e.target.value)}
             />
+            <p className="text-[10px] text-slate-500 mt-1">Used with “Schedule to platforms” below</p>
           </div>
           <p className="text-[11px] text-slate-500">{quotaLabel}</p>
           <button
@@ -456,13 +572,37 @@ export default function BloggingAgent() {
           >
             {streaming ? "Generating…" : "Generate"}
           </button>
-          <div className="flex gap-2">
-            <button type="button" onClick={saveDraft} className="flex-1 py-2 text-sm border border-slate-200 rounded-md hover:bg-slate-50">
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={publishToExternalNow}
+              className="w-full py-2.5 text-sm font-semibold rounded-md bg-[#031634] text-white hover:opacity-90"
+            >
+              Publish now (Dev.to / Medium / …)
+            </button>
+            <button
+              type="button"
+              onClick={scheduleExternal}
+              className="w-full py-2 text-sm font-semibold border-2 border-[#031634] text-[#031634] rounded-md hover:bg-slate-50"
+            >
+              Schedule to platforms
+            </button>
+            <button
+              type="button"
+              onClick={publishToStudioOnly}
+              className="w-full py-2 text-sm border border-slate-200 rounded-md hover:bg-slate-50"
+            >
+              Save to Studio only
+            </button>
+            <button type="button" onClick={saveDraft} className="w-full py-2 text-xs text-slate-600 hover:underline">
               Save draft
             </button>
-            <button type="button" onClick={scheduleOrPublish} className="flex-1 py-2 text-sm border border-slate-200 rounded-md hover:bg-slate-50">
-              Publish / schedule
-            </button>
+            <Link to="/studio/published" className="text-center text-xs font-semibold text-secondary hover:underline">
+              View Published →
+            </Link>
+            <Link to="/studio/calendar" className="text-center text-xs text-slate-500 hover:underline">
+              Calendar (scheduled) →
+            </Link>
           </div>
         </aside>
 
@@ -510,8 +650,31 @@ export default function BloggingAgent() {
             <span>{wc} words</span>
             <span>{rt} min read</span>
             <span>{lastSaved ? `Saved ${lastSaved.toLocaleTimeString()}` : "Not saved"}</span>
-            <span className="uppercase font-semibold text-slate-500">{status}</span>
+            <span
+              className={`uppercase font-semibold ${
+                status === "published" ? "text-emerald-700" : status === "failed" ? "text-rose-600" : "text-slate-500"
+              }`}
+            >
+              {status}
+            </span>
           </div>
+          {(publishError || publishedLinks.length > 0) && (
+            <div className="border-t border-slate-100 px-3 py-2 text-xs bg-amber-50/80">
+              {publishedLinks.map((pp, i) => (
+                <div key={i} className="text-slate-700">
+                  <span className="font-semibold">{pp.platform}:</span>{" "}
+                  {pp.url ? (
+                    <a href={pp.url} className="text-secondary hover:underline" target="_blank" rel="noreferrer">
+                      {pp.platform === "sentinel-studio" ? "Open post" : pp.url}
+                    </a>
+                  ) : (
+                    "pending"
+                  )}
+                </div>
+              ))}
+              {publishError && <p className="text-rose-700 mt-1">{publishError}</p>}
+            </div>
+          )}
         </div>
 
         <aside className="w-full xl:w-[260px] shrink-0 space-y-5 bg-white border border-surface-variant rounded-md p-4 h-fit">

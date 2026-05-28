@@ -46,10 +46,13 @@ export default function UserLiveWalletBar({ walletAddress }) {
       }
     }
     load();
-    const id = setInterval(load, 15000); // 15 sec refresh
+    const id = setInterval(load, 15000);
+    const onWalletUpdate = () => load();
+    window.addEventListener("walletBalanceUpdate", onWalletUpdate);
     return () => {
       cancelled = true;
       clearInterval(id);
+      window.removeEventListener("walletBalanceUpdate", onWalletUpdate);
     };
   }, [walletAddress]);
 

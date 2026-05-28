@@ -43,7 +43,7 @@ function MarketplaceCard({ s }) {
         <h2 className="font-headline font-semibold text-primary text-lg">{s.title}</h2>
         {s.isSentinalOfficial && (
           <span className="bg-primary/10 text-primary border border-primary/20 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-            Powering Sentinal Chat
+            Official API
           </span>
         )}
       </div>

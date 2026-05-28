@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
 import Home from "./pages/Home.jsx";
@@ -28,6 +28,23 @@ import StudioPublished from "./pages/studio/Published.jsx";
 import StudioPlatforms from "./pages/studio/Platforms.jsx";
 import StudioAnalytics from "./pages/studio/Analytics.jsx";
 import StudioPlan from "./pages/studio/StudioPlan.jsx";
+import ClipCraft from "./pages/studio/ClipCraft.jsx";
+const WorkflowStudioHub = lazy(() => import("./pages/WorkflowStudioHub.jsx"));
+const WorkflowBuilder = lazy(() => import("./pages/WorkflowBuilder.jsx"));
+const WorkflowTemplates = lazy(() => import("./pages/WorkflowTemplates.jsx"));
+const WorkflowHistory = lazy(() => import("./pages/WorkflowHistory.jsx"));
+
+function StudioSuspense({ children }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="py-12 text-center text-sm text-slate-500">Loading studio module…</div>
+      }
+    >
+      {children}
+    </Suspense>
+  );
+}
 
 function Guard({ role, children }) {
   const { user, loading } = useAuth();
@@ -160,7 +177,40 @@ export default function App() {
         }
       >
         <Route index element={<StudioHome />} />
+        <Route
+          path="workflows"
+          element={
+            <StudioSuspense>
+              <WorkflowStudioHub />
+            </StudioSuspense>
+          }
+        />
+        <Route
+          path="workflows/templates"
+          element={
+            <StudioSuspense>
+              <WorkflowTemplates />
+            </StudioSuspense>
+          }
+        />
+        <Route
+          path="workflows/history"
+          element={
+            <StudioSuspense>
+              <WorkflowHistory />
+            </StudioSuspense>
+          }
+        />
+        <Route
+          path="workflows/:workflowId"
+          element={
+            <StudioSuspense>
+              <WorkflowBuilder />
+            </StudioSuspense>
+          }
+        />
         <Route path="blogging-agent" element={<BloggingAgent />} />
+        <Route path="clipcraft" element={<ClipCraft />} />
         <Route path="projects" element={<StudioProjects />} />
         <Route path="projects/:id" element={<ProjectDetail />} />
         <Route path="calendar" element={<StudioCalendar />} />
@@ -173,16 +223,7 @@ export default function App() {
         <Route path="queue" element={<StudioQueue />} />
         <Route path="exports" element={<StudioExports />} />
         <Route path="storage" element={<StudioStorage />} />
-        <Route
-          path="video-editor"
-          element={
-            <StudioToolPage
-              tool="AI Video Editor"
-              description="Create short-form edits, cuts, captions, and export-ready clips."
-              icon="movie"
-            />
-          }
-        />
+        <Route path="video-editor" element={<Navigate to="/studio/clipcraft" replace />} />
         <Route path="blog-writer" element={<Navigate to="/studio/blogging-agent" replace />} />
         <Route
           path="data-analyst"

@@ -110,6 +110,25 @@ export async function fundBurnerWallet(peraAddress, amountMicroAlgos, algodServe
  * @param {string} algodServer - Node URL
  * @returns {Promise<{txId: string}>}
  */
+/** Pay from burner wallet (workflow / agent auto-spend). */
+export async function sendBurnerPayment({ to, amountMicroAlgos, noteStr, algodServer }) {
+  const burner = getBurnerWallet();
+  const algod = new algosdk.Algodv2("", algodServer.trim(), "");
+  const params = await algod.getTransactionParams().do();
+  const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+    sender: burner.addr,
+    receiver: to,
+    amount: Math.max(0, amountMicroAlgos),
+    note: new TextEncoder().encode(noteStr || "Sentinal workflow"),
+    suggestedParams: params,
+  });
+  const signed = txn.signTxn(burner.sk);
+  const sendResult = await algod.sendRawTransaction(signed).do();
+  const txId = sendResult.txid || sendResult.txId;
+  await algosdk.waitForConfirmation(algod, txId, 4);
+  return { txId };
+}
+
 export async function refundBurnerWallet(peraAddress, algodServer) {
   const burner = getBurnerWallet();
   const algod = new algosdk.Algodv2("", algodServer.trim(), "");

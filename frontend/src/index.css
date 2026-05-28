@@ -26,7 +26,68 @@ body {
   50%       { opacity: 0; }
 }
 
+.glass-card {
+  background: rgba(18, 18, 26, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 12px;
+}
+
+.workflow-page-bg {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(34, 211, 238, 0.06) 0%, transparent 60%),
+    #0a0a0f;
+}
+
+@keyframes edgePulse {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Workflow Studio — visible caret & pointer on light canvas */
+.workflow-canvas .react-flow {
+  --xy-node-color: #031634;
+  --xy-edge-stroke-default: #64748b;
+}
+
+.workflow-canvas .react-flow__pane {
+  cursor: default;
+}
+
+.workflow-canvas .react-flow__pane.dragging {
+  cursor: grabbing;
+}
+
+.workflow-canvas .react-flow__node {
+  cursor: grab;
+}
+
+.workflow-canvas .react-flow__node.dragging {
+  cursor: grabbing;
+}
+
+.workflow-canvas .workflow-field,
+.workflow-canvas input,
+.workflow-canvas textarea,
+.workflow-canvas select {
+  color: #031634 !important;
+  caret-color: #031634;
+}
+
+.workflow-canvas .workflow-field::placeholder,
+.workflow-canvas textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.workflow-canvas input::selection,
+.workflow-canvas textarea::selection {
+  background: #cbd5e1;
+  color: #031634;
 }

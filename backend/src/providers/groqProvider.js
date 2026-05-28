@@ -125,6 +125,50 @@ export async function generateTitleSuggestions({ topic, tone }) {
   }
 }
 
+/**
+ * Turn workflow research / transcript / summary into publish-ready markdown (non-streaming).
+ */
+export async function generateBlogFromSource({
+  topic,
+  sourceMaterial,
+  keywords = [],
+  tone = "professional",
+  targetAudience = "",
+  wordCount = 1000,
+  brandVoice = "",
+}) {
+  ensureKey();
+  const kw = Array.isArray(keywords) ? keywords.join(", ") : "";
+  const completion = await groq.chat.completions.create({
+    model: HEAVY,
+    messages: [
+      {
+        role: "system",
+        content: `You are an expert blog writer for SentinelAI Studio. Output valid Markdown only (H1 title as #, sections with ##, paragraphs, bullet lists). No preamble, no "here is your post". Content must be publish-ready: engaging intro, substantive body, clear conclusion, optional FAQ. SEO-friendly headings.`,
+      },
+      {
+        role: "user",
+        content: `Write a complete blog post from this source material.
+
+Topic / working title: ${topic}
+Keywords: ${kw}
+Tone: ${tone}
+Audience: ${targetAudience || "general readers"}
+Target length: ~${wordCount} words
+Brand voice: ${brandVoice || "clear, authoritative"}
+
+Source material (research, transcript, notes):
+${String(sourceMaterial).slice(0, 14000)}`,
+      },
+    ],
+    temperature: 0.7,
+    max_tokens: Math.min(8192, Math.max(1500, Math.ceil(wordCount * 1.6))),
+  });
+  let body = completion.choices[0]?.message?.content?.trim() || "";
+  body = body.replace(/^```(?:markdown|md)?\s*/i, "").replace(/```\s*$/i, "").trim();
+  return body;
+}
+
 export async function generateSocialSnippets({ content }) {
   ensureKey();
   const completion = await groq.chat.completions.create({

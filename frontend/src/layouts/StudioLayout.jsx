@@ -9,7 +9,9 @@ import { api } from "../api/client.js";
 
 const nav = [
   { id: "studio-home", path: "/studio", label: "Studio Home", icon: "home" },
+  { id: "workflows", path: "/studio/workflows", label: "Workflow Studio", icon: "account_tree" },
   { id: "blogging-agent", path: "/studio/blogging-agent", label: "Blogging Agent", icon: "article" },
+  { id: "clipcraft", path: "/studio/clipcraft", label: "ClipCraft", icon: "movie_edit" },
   { id: "projects", path: "/studio/projects", label: "Projects", icon: "folder" },
   { id: "calendar", path: "/studio/calendar", icon: "calendar_month", label: "Calendar" },
   { id: "drafts", path: "/studio/drafts", icon: "edit_note", label: "Drafts" },
@@ -32,6 +34,10 @@ export default function StudioLayout() {
   const { user } = useAuth();
   const { pathname } = useLocation();
   const active = sidebarActiveId(pathname);
+  const isWorkflowBuilder =
+    /\/studio\/workflows\/[^/]+$/.test(pathname) &&
+    !pathname.includes("templates") &&
+    !pathname.includes("history");
 
   const { data: usage } = useQuery({
     queryKey: ["studio-usage"],
@@ -111,7 +117,12 @@ export default function StudioLayout() {
       </aside>
 
       <main className="md:ml-[220px] pt-14 min-h-screen">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="px-4 sm:px-6 pb-16 max-w-6xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
+          className={isWorkflowBuilder ? "pb-0 max-w-none px-0" : "px-4 sm:px-6 pb-16 max-w-6xl mx-auto"}
+        >
           <Outlet />
         </motion.div>
       </main>

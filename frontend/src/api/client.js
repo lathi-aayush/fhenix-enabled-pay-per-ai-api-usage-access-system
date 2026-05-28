@@ -1,6 +1,13 @@
 import axios from "axios";
 
-const base = import.meta.env.VITE_API_URL ?? "";
+/** Local dev defaults to backend/.env PORT (5001). Set VITE_API_URL for production builds. */
+export function getApiBase() {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  if (import.meta.env.DEV) return "http://localhost:5001";
+  return "";
+}
+
+const base = getApiBase();
 
 export const api = axios.create({
   baseURL: base || undefined,

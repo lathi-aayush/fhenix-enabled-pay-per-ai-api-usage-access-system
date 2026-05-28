@@ -3,12 +3,12 @@ import algosdk from "algosdk";
 let indexerClient;
 
 function getIndexerServer() {
-  return (
+  const raw =
     process.env.ALGO_INDEXER_URL ||
     process.env.INDEXER_SERVER ||
     process.env.ALGORAND_INDEXER ||
-    "https://testnet-idx.algonode.cloud"
-  ).replace(/\/$/, "");
+    "https://testnet-idx.algonode.cloud";
+  return String(raw).trim().replace(/\/$/, "");
 }
 
 function getIndexer() {

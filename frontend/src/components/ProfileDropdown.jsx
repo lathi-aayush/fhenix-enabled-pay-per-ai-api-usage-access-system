@@ -117,7 +117,7 @@ export default function ProfileDropdown() {
           className="w-7 h-7 rounded-full border border-[#031634] object-cover"
         />
         <span className="hidden sm:inline-block font-semibold text-slate-800 dark:text-slate-200">
-          {user.displayName || "Google User"}
+          {user.displayName || shortenWalletAddress(user.walletAddress)}
         </span>
         <span className="material-symbols-outlined text-slate-400 text-base">expand_more</span>
       </button>
@@ -164,7 +164,7 @@ export default function ProfileDropdown() {
               <div className="flex flex-col items-center">
                 <div className="flex items-center gap-1.5 justify-center">
                   <h4 className="font-bold text-[#031634] dark:text-white text-base">
-                    {user.displayName || "Google User"}
+                    {user.displayName || shortenWalletAddress(user.walletAddress)}
                   </h4>
                   <button
                     onClick={() => setEditingName(true)}

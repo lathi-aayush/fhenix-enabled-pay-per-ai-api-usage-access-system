@@ -41,12 +41,10 @@
    - [Service Creation Flow (Creator)](#82-service-creation-flow-creator)
    - [Pay-Per-Use AI API Call Flow](#83-pay-per-use-ai-api-call-flow)
    - [Burner Wallet Flow](#84-burner-wallet-flow)
-   - [Chatbot Flow](#85-chatbot-flow)
    - [Direct Payment & Access Token Flow](#86-direct-payment--access-token-flow)
    - [Top-Up (Contract) Flow](#87-top-up-contract-flow)
    - [Proof-of-Intelligence Flow](#88-proof-of-intelligence-flow)
-9. [Chatbot System](#9-chatbot-system)
-10. [Agent Context JSON](#10-agent-context-json)
+9. [Agent Context JSON](#10-agent-context-json)
 11. [x402 Payment Protocol (Roadmap)](#11-x402-payment-protocol-roadmap)
 12. [Environment Variables Reference](#12-environment-variables-reference)
 13. [API Reference (All Endpoints)](#13-api-reference-all-endpoints)
@@ -75,7 +73,7 @@ Sentinel is a **decentralized pay-per-use AI API marketplace** built on the **Al
 
 **Key design properties:**
 - Zero platform cut on marketplace transactions — all ALGO flows creator → user directly.
-- The **Burner Wallet** lets users pre-fund a hot wallet so the chatbot (and future AI agents) can pay automatically without a manual Pera Wallet signature per message.
+- The **Burner Wallet** lets users pre-fund a hot wallet so automated clients (and future AI agents) can pay without a manual Pera Wallet signature per message.
 - The **Agent Context JSON** endpoint allows any external AI assistant to read the live service catalog and recommend APIs — positioning Sentinel as a **machine-native marketplace**.
 - The planned **x402 protocol** endpoint will allow AI agents to call Sentinel services using the emerging HTTP 402 payment standard, without any Sentinel-specific client code.
 
@@ -85,39 +83,24 @@ Sentinel is a **decentralized pay-per-use AI API marketplace** built on the **Al
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│              FRONTENDS                                                │
-│                                                                      │
-│  Main SPA (React + Vite :5173)          Chat UI (React + Vite :5555) │
-│  Home ──► Firebase Login ──► Role       Sidebar (conversations)      │
-│  Marketplace ──► Service Detail         ChatWindow ──► Messages      │
+│  Main SPA (React + Vite :5173)                                       │
+│  Home ──► Pera Wallet login ──► Role                                 │
+│  Marketplace ──► Service Detail (pay-per-use)                        │
 │  Dashboard (Agent Context JSON panel)                                │
-│  Studio (blog, projects, platforms)                                  │
-└────────────┬─────────────────────────────────┬───────────────────────┘
-             │ Vite Proxy /api → :5000          │ Fetch → :4000
-             ▼                                 ▼
-┌─────────────────────────┐      ┌──────────────────────────────────────┐
-│  MAIN BACKEND (:5000)   │      │  CHAT BACKEND (:4000)                │
-│  Express + MongoDB      │◄─────│  Express + MongoDB (conversations)   │
-│                         │      │                                      │
-│  /api/auth              │      │  GET  /conversations                 │
-│  /api/services          │      │  GET  /user-info (burner balance)    │
-│    └─ /agent-context ◄──┼──────┼─ public catalog for AI agents        │
-│  /api/use (quote+claim) │      │  POST /chat                          │
-│  /api/profile/burner    │      │    1. Fetch burner mnemonic           │
-│  /api/access/generate   │      │    2. Get/generate proxy key          │
-│  /api/payment           │      │    3. Quote from /api/use            │
-│  /api/creator           │      │    4. Pay via burner wallet          │
-│  /api/studio            │      │    5. Claim AI response              │
-│  /api/prediction        │      │  GET  /messages/:convoId             │
-└──────────┬──────────────┘      └──────────────────────────────────────┘
-           │
-     ┌─────┴───────────────────────────────────┐
-     │         DATA & CHAIN                    │
-     │                                         │
-     │  MongoDB (Atlas)  Redis (BullMQ)         │
-     │  Algorand TestNet (algod + indexer)      │
-     │  Groq / OpenAI / Anthropic / Together    │
-     └─────────────────────────────────────────┘
+│  Studio (blog, projects, platforms)                                │
+└────────────────────────────┬─────────────────────────────────────────┘
+                             │ Vite Proxy /api → :5000
+                             ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│  MAIN BACKEND (:5000) — Express + MongoDB                            │
+│  /api/auth · /api/services · /api/use · /api/profile/burner          │
+│  /api/access · /api/payment · /api/creator · /api/studio             │
+└────────────────────────────┬─────────────────────────────────────────┘
+                             │
+     ┌───────────────────────┴────────────────────────────────────────┐
+     │  MongoDB (Atlas) · Redis (BullMQ) · Algorand TestNet              │
+     │  Groq / OpenAI / Anthropic / Together                             │
+     └──────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -812,70 +795,9 @@ The Burner Wallet is a hot Algorand wallet stored locally (mnemonic in `localSto
 3. POST /api/profile/burner { mnemonic } syncs the encrypted mnemonic to the user's MongoDB profile
 4. GET  /api/profile/burner retrieves the mnemonic (decrypted server-side) for other services
 5. User funds the burner wallet by sending ALGO to its address from Pera Wallet
-6. The chatbot (and future x402 clients) sign transactions using burner.sk directly — no user prompt
+6. Automated clients (and future x402 agents) can sign transactions using burner.sk directly — no user prompt
 7. On logout or manual reset, the burner wallet can refund remaining ALGO back to Pera via closeRemainderTo
 ```
-
-### 8.8 Chatbot Flow
-
-See also [Section 9: Chatbot System](#9-chatbot-system) for architecture details.
-
-```
-User types a message in chat-front → POST /chat (chat-backend)
-
-1. chat-backend auth: JWT verified with shared JWT_SECRET
-2. Fetch/create Conversation document in chat MongoDB
-3. Save user Message document
-4. GET /api/profile/burner → retrieve encrypted burner mnemonic from main backend
-5. GET /api/user/proxy-keys → find or generate an official Sentinel service key
-   - If none exists: POST /api/access/generate for the official Sentinel Chat service
-6. POST /api/use { messages } with proxy key → receive paymentRef + expectedMicroAlgos + developerWallet
-7. Build + sign Algorand payment from burner wallet (no user interaction needed)
-8. Submit transaction to Algorand TestNet; wait for confirmation
-9. POST /api/use { txId, paymentRef } → receive AI response
-10. Save AI Message document with paymentTxId
-11. Return { conversationId, message, receipt } to chat-front
-```
-
----
-
-## 9. Chatbot System
-
-**Files:** `chatbot/chat-backend/` (Express, port 4000) · `chatbot/chat-front/` (Vite + React, port 5555)
-
-The chatbot is a standalone first-party consumer of the Sentinel marketplace, demonstrating the full pay-per-use flow with automatic burner wallet payments.
-
-### Chat Backend Routes
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `GET` | `/health` | ❌ | Health check |
-| `GET` | `/conversations` | ✅ JWT | List user's conversations |
-| `GET` | `/messages/:conversationId` | ✅ JWT | Messages for a conversation |
-| `GET` | `/user-info` | ✅ JWT | Burner wallet address + ALGO balance |
-| `POST` | `/chat` | ✅ JWT | Send message, auto-pay, return AI response |
-
-### Chat Backend Models
-
-**`Conversation`** — `{ userId, walletAddress, title, createdAt, updatedAt }`
-
-**`Message`** — `{ conversationId, role ("user" / "assistant"), content, paymentTxId, createdAt }`
-
-### Shared Secrets
-
-The chat backend validates the same Firebase-issued JWTs as the main backend. `JWT_SECRET` and `ENCRYPTION_KEY` **must be identical** in both `.env` files. The burner mnemonic is decrypted by the main backend using `ENCRYPTION_KEY` before being returned to the chat backend.
-
-### Chat Backend `.env`
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `JWT_SECRET` | ✅ | **Must match** main backend |
-| `ENCRYPTION_KEY` | ✅ | **Must match** main backend |
-| `SENTINAL_API_URL` | ✅ | Main backend URL (e.g. `http://localhost:5000`) |
-| `MONGODB_URI` | ✅ | Separate DB for conversations/messages |
-| `PORT` | ❌ | Default: 4000 |
-
----
 
 ## 10. Agent Context JSON
 
@@ -1115,4 +1037,4 @@ The prediction system provides AI-based usage forecasting. It aggregates transac
 
 ---
 
-*Last updated: May 2026. Reflects chatbot system, burner wallet sync, Agent Context JSON endpoint, and x402 roadmap.*
+*Last updated: May 2026. Reflects Pera wallet auth, burner wallet sync, Agent Context JSON endpoint, and x402 roadmap.*

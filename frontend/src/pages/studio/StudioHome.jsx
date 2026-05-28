@@ -61,6 +61,15 @@ export default function StudioHome() {
         <div className="flex flex-wrap gap-3">
           <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
             <Link
+              to="/studio/workflows"
+              className="inline-flex flex-col items-center justify-center w-[100px] h-[88px] bg-white border border-surface-variant rounded-md text-center px-2 hover:border-secondary transition-colors"
+            >
+              <span className="material-symbols-outlined text-slate-700 text-2xl">account_tree</span>
+              <span className="text-[11px] font-semibold text-primary mt-1">Workflows</span>
+            </Link>
+          </motion.div>
+          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+            <Link
               to="/studio/blogging-agent"
               className="inline-flex flex-col items-center justify-center w-[100px] h-[88px] bg-white border border-surface-variant rounded-md text-center px-2 hover:border-secondary transition-colors"
             >
@@ -84,6 +93,15 @@ export default function StudioHome() {
             >
               <span className="material-symbols-outlined text-slate-700 text-2xl">event</span>
               <span className="text-[11px] font-semibold text-primary mt-1">Schedule</span>
+            </Link>
+          </motion.div>
+          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+            <Link
+              to="/studio/clipcraft"
+              className="inline-flex flex-col items-center justify-center w-[100px] h-[88px] bg-white border border-surface-variant rounded-md text-center px-2 hover:border-secondary transition-colors"
+            >
+              <span className="material-symbols-outlined text-slate-700 text-2xl">movie_edit</span>
+              <span className="text-[11px] font-semibold text-primary mt-1">ClipCraft</span>
             </Link>
           </motion.div>
         </div>
@@ -197,8 +215,8 @@ export default function StudioHome() {
       <section className="mt-10 pt-6 border-t border-slate-200">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Legacy studio tools</h2>
         <div className="flex flex-wrap gap-2 text-sm">
-          <Link to="/studio/video-editor" className="text-secondary hover:underline">
-            Video editor
+          <Link to="/studio/clipcraft" className="text-secondary hover:underline">
+            ClipCraft (video clips)
           </Link>
           <span className="text-slate-300">·</span>
           <Link to="/studio/data-analyst" className="text-secondary hover:underline">

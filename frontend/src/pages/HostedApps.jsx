@@ -1,12 +1,6 @@
 import React from "react";
+
 const HOSTED_APPS = [
-  {
-    id: "chat",
-    title: "Sentinal Chat",
-    description: "A fast, clean ChatGPT-like interface. Just paste your Sentinal API key and start talking.",
-    icon: "forum",
-    url: import.meta.env.VITE_CHATBOT_URL || "http://localhost:5555",
-  },
   {
     id: "image",
     title: "Sentinal Image Studio",
@@ -24,10 +18,10 @@ const HOSTED_APPS = [
 ];
 
 const APP_SECTIONS = [
-  { title: "Featured Apps", ids: ["chat", "image"] },
+  { title: "Featured Apps", ids: ["image"] },
   { title: "Creator Tools", ids: ["image"] },
   { title: "Developer Tools", ids: ["coder"] },
-  { title: "Community Apps", ids: ["chat", "coder"] },
+  { title: "Community Apps", ids: ["coder"] },
 ];
 
 export default function HostedApps() {

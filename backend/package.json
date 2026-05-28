@@ -8,7 +8,12 @@
   },
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "clipcraft:run": "node src/studio/clipcraft/cli/runClipCraft.js",
+    "clipcraft:test": "node src/studio/clipcraft/tests/runAll.js",
+    "clipcraft:smoke": "node src/studio/clipcraft/scripts/phase4-smoke.mjs",
+    "clipcraft:phase5": "node src/studio/clipcraft/scripts/phase5-smoke.mjs",
+    "clipcraft:checklist": "node -e \"import('./src/studio/clipcraft/production/validationChecklist.js').then(m=>console.log(m.exportChecklistJson()))\""
   },
   "dependencies": {
     "algosdk": "^3.5.2",
@@ -20,12 +25,13 @@
     "express-async-errors": "^3.1.1",
     "express-rate-limit": "^7.5.1",
     "express-validator": "^7.2.1",
-    "firebase-admin": "^12.0.0",
     "groq-sdk": "^1.2.0",
     "helmet": "^8.0.0",
     "ioredis": "^5.10.1",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.3",
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "sanitize-html": "^2.17.4",
+    "youtube-transcript": "^1.2.1"
   }
 }

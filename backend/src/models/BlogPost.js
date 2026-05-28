@@ -24,6 +24,8 @@ const blogPostSchema = new mongoose.Schema(
     },
     status: { type: String, enum: statusEnum, default: "draft", index: true },
     scheduledFor: { type: Date },
+    /** Platforms to publish to when scheduledFor fires */
+    scheduledPlatforms: [{ type: String }],
     publishedPlatforms: [
       {
         platform: String,

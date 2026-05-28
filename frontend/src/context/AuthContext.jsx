@@ -1,8 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { api, setAuthToken } from "../api/client.js";
 import { parseJwtPayload } from "../utils/jwt.js";
-import { signOut } from "firebase/auth";
-import { auth } from "../config/firebase.js";
 import { fetchBurnerWallet } from "../wallet/burner.js";
 import { reconnectPera } from "../wallet/pera.js";
 
@@ -43,7 +41,6 @@ export function AuthProvider({ children }) {
         if (derived) {
           setUser(derived);
           try {
-            // Refetch latest fresh data from MongoDB to stay in sync!
             const { data } = await api.get("/api/profile/summary");
             if (data?.profile) {
               setUser({
@@ -55,13 +52,11 @@ export function AuthProvider({ children }) {
                 photoURL: data.profile.photoURL,
               });
             }
-            // Fetch and sync the burner wallet in the background
-            fetchBurnerWallet().catch(err => console.warn("Burner sync error:", err));
+            fetchBurnerWallet().catch((err) => console.warn("Burner sync error:", err));
           } catch (err) {
             console.warn("Failed to refetch latest profile data:", err.message);
           }
         } else {
-          // Token exists but is malformed – force logout
           localStorage.removeItem(STORAGE_KEY);
           setToken(null);
           setUser(null);
@@ -76,87 +71,46 @@ export function AuthProvider({ children }) {
     syncProfile();
   }, [token]);
 
+  const persistSession = useCallback((incoming) => {
+    const derived = userFromToken(incoming);
+    if (!derived) throw new Error("Auth response contained an invalid token.");
+    localStorage.setItem(STORAGE_KEY, incoming);
+    setAuthToken(incoming);
+    setToken(incoming);
+    setUser(derived);
+    return derived;
+  }, []);
+
   const login = useCallback(async (walletAddress, role) => {
     const { data } = await api.post("/api/auth/login", { walletAddress, role });
-    const incoming = data.token;
-    const derived = userFromToken(incoming);
-    if (!derived) throw new Error("Login response contained an invalid token.");
-    localStorage.setItem(STORAGE_KEY, incoming);
-    setAuthToken(incoming);
-    setToken(incoming);
-    setUser(derived);
-    return derived;
-  }, []);
+    const user = persistSession(data.token);
+    return {
+      user,
+      isNewUser: Boolean(data.isNewUser),
+      needsProfile: Boolean(data.needsProfile),
+    };
+  }, [persistSession]);
 
-  const firebaseLogin = useCallback(async (idToken, role) => {
-    const { data } = await api.post("/api/auth/firebase-login", { idToken, role });
-    if (data.isNewUser) {
-      return {
-        isNewUser: true,
-        firebaseUid: data.firebaseUid,
-        email: data.email,
-        displayName: data.displayName,
-        photoURL: data.photoURL,
-      };
-    }
-    const incoming = data.token;
-    const derived = userFromToken(incoming);
-    if (!derived) throw new Error("Firebase login response contained an invalid token.");
-    localStorage.setItem(STORAGE_KEY, incoming);
-    setAuthToken(incoming);
-    setToken(incoming);
-    setUser(derived);
-    return { isNewUser: false, user: derived };
-  }, []);
-
-  const register = useCallback(async (idToken, role, displayName, walletAddress) => {
-    const { data } = await api.post("/api/auth/register", { idToken, role, displayName, walletAddress });
-    const incoming = data.token;
-    const derived = userFromToken(incoming);
-    if (!derived) throw new Error("Registration response contained an invalid token.");
-    localStorage.setItem(STORAGE_KEY, incoming);
-    setAuthToken(incoming);
-    setToken(incoming);
-    setUser(derived);
-    return derived;
-  }, []);
+  const register = useCallback(async (walletAddress, role, displayName) => {
+    const { data } = await api.post("/api/auth/register", { walletAddress, role, displayName });
+    return persistSession(data.token);
+  }, [persistSession]);
 
   const linkWallet = useCallback(async (walletAddress) => {
     const { data } = await api.post("/api/auth/link-wallet", { walletAddress });
-    const incoming = data.token;
-    const derived = userFromToken(incoming);
-    if (!derived) throw new Error("Linking response contained an invalid token.");
-    localStorage.setItem(STORAGE_KEY, incoming);
-    setAuthToken(incoming);
-    setToken(incoming);
-    setUser(derived);
-    return derived;
-  }, []);
+    return persistSession(data.token);
+  }, [persistSession]);
 
   const updateProfile = useCallback(async (displayName) => {
     const { data } = await api.put("/api/profile", { displayName });
-    const incoming = data.token;
-    const derived = userFromToken(incoming);
-    if (!derived) throw new Error("Profile update response contained an invalid token.");
-    localStorage.setItem(STORAGE_KEY, incoming);
-    setAuthToken(incoming);
-    setToken(incoming);
-    setUser(derived);
-    return derived;
-  }, []);
+    return persistSession(data.token);
+  }, [persistSession]);
 
-  const logout = useCallback(async () => {
+  const logout = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
     setToken(null);
     setUser(null);
     setAuthToken(null);
-    try {
-      if (auth) {
-        await signOut(auth);
-      }
-    } catch (e) {
-      console.warn("Firebase signout failed:", e.message);
-    }
   }, []);
 
   const value = useMemo(
@@ -165,14 +119,13 @@ export function AuthProvider({ children }) {
       user,
       loading,
       login,
-      firebaseLogin,
       register,
       linkWallet,
       updateProfile,
       logout,
       isAuthenticated: Boolean(token && user),
     }),
-    [token, user, loading, login, firebaseLogin, register, linkWallet, updateProfile, logout]
+    [token, user, loading, login, register, linkWallet, updateProfile, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

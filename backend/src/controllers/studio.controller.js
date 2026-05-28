@@ -14,7 +14,9 @@ import {
   incrementBlogUsage,
   ensureUsageMonth,
 } from "../services/blog.service.js";
-import { getPublishingQueue } from "../queues/publishingQueue.js";
+import { publishBlogPost, STUDIO_PLATFORM } from "../services/blogPublishService.js";
+import { PLATFORM_SETUP, verifyPlatformCredentials } from "../services/platformPublishers.js";
+import { parseScheduledFor } from "../utils/scheduleDate.js";
 
 // --- Blog ---
 
@@ -106,7 +108,9 @@ export async function postBlogSave(req, res) {
     if (titleSuggestions) post.titleSuggestions = titleSuggestions;
     if (socialSnippets) post.socialSnippets = { ...post.socialSnippets, ...socialSnippets };
     if (status) post.status = status;
-    if (scheduledFor !== undefined) post.scheduledFor = scheduledFor ? new Date(scheduledFor) : null;
+    if (scheduledFor !== undefined) {
+      post.scheduledFor = scheduledFor ? parseScheduledFor(scheduledFor) : null;
+    }
     post.wordCount = String(post.content).trim().split(/\s+/).filter(Boolean).length;
     post.readingTime = Math.max(1, Math.ceil(post.wordCount / 200));
     await post.save();
@@ -132,7 +136,7 @@ export async function postBlogSave(req, res) {
     titleSuggestions: titleSuggestions || [],
     socialSnippets: socialSnippets || { linkedin: "", twitter: "" },
     status: status || "draft",
-    scheduledFor: scheduledFor ? new Date(scheduledFor) : undefined,
+    scheduledFor: scheduledFor ? parseScheduledFor(scheduledFor) : undefined,
   });
   post.wordCount = String(post.content).trim().split(/\s+/).filter(Boolean).length;
   post.readingTime = Math.max(1, Math.ceil(post.wordCount / 200));
@@ -182,68 +186,53 @@ export async function postBlogMetadata(req, res) {
   });
 }
 
+export async function getPlatformSetup(req, res) {
+  res.json({ platforms: PLATFORM_SETUP });
+}
+
 export async function postBlogSchedule(req, res) {
-  const { postId, platforms = [], scheduledFor } = req.body;
+  const { postId, platforms = [], scheduledFor, publishToStudio = true } = req.body;
   if (!postId || !mongoose.isValidObjectId(postId)) {
     return res.status(400).json({ error: "postId required" });
   }
-  const post = await BlogPost.findOne({ _id: postId, userId: req.user.userId });
-  if (!post) return res.status(404).json({ error: "Post not found" });
 
-  const user = await User.findById(req.user.userId);
-  const tier = user.subscriptionTier || "free";
-
-  if (scheduledFor) {
-    post.scheduledFor = new Date(scheduledFor);
-    post.status = "scheduled";
+  const includeStudio = publishToStudio !== false;
+  let targetPlatforms = Array.isArray(platforms) ? [...platforms] : [];
+  if (includeStudio && !targetPlatforms.includes(STUDIO_PLATFORM)) {
+    targetPlatforms.unshift(STUDIO_PLATFORM);
   }
-
-  const allowed = [];
-  for (const p of platforms) {
-    if (tier === "free") {
-      continue;
-    }
-    if (tier === "creator" && !["medium", "linkedin"].includes(p)) {
-      continue;
-    }
-    allowed.push(p);
-  }
-
-  if (tier === "free" && platforms.length > 0) {
-    return res.status(403).json({
-      error: "Automated publishing requires a paid tier. Save as draft or upgrade.",
-    });
-  }
-
-  const queue = getPublishingQueue();
-  if (!queue) {
-    return res.status(503).json({
-      error: "Background publishing queue is currently unavailable. Please ensure Redis is running.",
+  if (targetPlatforms.length === 0) {
+    return res.status(400).json({
+      error: includeStudio
+        ? "Select at least one platform"
+        : "Select Dev.to, Medium, LinkedIn, etc. and connect them under Studio → Platforms",
     });
   }
 
   try {
-    for (const platform of allowed.length ? allowed : []) {
-      await queue.add(
-        "publish",
-        { blogPostId: post._id.toString(), platform, userId: req.user.userId.toString() },
-        { removeOnComplete: true }
-      );
-      post.status = post.scheduledFor ? "scheduled" : "publishing";
-    }
-  } catch (err) {
-    console.error('[Queue] Failed to add job:', err.message);
-    return res.status(503).json({
-      error: 'Publishing queue is currently unavailable. Please try again later.'
+    const result = await publishBlogPost({
+      postId,
+      userId: req.user.userId,
+      platforms: targetPlatforms,
+      scheduledFor: scheduledFor && String(scheduledFor).trim() ? scheduledFor : null,
+      includeStudio,
     });
+    res.status(202).json({
+      ok: true,
+      post: result.post,
+      published: result.published,
+      queued: result.queued,
+      errors: result.errors,
+      studioUrl: result.studioUrl,
+      scheduled: result.scheduled || false,
+      message: result.message,
+      scheduledFor: result.scheduledFor,
+      scheduledPlatforms: result.scheduledPlatforms,
+    });
+  } catch (e) {
+    console.error("[studio publish]", e);
+    res.status(400).json({ error: e.message || "Publish failed" });
   }
-
-  if (!scheduledFor && allowed.length) {
-    post.status = "publishing";
-  }
-
-  await post.save();
-  res.status(202).json({ ok: true, post, queued: allowed.length });
 }
 
 export async function getBlog(req, res) {
@@ -344,7 +333,13 @@ export async function connectPlatform(req, res) {
   if (!platform || !accessToken) {
     return res.status(400).json({ error: "platform and accessToken required" });
   }
-  const encAccess = encryptSecret(accessToken);
+  let normalizedToken;
+  try {
+    normalizedToken = await verifyPlatformCredentials(platform, accessToken);
+  } catch (e) {
+    return res.status(400).json({ error: e.message || "Invalid credentials" });
+  }
+  const encAccess = encryptSecret(normalizedToken);
   const encRefresh = refreshToken ? encryptSecret(refreshToken) : undefined;
 
   await ConnectedPlatform.findOneAndUpdate(
@@ -454,7 +449,12 @@ export async function getCalendar(req, res) {
   if (end) range.$lte = new Date(end);
   q.scheduledFor =
     start || end ? { ...range, $exists: true, $ne: null } : { $ne: null };
-  const items = await BlogPost.find(q).sort({ scheduledFor: 1 }).limit(200);
+  const items = await BlogPost.find({
+    ...q,
+    status: { $in: ["scheduled", "publishing"] },
+  })
+    .sort({ scheduledFor: 1 })
+    .limit(200);
   res.json({ posts: items });
 }
 
@@ -467,7 +467,14 @@ export async function listDrafts(req, res) {
 }
 
 export async function listPublished(req, res) {
-  const posts = await BlogPost.find({ userId: req.user.userId, status: "published" })
+  const posts = await BlogPost.find({
+    userId: req.user.userId,
+    $or: [
+      { status: "published" },
+      { status: "publishing" },
+      { "publishedPlatforms.0": { $exists: true } },
+    ],
+  })
     .sort({ updatedAt: -1 })
     .limit(50)
     .populate("projectId", "title color");

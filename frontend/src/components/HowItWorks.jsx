@@ -257,19 +257,19 @@ function LiveApiDemo({ visible }) {
 }
 
 /* ── Main export ── */
-export default function HowItWorks({ enterWithGoogle }) {
+export default function HowItWorks({ enterWithPera }) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
   function goMarketplace() {
     if (isAuthenticated) navigate("/dashboard/home");
-    else if (enterWithGoogle) enterWithGoogle("user");
+    else if (enterWithPera) enterWithPera("user");
     else navigate("/");
   }
 
   function goStudio() {
     if (isAuthenticated) navigate("/studio");
-    else if (enterWithGoogle) enterWithGoogle("user");
+    else if (enterWithPera) enterWithPera("user");
     else navigate("/");
   }
 
@@ -485,7 +485,7 @@ export default function HowItWorks({ enterWithGoogle }) {
       >
         <div>
           <h3 className="font-headline text-xl font-bold">Ready to get started?</h3>
-          <p className="text-slate-300 text-sm mt-1">Sign in with Google, link your Pera Wallet, and start in minutes.</p>
+          <p className="text-slate-300 text-sm mt-1">Connect your Pera Wallet and start in minutes.</p>
         </div>
         <div className="flex gap-3 flex-shrink-0">
           <button

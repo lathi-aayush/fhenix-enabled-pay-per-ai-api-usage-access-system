@@ -18,16 +18,17 @@
     "@tiptap/extension-placeholder": "^3.23.5",
     "@tiptap/react": "^3.23.5",
     "@tiptap/starter-kit": "^3.23.5",
+    "@xyflow/react": "^12.10.2",
     "algosdk": "^3.0.0",
     "axios": "^1.7.9",
     "buffer": "^6.0.3",
-    "firebase": "^10.7.0",
     "framer-motion": "^12.39.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.4.1",
     "react-router-dom": "^7.1.1",
-    "recharts": "^3.8.1"
+    "recharts": "^3.8.1",
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",

@@ -42,13 +42,11 @@
 | **`frontend/`** | Vite + React 18 + Tailwind. **Marketplace** (`/dashboard/*`) for API discovery, keys, usage, billing. **Studio** (`/studio/*`) for blogging, projects, platforms, analytics (Groq-backed). |
 | **`backend/`** | Express API, MongoDB (Mongoose), JWT auth, Algorand helpers, AI proxy for marketplace services, **Studio** routes (`/api/studio`), BullMQ publishing worker. |
 | **`contract/`** | Puya / **algopy** smart contract (`SentinelContract`) + deploy script + compiled `artifacts/`. |
-| **`chatbot/`** | Standalone AI chatbot powered by the Sentinel marketplace — `chat-backend` (Express, port 4000) orchestrates burner wallet payments automatically; `chat-front` (Vite + React, port 5555) is the user-facing chat UI. |
 
 **Ecosystem split (product):**
 
 - **Marketplace** — Browse, buy, and use AI APIs published by creators. All calls are pay-per-use in ALGO.
 - **Studio** — Content workflows: Groq-only blog generation (SSE), drafts, scheduling, BullMQ publishing (Redis), encrypted platform tokens.
-- **Chatbot** — A first-party consumer of the Sentinel marketplace. Uses the burner wallet to pay for AI calls automatically, demonstrating the full pay-per-use flow without manual wallet interaction per message.
 
 ---
 
@@ -123,17 +121,6 @@ pay-per-usage-ai-api-access-system-using-algorand/
 │   ├── requirements.txt
 │   ├── artifacts/            ← TEAL + ARC56 JSON (generated)
 │   └── contract_info.json    ← written by deploy (app id + address)
-└── chatbot/
-    ├── chat-backend/         ← Express server (port 4000) — orchestrates burner payments
-    │   ├── server.js
-    │   ├── routes.js         ← /conversations, /user-info, /chat, /messages
-    │   ├── models.js         ← Conversation, Message schemas
-    │   ├── middleware.js      ← JWT auth (shared secret with main backend)
-    │   └── .env
-    └── chat-front/           ← Vite + React chat UI (port 5555)
-        └── src/
-            ├── App.jsx
-            └── components/   ← ChatWindow, Sidebar, MessageBubble
 ```
 
 ---
@@ -146,14 +133,12 @@ High-level data flow:
 flowchart TB
   subgraph client [Browser]
     FE[React SPA :5173]
-    CF[Chat Front :5555]
   end
   subgraph server [Node backends]
     API[Main Backend :5000]
     PROXY[AI proxy + metering]
     STUDIO[Studio: Groq SSE + CRUD]
     WORKER[BullMQ worker]
-    CB[Chat Backend :4000]
   end
   subgraph data [Data and chain]
     MONGO[(MongoDB)]
@@ -162,8 +147,6 @@ flowchart TB
     GROQ[Groq / OpenAI / etc]
   end
   FE -->|HTTPS JSON| API
-  CF -->|HTTPS JSON| CB
-  CB -->|/api/profile/burner + /api/use| API
   API --> MONGO
   API --> PROXY
   API --> STUDIO
@@ -172,13 +155,10 @@ flowchart TB
   WORKER --> MONGO
   PROXY --> GROQ
   FE -->|Pera Wallet| ALGO
-  CB -->|Burner Wallet auto-sign| ALGO
   API --> ALGO
 ```
 
 **Marketplace call (simplified):** user requests a quote on `/api/use` → backend runs AI and returns `paymentRef + chargeAlgo` → user pays on-chain → user claims response with `txId + paymentRef`.
-
-**Chatbot flow:** user sends a message on chat-front → chat-backend fetches burner mnemonic from main backend → builds Algorand transaction → pays the official Sentinel AI service automatically → returns the AI response.
 
 **Studio:** blog generation streams from Groq through `/api/studio/blog/generate` (SSE). Publishing is **never inline**: `POST /api/studio/blog/schedule` enqueues BullMQ jobs; `publishingWorker` updates `BlogPost` status.
 
@@ -224,24 +204,6 @@ npm run dev
 # proxies /api → http://localhost:5000 via vite.config.js
 ```
 
-**Chat Backend** (chatbot server, port 4000)
-
-```bash
-cd chatbot/chat-backend
-npm install
-# create chatbot/chat-backend/.env — must share JWT_SECRET and ENCRYPTION_KEY with main backend
-npm run dev
-# health: GET http://localhost:4000/health
-```
-
-**Chat Frontend** (chat UI, port 5555)
-
-```bash
-cd chatbot/chat-front
-npm install
-npm run dev
-```
-
 **Smart contract (optional)**
 
 ```bash
@@ -257,9 +219,8 @@ python deploy.py
 ### 6.2 Verify
 
 1. `http://localhost:5173` — main marketplace with login
-2. `http://localhost:5555` — chatbot UI (requires login)
-3. `curl http://localhost:5000/api/health` → `{"ok":true}`
-4. `curl http://localhost:5000/api/services/agent-context` → live service catalog JSON
+2. `curl http://localhost:5000/api/health` → `{"ok":true}`
+3. `curl http://localhost:5000/api/services/agent-context` → live service catalog JSON
 
 ---
 
@@ -271,8 +232,8 @@ python deploy.py
 |----------|---------|
 | `PORT` | API port (default `5000`) |
 | `MONGODB_URI` / `MONGO_URI` | MongoDB connection string |
-| `JWT_SECRET` | Signs session JWTs — **must match chat-backend** |
-| `ENCRYPTION_KEY` | AES-GCM for secrets at rest — **must match chat-backend** |
+| `JWT_SECRET` | Signs session JWTs |
+| `ENCRYPTION_KEY` | AES-GCM for secrets at rest (e.g. burner wallet, provider keys) |
 | `NODE_ENV` | `production` serves `frontend/dist` from Express |
 | `FRONTEND_ORIGIN` / `FRONTEND_URL` | CORS allowlist |
 
@@ -299,17 +260,7 @@ Configure Firebase Admin (`GOOGLE_APPLICATION_CREDENTIALS` or service account JS
 | `REDIS_URL` | BullMQ connection |
 | `RECEIVER_WALLET` | Algorand address that receives Studio plan upgrade payments |
 
-### 7.5 Chat Backend (`chatbot/chat-backend/.env`)
-
-| Variable | Purpose |
-|----------|---------|
-| `JWT_SECRET` | **Must be identical** to the main backend — tokens are cross-validated |
-| `ENCRYPTION_KEY` | **Must be identical** to the main backend — burner mnemonic decryption |
-| `SENTINAL_API_URL` | URL of main backend (default: `http://localhost:5000`) |
-| `SENTINAL_CHAT_API_URL` | URL of the `/api/use` endpoint |
-| `MONGODB_URI` | Separate chat database for conversations and messages |
-
-### 7.6 Frontend (`frontend/.env`)
+### 7.5 Frontend (`frontend/.env`)
 
 | Variable | Purpose |
 |----------|---------|
@@ -465,13 +416,13 @@ The panel also shows live status pills (active service count, network, generatio
 **Pull requests**
 
 - Describe **what** and **why**, list test steps, link issues.
-- Keep Marketplace, Studio, and Chatbot concerns in **separate commits or PRs**.
+- Keep Marketplace and Studio concerns in **separate commits or PRs**.
 
 ---
 
 ## 15. Further reading
 
-- **`DOCUMENTATION.md`** — End-to-end technical reference: login flows, pay-per-use sequence, chatbot architecture, burner wallet sync, full API listing, security notes.
+- **`DOCUMENTATION.md`** — End-to-end technical reference: login flows, pay-per-use sequence, burner wallet sync, full API listing, security notes.
 - **`contract/deploy.py`** — Env vars and compile/deploy steps inline in the script header.
 - **[x402.org](https://x402.org)** — x402 protocol specification.
 - **[Algorand TestNet Dispenser](https://bank.testnet.algorand.network/)** — Get free TestNet ALGO.

@@ -42,7 +42,7 @@ export default function DevDashboard() {
 
   const handleDeleteUser = async (user) => {
     const confirmDelete = window.confirm(
-      `Are you ABSOLUTELY sure you want to delete ${user.displayName || user.email}? This removes them from MongoDB and Firebase Auth permanently.`
+      `Are you ABSOLUTELY sure you want to delete ${user.displayName || user.walletAddress || user.email}? This removes them from MongoDB permanently.`
     );
     if (!confirmDelete) return;
 
@@ -51,7 +51,7 @@ export default function DevDashboard() {
       await api.delete(`/api/dev/users/${user._id}`, {
         headers: { "x-dev-secret": secret },
       });
-      toast.success("User completely deleted from Firebase and DB!");
+      toast.success("User deleted from database.");
       setUsers((prev) => prev.filter((u) => u._id !== user._id));
     } catch (e) {
       toast.error(e?.response?.data?.error || "Failed to delete user");
@@ -119,7 +119,7 @@ export default function DevDashboard() {
                 <tr>
                   <th className="px-6 py-4">User</th>
                   <th className="px-6 py-4">Role</th>
-                  <th className="px-6 py-4">Firebase UID</th>
+                  <th className="px-6 py-4">User ID</th>
                   <th className="px-6 py-4">Wallet</th>
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
@@ -144,7 +144,7 @@ export default function DevDashboard() {
                       </span>
                     </td>
                     <td className="px-6 py-4 font-mono text-[11px] text-on-surface-variant">
-                      {u.firebaseUid || "N/A"}
+                      {u._id?.slice(-8) || "N/A"}
                     </td>
                     <td className="px-6 py-4 font-mono text-[11px]">
                       {u.walletAddress ? `${u.walletAddress.slice(0,6)}...${u.walletAddress.slice(-4)}` : <span className="text-slate-400">Unlinked</span>}
@@ -158,7 +158,7 @@ export default function DevDashboard() {
                         <span className="material-symbols-outlined text-[14px]">
                           {deletingId === u._id ? "hourglass_empty" : "delete_forever"}
                         </span>
-                        {deletingId === u._id ? "Deleting..." : "Delete DB+Firebase"}
+                        {deletingId === u._id ? "Deleting..." : "Delete User"}
                       </button>
                     </td>
                   </tr>
