@@ -24,23 +24,13 @@ import { startScheduledPublishScheduler } from "./services/scheduledPublishSched
 import { loadClipCraftConfig } from "./studio/clipcraft/config/loadConfig.js";
 import { getClipCraftRuntime } from "./studio/clipcraft/production/ClipCraftRuntime.js";
 import { registerClipCraftGracefulShutdown } from "./studio/clipcraft/production/gracefulShutdown.js";
+import { buildCorsOrigins, isCorsOriginAllowed } from "./config/corsOrigins.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const allowedOrigins = [
-  process.env.FRONTEND_ORIGIN || "http://localhost:5173",
-  process.env.FRONTEND_URL,
-  process.env.RENDER_EXTERNAL_URL,
-  "https://sentinal-j4ox.onrender.com",
-  "https://sentinal-z3ue.onrender.com",
-  "https://pay-per-usage-ai-api-access-system-using-zrgu.onrender.com",
-  "http://localhost:5174",
-  "http://localhost:5175",
-  "http://localhost:5176",
-  "http://localhost:5177"
-].filter(Boolean);
+const allowedOrigins = buildCorsOrigins();
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -51,7 +41,13 @@ app.use(helmet({
 }));
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin(origin, callback) {
+      if (isCorsOriginAllowed(origin, allowedOrigins)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS blocked origin: ${origin}`));
+      }
+    },
     credentials: true,
   })
 );

@@ -2,116 +2,210 @@ import algosdk from "algosdk";
 import { signAndSendPayment } from "./pera.js";
 import { api } from "../api/client.js";
 
-// Storage key for the burner wallet
-const BURNER_WALLET_KEY = "burner_wallet_mnemonic";
+const LEGACY_BURNER_KEY = "burner_wallet_mnemonic";
+const BURNER_KEY_PREFIX = "sentinal_burner_mnemonic:";
 
-/**
- * Retrieves the Burner Wallet. If it doesn't exist, generates one and stores it.
- * @returns {algosdk.Account}
- */
-export function getBurnerWallet() {
-  const storedMnemonic = localStorage.getItem(BURNER_WALLET_KEY);
-  if (storedMnemonic) {
-    try {
-      const acct = algosdk.mnemonicToSecretKey(storedMnemonic);
-      return { addr: acct.addr.toString(), sk: acct.sk };
-    } catch (e) {
-      console.warn("Invalid mnemonic in local storage. Regenerating...");
-    }
-  }
+/** @type {string | null} */
+let activeUserId = null;
+/** @type {Promise<void> | null} */
+let initPromise = null;
 
-  const newAccount = algosdk.generateAccount();
-  const mnemonic = algosdk.secretKeyToMnemonic(newAccount.sk);
-  localStorage.setItem(BURNER_WALLET_KEY, mnemonic);
-  
-  // Try to sync it to backend in background (fire-and-forget)
-  syncBurnerWallet(mnemonic).catch(console.error);
-  
-  return { addr: newAccount.addr.toString(), sk: newAccount.sk };
+export function getDefaultAlgodServer() {
+  const fromEnv = import.meta.env.VITE_ALGOD_SERVER?.trim();
+  return fromEnv || "https://testnet-api.algonode.cloud";
 }
 
-export async function syncBurnerWallet(mnemonic) {
+function storageKey(userId) {
+  return `${BURNER_KEY_PREFIX}${userId}`;
+}
+
+function readLocalMnemonic(userId) {
+  if (!userId) return null;
+  const scoped = localStorage.getItem(storageKey(userId));
+  if (scoped?.trim()) return scoped.trim();
+  const legacy = localStorage.getItem(LEGACY_BURNER_KEY);
+  if (legacy?.trim()) {
+    localStorage.setItem(storageKey(userId), legacy.trim());
+    localStorage.removeItem(LEGACY_BURNER_KEY);
+    return legacy.trim();
+  }
+  return null;
+}
+
+function writeLocalMnemonic(userId, mnemonic) {
+  if (!userId || !mnemonic) return;
+  localStorage.setItem(storageKey(userId), mnemonic.trim());
+}
+
+function mnemonicToAccount(mnemonic) {
+  const acct = algosdk.mnemonicToSecretKey(mnemonic.trim());
+  return { addr: acct.addr.toString(), sk: acct.sk };
+}
+
+async function balanceForMnemonic(mnemonic, algodServer) {
   try {
-    const m = mnemonic || localStorage.getItem(BURNER_WALLET_KEY);
-    if (!m) return;
+    const { addr } = mnemonicToAccount(mnemonic);
+    const algod = new algosdk.Algodv2("", algodServer.trim(), "");
+    const info = await algod.accountInformation(addr).do();
+    return Number(info.amount) || 0;
+  } catch (err) {
+    if (err?.status === 404 || err?.response?.status === 404 || err?.message?.includes("404")) {
+      return 0;
+    }
+    return 0;
+  }
+}
+
+/**
+ * Pick the mnemonic to use when local and server disagree (keep funded wallet).
+ */
+async function resolveBurnerMnemonic(userId, algodServer = getDefaultAlgodServer()) {
+  const local = readLocalMnemonic(userId);
+  let remote = null;
+  try {
+    const res = await api.get("/api/profile/burner");
+    remote = res.data?.mnemonic?.trim() || null;
+  } catch (err) {
+    console.warn("Failed to fetch burner wallet from profile:", err);
+  }
+
+  if (local && remote && local !== remote) {
+    const [localBal, remoteBal] = await Promise.all([
+      balanceForMnemonic(local, algodServer),
+      balanceForMnemonic(remote, algodServer),
+    ]);
+    const chosen = localBal >= remoteBal ? local : remote;
+    writeLocalMnemonic(userId, chosen);
+    if (chosen !== remote) {
+      await syncBurnerWallet(chosen, userId);
+    }
+    return chosen;
+  }
+
+  if (local) {
+    writeLocalMnemonic(userId, local);
+    if (!remote) await syncBurnerWallet(local, userId);
+    return local;
+  }
+
+  if (remote) {
+    writeLocalMnemonic(userId, remote);
+    return remote;
+  }
+
+  return null;
+}
+
+/**
+ * Load or create one stable burner wallet per user (call after login).
+ */
+export async function ensureBurnerWallet(userId, algodServer = getDefaultAlgodServer()) {
+  if (!userId) return null;
+  if (activeUserId === userId && readLocalMnemonic(userId)) {
+    return readLocalMnemonic(userId);
+  }
+  if (initPromise && activeUserId === userId) {
+    await initPromise;
+    return readLocalMnemonic(userId);
+  }
+
+  activeUserId = userId;
+  initPromise = (async () => {
+    let mnemonic = await resolveBurnerMnemonic(userId, algodServer);
+    if (!mnemonic) {
+      const newAccount = algosdk.generateAccount();
+      mnemonic = algosdk.secretKeyToMnemonic(newAccount.sk);
+      writeLocalMnemonic(userId, mnemonic);
+      await syncBurnerWallet(mnemonic, userId);
+    }
+  })();
+
+  try {
+    await initPromise;
+  } finally {
+    initPromise = null;
+  }
+  return readLocalMnemonic(userId);
+}
+
+export function clearActiveBurnerUser() {
+  activeUserId = null;
+  initPromise = null;
+}
+
+/**
+ * Returns the burner account for the active user. Call ensureBurnerWallet first.
+ */
+export function getBurnerWallet(userId = activeUserId) {
+  const uid = userId || activeUserId;
+  if (!uid) {
+    throw new Error("Burner wallet not ready — sign in and wait a moment, then retry.");
+  }
+  const storedMnemonic = readLocalMnemonic(uid);
+  if (storedMnemonic) {
+    try {
+      return mnemonicToAccount(storedMnemonic);
+    } catch (e) {
+      console.warn("Invalid burner mnemonic; re-initializing…", e);
+    }
+  }
+  throw new Error("Burner wallet not initialized. Refresh the page after signing in.");
+}
+
+/** @deprecated Use ensureBurnerWallet */
+export async function fetchBurnerWallet(userId = activeUserId) {
+  if (!userId) return null;
+  return ensureBurnerWallet(userId);
+}
+
+export async function syncBurnerWallet(mnemonic, userId = activeUserId) {
+  try {
+    const m = (mnemonic || readLocalMnemonic(userId))?.trim();
+    if (!m || !userId) return;
     await api.post("/api/profile/burner", { mnemonic: m });
   } catch (err) {
     console.error("Failed to sync burner wallet to profile:", err);
   }
 }
 
-export async function fetchBurnerWallet() {
-  try {
-    const res = await api.get("/api/profile/burner");
-    if (res.data?.mnemonic) {
-      localStorage.setItem(BURNER_WALLET_KEY, res.data.mnemonic);
-      return res.data.mnemonic;
-    }
-    // If backend doesn't have one, but we have one locally, sync it up
-    const local = localStorage.getItem(BURNER_WALLET_KEY);
-    if (local) {
-      await syncBurnerWallet(local);
-      return local;
-    }
-  } catch (err) {
-    console.error("Failed to fetch burner wallet from profile:", err);
-  }
-  return null;
+export function getBurnerAddress(userId = activeUserId) {
+  return getBurnerWallet(userId).addr;
 }
 
 /**
- * Fetch the current on-chain balance of the Burner Wallet.
- * @param {string} algodServer - Node URL
- * @returns {Promise<number>} - Balance in microAlgos
+ * @param {string} [algodServer]
+ * @param {string} [userId]
+ * @returns {Promise<number>} microAlgos
  */
-export async function getBurnerBalance(algodServer) {
-  const account = getBurnerWallet();
+export async function getBurnerBalance(algodServer = getDefaultAlgodServer(), userId = activeUserId) {
+  const account = getBurnerWallet(userId);
   const algod = new algosdk.Algodv2("", algodServer.trim(), "");
-  
+
   try {
     const accountInfo = await algod.accountInformation(account.addr).do();
     return Number(accountInfo.amount);
   } catch (err) {
     if (err?.status === 404 || err?.response?.status === 404 || err?.message?.includes("404")) {
-      // Account does not exist on-chain yet (zero balance)
       return 0;
     }
     throw err;
   }
 }
 
-/**
- * Fund the burner wallet from the connected Pera wallet.
- * @param {string} peraAddress - The connected Pera wallet address sent from
- * @param {number} amountMicroAlgos - The amount to fund
- * @param {string} algodServer - Node URL
- * @returns {Promise<{txId: string}>}
- */
-export async function fundBurnerWallet(peraAddress, amountMicroAlgos, algodServer) {
+export async function fundBurnerWallet(peraAddress, amountMicroAlgos, algodServer = getDefaultAlgodServer()) {
   const burner = getBurnerWallet();
-  
-  // Use existing pera.js Pera wallet flow to fund the Burner.
   const { txId } = await signAndSendPayment({
     from: peraAddress,
     to: burner.addr,
     amountMicroAlgos,
     noteStr: "Fund Burner Wallet",
-    algodServer
+    algodServer,
   });
-  
+  window.dispatchEvent(new CustomEvent("walletBalanceUpdate"));
   return { txId };
 }
 
-/**
- * Refund the entire remainder of the burner wallet back to the Pera address.
- * Close the account out entirely to recover the minimum balance.
- * 
- * @param {string} peraAddress - The connected Pera wallet address to refund to
- * @param {string} algodServer - Node URL
- * @returns {Promise<{txId: string}>}
- */
-/** Pay from burner wallet (workflow / agent auto-spend). */
-export async function sendBurnerPayment({ to, amountMicroAlgos, noteStr, algodServer }) {
+export async function sendBurnerPayment({ to, amountMicroAlgos, noteStr, algodServer = getDefaultAlgodServer() }) {
   const burner = getBurnerWallet();
   const algod = new algosdk.Algodv2("", algodServer.trim(), "");
   const params = await algod.getTransactionParams().do();
@@ -126,13 +220,14 @@ export async function sendBurnerPayment({ to, amountMicroAlgos, noteStr, algodSe
   const sendResult = await algod.sendRawTransaction(signed).do();
   const txId = sendResult.txid || sendResult.txId;
   await algosdk.waitForConfirmation(algod, txId, 4);
+  window.dispatchEvent(new CustomEvent("walletBalanceUpdate"));
   return { txId };
 }
 
-export async function refundBurnerWallet(peraAddress, algodServer) {
-  const burner = getBurnerWallet();
+export async function refundBurnerWallet(peraAddress, algodServer = getDefaultAlgodServer(), userId = activeUserId) {
+  const burner = getBurnerWallet(userId);
   const algod = new algosdk.Algodv2("", algodServer.trim(), "");
-  
+
   let accountInfo;
   try {
     accountInfo = await algod.accountInformation(burner.addr).do();
@@ -143,31 +238,25 @@ export async function refundBurnerWallet(peraAddress, algodServer) {
   const totalBalance = Number(accountInfo.amount);
   const params = await algod.getTransactionParams().do();
   const txFee = Number(params.fee) || 1000;
-  
+
   if (totalBalance <= txFee) {
     throw new Error("Insufficient funds to cover network fee for refund.");
   }
-  
+
   const refundAmount = totalBalance - txFee;
-  
-  // closeRemainderTo will send any additional MBR (minimum balance requirement) back to Pera
   const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
     sender: burner.addr,
     receiver: peraAddress,
     amount: refundAmount,
     note: new TextEncoder().encode("Refund from Burner Wallet"),
     suggestedParams: params,
-    closeRemainderTo: peraAddress 
+    closeRemainderTo: peraAddress,
   });
-  
+
   const signedTxn = txn.signTxn(burner.sk);
   const sendResult = await algod.sendRawTransaction(signedTxn).do();
   const txId = sendResult.txid || sendResult.txId;
-  
   await algosdk.waitForConfirmation(algod, txId, 4);
-  
-  // Optional: clear out local storage since we closed the account
-  localStorage.removeItem(BURNER_WALLET_KEY);
-  
+  window.dispatchEvent(new CustomEvent("walletBalanceUpdate"));
   return { txId };
 }

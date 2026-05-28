@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { api, setAuthToken } from "../api/client.js";
 import { parseJwtPayload } from "../utils/jwt.js";
-import { fetchBurnerWallet } from "../wallet/burner.js";
+import { ensureBurnerWallet, clearActiveBurnerUser } from "../wallet/burner.js";
 import { reconnectPera } from "../wallet/pera.js";
 
 const AuthContext = createContext(null);
@@ -28,6 +28,7 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem(STORAGE_KEY));
   const [user, setUser] = useState(() => userFromToken(localStorage.getItem(STORAGE_KEY)));
   const [loading, setLoading] = useState(true);
+  const [burnerReady, setBurnerReady] = useState(false);
 
   useEffect(() => {
     reconnectPera().catch((err) => console.warn("Pera auto-reconnect failed:", err));
@@ -40,6 +41,7 @@ export function AuthProvider({ children }) {
         const derived = userFromToken(token);
         if (derived) {
           setUser(derived);
+          setBurnerReady(false);
           try {
             const { data } = await api.get("/api/profile/summary");
             if (data?.profile) {
@@ -52,9 +54,15 @@ export function AuthProvider({ children }) {
                 photoURL: data.profile.photoURL,
               });
             }
-            fetchBurnerWallet().catch((err) => console.warn("Burner sync error:", err));
           } catch (err) {
             console.warn("Failed to refetch latest profile data:", err.message);
+          }
+          try {
+            await ensureBurnerWallet(derived.id);
+          } catch (err) {
+            console.warn("Burner init error:", err);
+          } finally {
+            setBurnerReady(true);
           }
         } else {
           localStorage.removeItem(STORAGE_KEY);
@@ -65,19 +73,29 @@ export function AuthProvider({ children }) {
       } else {
         setAuthToken(null);
         setUser(null);
+        clearActiveBurnerUser();
+        setBurnerReady(false);
       }
       setLoading(false);
     }
     syncProfile();
   }, [token]);
 
-  const persistSession = useCallback((incoming) => {
+  const persistSession = useCallback(async (incoming) => {
     const derived = userFromToken(incoming);
     if (!derived) throw new Error("Auth response contained an invalid token.");
     localStorage.setItem(STORAGE_KEY, incoming);
     setAuthToken(incoming);
     setToken(incoming);
     setUser(derived);
+    setBurnerReady(false);
+    try {
+      await ensureBurnerWallet(derived.id);
+    } catch (err) {
+      console.warn("Burner init after login:", err);
+    } finally {
+      setBurnerReady(true);
+    }
     return derived;
   }, []);
 
@@ -111,6 +129,8 @@ export function AuthProvider({ children }) {
     setToken(null);
     setUser(null);
     setAuthToken(null);
+    clearActiveBurnerUser();
+    setBurnerReady(false);
   }, []);
 
   const value = useMemo(
@@ -123,9 +143,10 @@ export function AuthProvider({ children }) {
       linkWallet,
       updateProfile,
       logout,
+      burnerReady,
       isAuthenticated: Boolean(token && user),
     }),
-    [token, user, loading, login, register, linkWallet, updateProfile, logout]
+    [token, user, loading, burnerReady, login, register, linkWallet, updateProfile, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

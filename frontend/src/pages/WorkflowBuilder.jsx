@@ -11,7 +11,8 @@ import WorkflowToolbar from "../components/workflow/controls/WorkflowToolbar.jsx
 import ExecutionPanel from "../components/workflow/controls/ExecutionPanel.jsx";
 import { useWorkflowPersistence } from "../hooks/useWorkflowPersistence.js";
 import { useWorkflowExecutor } from "../hooks/useWorkflowExecutor.js";
-import { getBurnerBalance } from "../wallet/burner.js";
+import { useAuth } from "../context/AuthContext.jsx";
+import { getBurnerBalance, getDefaultAlgodServer } from "../wallet/burner.js";
 
 function BuilderInner() {
   const { workflowId: paramId } = useParams();
@@ -34,6 +35,8 @@ function BuilderInner() {
   const [selectedId, setSelectedId] = useState(null);
   const [burnerBal, setBurnerBal] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { burnerReady } = useAuth();
+  const algodServer = getDefaultAlgodServer();
 
   const effectiveId = workflowId || paramId;
   const { isRunning, currentRun, liveLogs, runWorkflow } = useWorkflowExecutor(effectiveId);
@@ -61,16 +64,19 @@ function BuilderInner() {
   }, [paramId, loadWorkflow, navigate]);
 
   useEffect(() => {
-    getBurnerBalance("https://testnet-api.algonode.cloud")
-      .then((m) => setBurnerBal(m / 1e6))
-      .catch(() => setBurnerBal(null));
-    const onBal = () =>
-      getBurnerBalance("https://testnet-api.algonode.cloud")
+    if (!burnerReady) {
+      setBurnerBal(null);
+      return;
+    }
+    const refresh = () =>
+      getBurnerBalance(algodServer)
         .then((m) => setBurnerBal(m / 1e6))
-        .catch(() => {});
+        .catch(() => setBurnerBal(null));
+    refresh();
+    const onBal = () => refresh();
     window.addEventListener("walletBalanceUpdate", onBal);
     return () => window.removeEventListener("walletBalanceUpdate", onBal);
-  }, []);
+  }, [burnerReady, algodServer]);
 
   const selectedNode = nodes.find((n) => n.id === selectedId);
 

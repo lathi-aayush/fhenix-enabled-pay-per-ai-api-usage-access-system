@@ -2,7 +2,14 @@ import React from "react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 import toast from "react-hot-toast";
-import { getBurnerWallet, getBurnerBalance, fundBurnerWallet, refundBurnerWallet } from "../wallet/burner.js";
+import { useAuth } from "../context/AuthContext.jsx";
+import {
+  getBurnerAddress,
+  getBurnerBalance,
+  fundBurnerWallet,
+  refundBurnerWallet,
+  getDefaultAlgodServer,
+} from "../wallet/burner.js";
 
 /** Shorten Algorand address for display (e.g. ABC123…XYZ9). */
 export function shortenWallet(a) {
@@ -13,20 +20,27 @@ export function shortenWallet(a) {
 }
 
 export default function UserLiveWalletBar({ walletAddress }) {
+  const { burnerReady } = useAuth();
   const [algo, setAlgo] = useState(null);
   const [burnerAlgo, setBurnerAlgo] = useState(null);
+  const [burnerAddr, setBurnerAddr] = useState(null);
   const [fundAmount, setFundAmount] = useState("0."); // User input 
   const [isFunding, setIsFunding] = useState(false);
   const [isRefunding, setIsRefunding] = useState(false);
   const [showManage, setShowManage] = useState(false);
   
-  // Default to testnet
-  const algodServer = "https://testnet-api.algonode.cloud";
+  const algodServer = getDefaultAlgodServer();
 
   useEffect(() => {
     if (!walletAddress) {
       setAlgo(null);
       setBurnerAlgo(null);
+      setBurnerAddr(null);
+      return;
+    }
+    if (!burnerReady) {
+      setBurnerAlgo(null);
+      setBurnerAddr(null);
       return;
     }
     let cancelled = false;
@@ -37,12 +51,16 @@ export default function UserLiveWalletBar({ walletAddress }) {
       } catch {
         if (!cancelled) setAlgo(null);
       }
-      
+
       try {
+        setBurnerAddr(getBurnerAddress());
         const bBal = await getBurnerBalance(algodServer);
         if (!cancelled) setBurnerAlgo(bBal);
       } catch {
-        if (!cancelled) setBurnerAlgo(null);
+        if (!cancelled) {
+          setBurnerAlgo(null);
+          setBurnerAddr(null);
+        }
       }
     }
     load();
@@ -54,7 +72,7 @@ export default function UserLiveWalletBar({ walletAddress }) {
       clearInterval(id);
       window.removeEventListener("walletBalanceUpdate", onWalletUpdate);
     };
-  }, [walletAddress]);
+  }, [walletAddress, burnerReady, algodServer]);
 
   const handleFund = async () => {
     if (!walletAddress) return toast.error("Connect main wallet first");
@@ -136,8 +154,14 @@ export default function UserLiveWalletBar({ walletAddress }) {
           </div>
           
           <div className="text-xs text-slate-500 max-w-[220px]">
-            The Burner wallet handles microtransactions automatically without Pera popups.
+            The Burner wallet handles microtransactions automatically without Pera popups. Your funded balance
+            is tied to this address and syncs to your account.
           </div>
+          {burnerAddr && (
+            <p className="text-[10px] font-mono text-slate-400 break-all" title={burnerAddr}>
+              {shortenWallet(burnerAddr)}
+            </p>
+          )}
 
           <div className="flex items-center gap-2 mt-1">
             <input 

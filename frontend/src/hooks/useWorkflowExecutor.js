@@ -2,12 +2,12 @@ import { useCallback, useState } from "react";
 import toast from "react-hot-toast";
 import { api, getApiBase } from "../api/client.js";
 import { WORKFLOW_API } from "../api/workflowApi.js";
-import { getBurnerBalance, sendBurnerPayment } from "../wallet/burner.js";
+import { getBurnerBalance, sendBurnerPayment, getDefaultAlgodServer } from "../wallet/burner.js";
+import { useAuth } from "../context/AuthContext.jsx";
 import { useNodeExecution } from "../context/NodeExecutionContext.jsx";
 import { extractBlogResult } from "../utils/workflowBlog.js";
 
 const STORAGE_KEY = "sentinal_token";
-const ALGOD = "https://testnet-api.algonode.cloud";
 
 async function streamRunEvents(runId, onEvent) {
   const token = localStorage.getItem(STORAGE_KEY);
@@ -41,9 +41,15 @@ export function useWorkflowExecutor(workflowId) {
   const [currentRun, setCurrentRun] = useState(null);
   const [liveLogs, setLiveLogs] = useState([]);
   const { setNodeStatuses, setRunId } = useNodeExecution();
+  const { burnerReady } = useAuth();
+  const algodServer = getDefaultAlgodServer();
 
   const runWorkflow = useCallback(async () => {
     if (!workflowId) return;
+    if (!burnerReady) {
+      toast.error("Burner wallet is still loading. Try again in a moment.");
+      return;
+    }
     setIsRunning(true);
     setLiveLogs([]);
     setNodeStatuses({});
@@ -61,7 +67,7 @@ export function useWorkflowExecutor(workflowId) {
       );
       if (!ok) return;
 
-      const microBal = await getBurnerBalance(ALGOD);
+      const microBal = await getBurnerBalance(algodServer);
       const microNeed = Math.max(1000, Math.ceil(estimatedCredits * 1_000_000));
       if (microBal < microNeed) {
         toast.error("Insufficient burner balance — fund it from the wallet bar above.");
@@ -80,7 +86,7 @@ export function useWorkflowExecutor(workflowId) {
           to: recipient,
           amountMicroAlgos: microNeed,
           noteStr: `workflow:${workflowId}`,
-          algodServer: ALGOD,
+          algodServer,
         });
         paymentProof = payRes.txId;
         window.dispatchEvent(new CustomEvent("walletBalanceUpdate"));
@@ -135,7 +141,7 @@ export function useWorkflowExecutor(workflowId) {
     } finally {
       setIsRunning(false);
     }
-  }, [workflowId, setNodeStatuses, setRunId]);
+  }, [workflowId, setNodeStatuses, setRunId, burnerReady, algodServer]);
 
   return { isRunning, currentRun, liveLogs, runWorkflow, setCurrentRun };
 }

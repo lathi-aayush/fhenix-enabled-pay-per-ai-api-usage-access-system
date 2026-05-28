@@ -26,7 +26,7 @@ function sleep(ms) {
 
 export default function ServiceDetail() {
   const { id } = useParams();
-  const { user, logout } = useAuth();
+  const { user, logout, burnerReady } = useAuth();
   const [service, setService] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -179,6 +179,9 @@ curl -sS "${apiBase}/api/use" \\
       setQuotedCharge(charge);
       setPayStage("sign");
 
+      if (!burnerReady) {
+        throw new Error("Burner wallet is still loading. Wait a moment and try again.");
+      }
       const burnerWallet = getBurnerWallet();
       const algosdk = (await import("algosdk")).default;
       const algod = new algosdk.Algodv2("", algodServer.trim(), "");
