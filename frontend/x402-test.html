@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentinel x402 Payment Client Portal</title>
+  <!-- Google Fonts (Outfit & Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-fontawesome/6.4.0/css/all.min.css">
+  
+  <!-- algosdk browser CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/algosdk@2.4.0/dist/browser/algosdk.min.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #0B0F19;
+      --card-bg: #151C2C;
+      --accent-primary: #3B82F6;
+      --accent-secondary: #8B5CF6;
+      --text-main: #F3F4F6;
+      --text-muted: #9CA3AF;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --border: rgba(255, 255, 255, 0.08);
+      --font-outfit: 'Outfit', sans-serif;
+      --font-inter: 'Inter', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-inter);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 40%);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1000px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Header styling */
+    header {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-family: var(--font-outfit);
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    /* Cards */
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(8px);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .section-title {
+      font-family: var(--font-outfit);
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #3B82F6;
+    }
+
+    /* Form controls */
+    .form-group {
+      margin-bottom: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    input, textarea, select {
+      background-color: rgba(11, 15, 25, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      color: var(--text-main);
+      font-family: var(--font-inter);
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+      width: 100%;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    /* Wallet info strip */
+    .wallet-status {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: rgba(11, 15, 25, 0.4);
+      padding: 0.75rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.75rem;
+    }
+
+    .badge-success { background-color: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .badge-warning { background-color: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .badge-danger { background-color: rgba(239, 68, 68, 0.15); color: var(--danger); }
+
+    /* Action button */
+    .btn-submit {
+      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 1rem;
+      font-family: var(--font-outfit);
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+      width: 100%;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-submit:active {
+      transform: translateY(0);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Logs timeline */
+    .log-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-height: 250px;
+      overflow-y: auto;
+      background-color: rgba(11, 15, 25, 0.5);
+      border-radius: 10px;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+
+    .log-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      line-height: 1.4;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .log-time {
+      color: var(--text-muted);
+      min-width: 70px;
+    }
+
+    .log-item.info .log-msg { color: var(--text-main); }
+    .log-item.success .log-msg { color: var(--success); }
+    .log-item.warning .log-msg { color: var(--warning); }
+    .log-item.error .log-msg { color: var(--danger); }
+
+    /* AI Response display */
+    .response-box {
+      background-color: rgba(11, 15, 25, 0.8);
+      border-radius: 12px;
+      padding: 1.25rem;
+      border: 1px dashed var(--accent-primary);
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .response-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--accent-primary);
+      font-weight: 600;
+      border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+      padding-bottom: 0.5rem;
+    }
+
+    .response-content {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .empty-response {
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-height: 80px;
+      font-style: italic;
+    }
+
+    /* Tabs/Details */
+    details {
+      margin-top: 1rem;
+    }
+
+    summary {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+      padding: 0.25rem 0;
+      font-weight: 500;
+    }
+
+    summary:hover {
+      color: var(--text-main);
+    }
+
+    pre {
+      background-color: rgba(0, 0, 0, 0.4);
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.75rem;
+      color: #A7F3D0;
+      margin-top: 0.5rem;
+      border: 1px solid var(--border);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Sentinel x402 Client Portal</h1>
+      <div class="subtitle">Demonstration of on-chain pay-per-use AI interaction using HTTP 402 challenges</div>
+    </header>
+
+    <div class="grid-2">
+      <!-- Left side: inputs -->
+      <div class="card">
+        <div class="section-title">
+          <i class="fa-solid fa-wallet"></i> Wallet Configuration
+        </div>
+
+        <div class="form-group">
+          <label for="mnemonic">TestNet Burner Wallet Mnemonic</label>
+          <textarea id="mnemonic" placeholder="Enter your 25-word Algorand TestNet mnemonic phrase..."></textarea>
+        </div>
+
+        <div class="wallet-status">
+          <div>
+            <div style="font-weight:600; color:var(--text-main);" id="wallet-address-short">No Wallet Loaded</div>
+            <div style="font-size:0.75rem; margin-top:0.2rem;" id="wallet-balance">Balance: 0.00 ALGO</div>
+          </div>
+          <span class="status-badge badge-danger" id="wallet-badge-status">
+            <i class="fa-solid fa-triangle-exclamation"></i> Unloaded
+          </span>
+        </div>
+
+        <hr style="border:0; border-top:1px solid var(--border); margin:1.5rem 0;">
+
+        <div class="section-title">
+          <i class="fa-solid fa-robot"></i> Service & Prompt
+        </div>
+
+        <div class="form-group">
+          <label for="service-select">Select x402 AI Service</label>
+          <select id="service-select">
+            <option value="" disabled selected>Fetching services...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="prompt">Prompt Text</label>
+          <input type="text" id="prompt" value="Tell me a joke about robots.">
+        </div>
+
+        <button class="btn-submit" id="btn-run" disabled>
+          <i class="fa-solid fa-play"></i> Run x402 Payment Cycle
+        </button>
+      </div>
+
+      <!-- Right side: logs and responses -->
+      <div class="card" style="display:flex; flex-direction:column; gap:1rem;">
+        <div class="section-title">
+          <i class="fa-solid fa-terminal"></i> Execution Console
+        </div>
+        
+        <div class="log-container" id="log-console">
+          <div class="log-item info">
+            <span class="log-time">[System]</span>
+            <span class="log-msg">Initialize wallet to begin testing.</span>
+          </div>
+        </div>
+
+        <div class="section-title" style="margin-top:0.5rem;">
+          <i class="fa-solid fa-sparkles"></i> AI Completion Output
+        </div>
+
+        <div class="response-box" id="response-box">
+          <div class="empty-response" id="empty-response">
+            AI completion result will appear here after verification completes...
+          </div>
+        </div>
+
+        <details>
+          <summary>View Raw Transaction & Receipt Details</summary>
+          <pre id="raw-details">No logs captured yet.</pre>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Funded TestNet mnemonic default for easy testing
+    const DEFAULT_MNEMONIC = "lecture rocket indicate pig veteran mixed planet above eye link crime island opera pass frost butter surprise narrow cook stable hunt topic city ability gown";
+    
+    // Nodes
+    const algodUrl = "https://testnet-api.algonode.cloud";
+    const algodClient = new algosdk.Algodv2("", algodUrl, "");
+
+    // DOM Elements
+    const elMnemonic = document.getElementById("mnemonic");
+    const elWalletAddressShort = document.getElementById("wallet-address-short");
+    const elWalletBalance = document.getElementById("wallet-balance");
+    const elWalletBadgeStatus = document.getElementById("wallet-badge-status");
+    const elServiceSelect = document.getElementById("service-select");
+    const elPrompt = document.getElementById("prompt");
+    const elBtnRun = document.getElementById("btn-run");
+    const elLogConsole = document.getElementById("log-console");
+    const elResponseBox = document.getElementById("response-box");
+    const elRawDetails = document.getElementById("raw-details");
+
+    let currentAccount = null;
+    let availableServices = [];
+
+    // Determine the API base URL dynamically
+    function getApiBase() {
+      if (window.location.port === "5000" || window.location.origin.includes("localhost:5000")) {
+        return "";
+      }
+      return "http://localhost:5000";
+    }
+    const apiBase = getApiBase();
+
+    // Initialize Page
+    window.addEventListener("DOMContentLoaded", async () => {
+      // Pre-fill mnemonic
+      elMnemonic.value = DEFAULT_MNEMONIC;
+      
+      // Setup event handlers
+      elMnemonic.addEventListener("input", handleMnemonicChange);
+      elBtnRun.addEventListener("click", runX402PaymentFlow);
+
+      // Load wallet and services
+      handleMnemonicChange();
+      await fetchX402Services();
+    });
+
+    // Logging helpers
+    function log(message, type = "info") {
+      const now = new Date();
+      const timeStr = now.toTimeString().split(" ")[0] + `.${String(now.getMilliseconds()).padStart(3, '0')}`;
+      
+      const item = document.createElement("div");
+      item.className = `log-item ${type}`;
+      item.innerHTML = `
+        <span class="log-time">[${timeStr}]</span>
+        <span class="log-msg">${escapeHtml(message)}</span>
+      `;
+      elLogConsole.appendChild(item);
+      elLogConsole.scrollTop = elLogConsole.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // Mnemonic -> Account Logic
+    async function handleMnemonicChange() {
+      const mnemonic = elMnemonic.value.trim();
+      if (!mnemonic) {
+        setUnloadedWallet();
+        return;
+      }
+
+      try {
+        currentAccount = algosdk.mnemonicToSecretKey(mnemonic);
+        const addr = currentAccount.addr;
+        
+        elWalletAddressShort.textContent = addr.substring(0, 8) + "..." + addr.substring(addr.length - 8);
+        elWalletAddressShort.title = addr;
+        
+        log(`Loaded Wallet: ${addr}`);
+        
+        // Fetch Balance
+        elWalletBalance.textContent = "Fetching balance...";
+        const accountInfo = await algodClient.accountInformation(addr).do();
+        const balance = Number(accountInfo.amount) / 1_000_000;
+        elWalletBalance.textContent = `Balance: ${balance.toFixed(4)} ALGO`;
+        
+        if (balance >= 0.02) {
+          elWalletBadgeStatus.className = "status-badge badge-success";
+          elWalletBadgeStatus.innerHTML = `<i class="fa-solid fa-circle-check"></i> Funded`;
+          elBtnRun.disabled = false;
+        } else {
+          elWalletBadgeStatus.className = "status-badge badge-warning";
+          elWalletBadgeStatus.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Low Balance`;
+          elBtnRun.disabled = true;
+          log("Warning: Wallet balance is below 0.02 ALGO (faucet top-up recommended)", "warning");
+        }
+      } catch (err) {
+        setUnloadedWallet("Invalid Mnemonic");
+        log(`Wallet Init Error: ${err.message}`, "error");
+      }
+    }
+
+    function setUnloadedWallet(message = "Unloaded") {
+      currentAccount = null;
+      elWalletAddressShort.textContent = "No Wallet Loaded";
+      elWalletBalance.textContent = "Balance: 0.00 ALGO";
+      elWalletBadgeStatus.className = "status-badge badge-danger";
+      elWalletBadgeStatus.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${message}`;
+      elBtnRun.disabled = true;
+    }
+
+    // Fetch Services List
+    async function fetchX402Services() {
+      try {
+        log("Fetching active x402 services from backend...");
+        const res = await fetch(apiBase + "/api/x402/services");
+        const data = await res.json();
+        
+        if (data.services && data.services.length > 0) {
+          availableServices = data.services;
+          elServiceSelect.innerHTML = "";
+          data.services.forEach(s => {
+            const opt = document.createElement("option");
+            opt.value = s.id;
+            opt.textContent = `${s.name} (${s.pricing.fixed_charge_algo} ALGO)`;
+            elServiceSelect.appendChild(opt);
+          });
+          log(`Successfully loaded ${data.services.length} services.`, "success");
+        } else {
+          elServiceSelect.innerHTML = `<option value="">No services available</option>`;
+          log("No active services with fixed minimum charges were found.", "warning");
+        }
+      } catch (err) {
+        elServiceSelect.innerHTML = `<option value="">Error fetching services</option>`;
+        log(`Failed to fetch services: ${err.message}`, "error");
+      }
+    }
+
+    // Execution Loop
+    async function runX402PaymentFlow() {
+      if (!currentAccount) return;
+      
+      const serviceId = elServiceSelect.value;
+      const prompt = elPrompt.value.trim();
+      if (!serviceId || !prompt) {
+        log("Error: Service ID or Prompt is missing.", "error");
+        return;
+      }
+
+      elBtnRun.disabled = true;
+      elResponseBox.innerHTML = `<div class="empty-response">Executing payment flow, please wait...</div>`;
+      elRawDetails.textContent = "Loading logs...";
+
+      try {
+        log(`Starting x402 handshake for service ID: ${serviceId}...`);
+
+        // --- Step 1: Send Request without Header ---
+        log("Step 1: Sending request without Payment Header...");
+        const initialRes = await fetch(apiBase + `/api/x402/use/${serviceId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: [{ role: "user", content: prompt }] })
+        });
+
+        log(`Server response status: ${initialRes.status}`);
+
+        if (initialRes.status !== 402) {
+          const body = await initialRes.json();
+          throw new Error(`Expected HTTP 402 Payment Required, got ${initialRes.status}: ${JSON.stringify(body)}`);
+        }
+
+        const challenge = await initialRes.json();
+        log("Step 2: Intercepted HTTP 402 challenge successfully!", "success");
+        
+        const requirement = challenge.accepts[0];
+        const payToAddress = requirement.payTo;
+        const amountMicroAlgos = Number(requirement.maxAmountRequired);
+        log(`Challenge requirements parsed: Pay ${amountMicroAlgos / 1_000_000} ALGO to ${payToAddress}`);
+
+        // --- Step 2: Build & Sign Blockchain Transaction ---
+        log("Step 3: Creating payment transaction on Algorand...");
+        const params = await algodClient.getTransactionParams().do();
+        
+        const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+          from: currentAccount.addr,
+          sender: currentAccount.addr,
+          to: payToAddress,
+          receiver: payToAddress,
+          amount: amountMicroAlgos,
+          suggestedParams: params,
+          note: new TextEncoder().encode("SentinelAI x402 payment web-test")
+        });
+
+        const signedTxnBytes = txn.signTxn(currentAccount.sk);
+        const txId = txn.txID();
+        log(`Transaction built and signed locally. ID: ${txId}`, "success");
+
+        // --- Step 3: Broadcast transaction to network ---
+        log("Step 4: Broadcasting transaction on-chain...");
+        await algodClient.sendRawTransaction(signedTxnBytes).do();
+        log("Transaction submitted to TestNet pool. Waiting for block confirmation...", "warning");
+
+        // Poll confirmation
+        let confirmed = false;
+        let attempts = 0;
+        while (!confirmed && attempts < 10) {
+          try {
+            const pendingInfo = await algodClient.pendingTransactionInformation(txId).do();
+            if (pendingInfo["confirmed-round"]) {
+              confirmed = true;
+              log(`On-chain transaction confirmed in round: ${pendingInfo["confirmed-round"]}!`, "success");
+              break;
+            }
+          } catch (e) {}
+          attempts++;
+          await new Promise(r => setTimeout(r, 1500));
+        }
+
+        if (!confirmed) {
+          throw new Error(`Transaction ${txId} did not confirm within timeout. Please retry.`);
+        }
+
+        // --- Step 4: Build x402 Base64 Header ---
+        log("Step 5: Generating x402 payload and encoding header...");
+        // Convert signed bytes to base64
+        const base64TxBytes = arrayBufferToBase64(signedTxnBytes);
+        const xPaymentPayload = {
+          paymentGroup: [base64TxBytes],
+          paymentIndex: 0
+        };
+        const xPaymentHeader = btoa(JSON.stringify(xPaymentPayload));
+        log("X-Payment header constructed.");
+
+        // --- Step 5: Retry request with Header ---
+        log("Step 6: Resending HTTP request with payment header...");
+        const retryRes = await fetch(apiBase + `/api/x402/use/${serviceId}`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "X-Payment": xPaymentHeader
+          },
+          body: JSON.stringify({ messages: [{ role: "user", content: prompt }] })
+        });
+
+        log(`Server response status: ${retryRes.status}`);
+
+        const result = await retryRes.json();
+        
+        if (retryRes.status === 200) {
+          log("Step 7: Payment verified and AI response received!", "success");
+          
+          const completionText = result.choices[0].message.content;
+          const receipt = result.sentinelReceipt;
+          
+          elResponseBox.innerHTML = `
+            <div class="response-header">
+              <span>Model: ${result.model}</span>
+              <span>TxId: ${receipt.paymentTxId.substring(0, 12)}...</span>
+            </div>
+            <div class="response-content">${escapeHtml(completionText)}</div>
+          `;
+
+          elRawDetails.textContent = JSON.stringify(result, null, 2);
+        } else {
+          throw new Error(`Server returned error ${retryRes.status}: ${JSON.stringify(result)}`);
+        }
+
+      } catch (err) {
+        log(`Execution Failed: ${err.message}`, "error");
+        elResponseBox.innerHTML = `<div class="empty-response" style="color:var(--danger)">Verification or completion failed. Check the console logs.</div>`;
+        elRawDetails.textContent = err.stack || err.message;
+      } finally {
+        elBtnRun.disabled = false;
+        // Refresh balance
+        handleMnemonicChange();
+      }
+    }
+
+    // Helper for bytes to base64
+    function arrayBufferToBase64(buffer) {
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return window.btoa(binary);
+    }
+  </script>
+</body>
+</html>

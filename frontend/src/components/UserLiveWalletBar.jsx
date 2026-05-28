@@ -1,5 +1,5 @@
 import React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { api } from "../api/client.js";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -24,23 +24,21 @@ export default function UserLiveWalletBar({ walletAddress }) {
   const [algo, setAlgo] = useState(null);
   const [burnerAlgo, setBurnerAlgo] = useState(null);
   const [burnerAddr, setBurnerAddr] = useState(null);
-  const [fundAmount, setFundAmount] = useState("0."); // User input 
+  const [fundAmount, setFundAmount] = useState("0.");
   const [isFunding, setIsFunding] = useState(false);
   const [isRefunding, setIsRefunding] = useState(false);
   const [showManage, setShowManage] = useState(false);
-  
+  const panelRef = useRef(null);
+
   const algodServer = getDefaultAlgodServer();
 
   useEffect(() => {
     if (!walletAddress) {
-      setAlgo(null);
-      setBurnerAlgo(null);
-      setBurnerAddr(null);
+      setAlgo(null); setBurnerAlgo(null); setBurnerAddr(null);
       return;
     }
     if (!burnerReady) {
-      setBurnerAlgo(null);
-      setBurnerAddr(null);
+      setBurnerAlgo(null); setBurnerAddr(null);
       return;
     }
     let cancelled = false;
@@ -48,19 +46,13 @@ export default function UserLiveWalletBar({ walletAddress }) {
       try {
         const { data } = await api.get("/api/user/algo-balance");
         if (!cancelled) setAlgo(data?.balanceAlgo ?? 0);
-      } catch {
-        if (!cancelled) setAlgo(null);
-      }
-
+      } catch { if (!cancelled) setAlgo(null); }
       try {
         setBurnerAddr(getBurnerAddress());
         const bBal = await getBurnerBalance(algodServer);
         if (!cancelled) setBurnerAlgo(bBal);
       } catch {
-        if (!cancelled) {
-          setBurnerAlgo(null);
-          setBurnerAddr(null);
-        }
+        if (!cancelled) { setBurnerAlgo(null); setBurnerAddr(null); }
       }
     }
     load();
@@ -74,26 +66,31 @@ export default function UserLiveWalletBar({ walletAddress }) {
     };
   }, [walletAddress, burnerReady, algodServer]);
 
+  // Close panel on outside click
+  useEffect(() => {
+    if (!showManage) return;
+    const handler = (e) => {
+      if (panelRef.current && !panelRef.current.contains(e.target)) setShowManage(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showManage]);
+
   const handleFund = async () => {
     if (!walletAddress) return toast.error("Connect main wallet first");
     const amountFloat = parseFloat(fundAmount);
     if (isNaN(amountFloat) || amountFloat <= 0) return toast.error("Invalid amount");
-    
     setIsFunding(true);
     try {
       const micro = Math.round(amountFloat * 1_000_000);
       await fundBurnerWallet(walletAddress, micro, algodServer);
       toast.success("Burner wallet funded");
-      
-      // Refresh balances
       const bBal = await getBurnerBalance(algodServer);
       setBurnerAlgo(bBal);
       setShowManage(false);
     } catch (e) {
       toast.error(e?.message || "Failed to fund burner");
-    } finally {
-      setIsFunding(false);
-    }
+    } finally { setIsFunding(false); }
   };
 
   const handleRefund = async () => {
@@ -102,97 +99,155 @@ export default function UserLiveWalletBar({ walletAddress }) {
     try {
       await refundBurnerWallet(walletAddress, algodServer);
       toast.success("Burner wallet refunded to Pera");
-      
       const bBal = await getBurnerBalance(algodServer);
       setBurnerAlgo(bBal);
       setShowManage(false);
     } catch (e) {
       toast.error(e?.message || "Failed to refund burner");
-    } finally {
-      setIsRefunding(false);
-    }
+    } finally { setIsRefunding(false); }
   };
 
+  const burnerDisplay = burnerAlgo == null
+    ? "…"
+    : `${(Number(burnerAlgo) / 1_000_000).toFixed(3)}`;
+  const algoDisplay = algo == null ? "…" : Number(algo).toFixed(3);
+
   return (
-    <div className="flex items-center gap-2 relative">
-      <div className="flex items-center gap-2 sm:gap-3 px-3 py-1.5 rounded-md bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-xs sm:text-sm">
-        <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-[18px] shrink-0">
+    <div className="relative flex items-center" ref={panelRef}>
+      {/* ── Compact pill button ── */}
+      <button
+        type="button"
+        onClick={() => setShowManage((v) => !v)}
+        className={`flex items-center gap-1.5 h-8 px-3 rounded-full border text-xs font-medium transition-all cursor-pointer select-none ${
+          showManage
+            ? "bg-slate-100 border-slate-300 text-slate-900"
+            : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300"
+        }`}
+      >
+        <span className="material-symbols-outlined text-indigo-500 text-[15px] shrink-0">
           account_balance_wallet
         </span>
-        <span className="font-mono text-slate-900 dark:text-slate-100 truncate max-w-[100px] sm:max-w-[160px]" title="Main Wallet">
-          {shortenWallet(walletAddress)}
-        </span>
-        <span className="text-slate-300 dark:text-slate-600 hidden sm:inline">|</span>
-        <span className="font-mono font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap shrink-0">
-          {algo == null ? "…" : `${Number(algo).toFixed(4)}`}
-        </span>
-        
-        {/* Burner Section */}
-        <span className="text-slate-300 dark:text-slate-600 hidden sm:inline">|</span>
-        <span className="material-symbols-outlined text-amber-500 text-[18px] shrink-0" title="Burner Wallet">
+        <span className="font-mono tabular-nums">{algoDisplay}</span>
+        <span className="text-slate-300 mx-0.5 text-[10px]">·</span>
+        <span className="material-symbols-outlined text-amber-500 text-[15px] shrink-0">
           local_fire_department
         </span>
-        <span className="font-mono font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap shrink-0">
-          {burnerAlgo == null ? "…" : `${(Number(burnerAlgo) / 1_000_000).toFixed(4)}`}
-        </span>
-        <button 
-          onClick={() => setShowManage(!showManage)}
-          className="ml-2 px-2 py-0.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded text-[10px] font-medium transition-colors"
+        <span className="font-mono tabular-nums">{burnerDisplay}</span>
+        <span
+          className="material-symbols-outlined text-slate-400 text-[14px] ml-0.5 transition-transform duration-200"
+          style={{ transform: showManage ? "rotate(180deg)" : "rotate(0deg)" }}
         >
-          Manage
-        </button>
-      </div>
+          expand_more
+        </span>
+      </button>
 
+      {/* ── Manage popover ── */}
       {showManage && (
-        <div className="absolute top-[120%] right-0 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl p-4 rounded-md w-[260px] z-50 flex flex-col gap-3">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1">
-              <span className="material-symbols-outlined text-amber-500 text-[18px]">local_fire_department</span>
-              Burner Settings
-            </span>
-            <button onClick={() => setShowManage(false)} className="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
-          </div>
-          
-          <div className="text-xs text-slate-500 max-w-[220px]">
-            The Burner wallet handles microtransactions automatically without Pera popups. Your funded balance
-            is tied to this address and syncs to your account.
-          </div>
-          {burnerAddr && (
-            <p className="text-[10px] font-mono text-slate-400 break-all" title={burnerAddr}>
-              {shortenWallet(burnerAddr)}
-            </p>
-          )}
-
-          <div className="flex items-center gap-2 mt-1">
-            <input 
-              type="number" 
-              step="0.1"
-              value={fundAmount}
-              onChange={(e) => setFundAmount(e.target.value)}
-              className="flex-1 w-full border border-slate-300 rounded px-2 py-1 text-sm bg-transparent dark:text-white"
-              placeholder="0.5"
-            />
-            <span className="text-sm text-slate-600 font-mono font-medium">ALGO</span>
+        <div
+          className="absolute top-[calc(100%+10px)] right-0 z-[60] w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl shadow-slate-200/60 overflow-hidden"
+          style={{ animation: "walletFadeIn 140ms ease both" }}
+        >
+          {/* header */}
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+            <span className="text-sm font-semibold text-slate-900">Wallets</span>
+            <button
+              onClick={() => setShowManage(false)}
+              className="text-slate-400 hover:text-slate-700 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
           </div>
 
-          <div className="flex gap-2">
-            <button 
-              onClick={handleFund}
-              disabled={isFunding}
-              className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-medium py-1.5 rounded text-sm transition-colors disabled:opacity-50"
-            >
-              {isFunding ? "..." : "Fund"}
-            </button>
-            <button 
-              onClick={handleRefund}
-              disabled={isRefunding}
-              className="flex-1 border border-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium py-1.5 rounded text-sm transition-colors disabled:opacity-50"
-            >
-              {isRefunding ? "..." : "Refund"}
-            </button>
+          <div className="p-4 space-y-3">
+            {/* Main wallet card */}
+            <div className="flex items-center justify-between bg-indigo-50 rounded-xl px-3 py-2.5">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-indigo-500 text-[20px]">
+                  account_balance_wallet
+                </span>
+                <div>
+                  <p className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider">
+                    Pera Wallet
+                  </p>
+                  <p className="text-xs font-mono text-indigo-800 mt-0.5">
+                    {shortenWallet(walletAddress)}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="font-mono text-sm font-bold text-indigo-700">{algoDisplay}</p>
+                <p className="text-[10px] text-indigo-400 font-medium">ALGO</p>
+              </div>
+            </div>
+
+            {/* Burner wallet card */}
+            <div className="flex items-center justify-between bg-amber-50 rounded-xl px-3 py-2.5">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-amber-500 text-[20px]">
+                  local_fire_department
+                </span>
+                <div>
+                  <p className="text-[10px] text-amber-500 font-semibold uppercase tracking-wider">
+                    Burner Wallet
+                  </p>
+                  {burnerAddr && (
+                    <p className="text-xs font-mono text-amber-800 mt-0.5">
+                      {shortenWallet(burnerAddr)}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="font-mono text-sm font-bold text-amber-700">{burnerDisplay}</p>
+                <p className="text-[10px] text-amber-400 font-medium">ALGO</p>
+              </div>
+            </div>
+
+            {/* Fund controls */}
+            <div className="pt-1">
+              <p className="text-[11px] text-slate-500 mb-2.5 leading-relaxed">
+                Top up the burner for seamless micro-payments — no Pera pop-ups.
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={fundAmount}
+                    onChange={(e) => setFundAmount(e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg pl-3 pr-14 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition-all"
+                    placeholder="0.5"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-slate-400">
+                    ALGO
+                  </span>
+                </div>
+                <button
+                  onClick={handleFund}
+                  disabled={isFunding}
+                  className="h-9 px-4 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-semibold rounded-lg text-xs transition-all disabled:opacity-50 whitespace-nowrap shadow-sm shadow-amber-200"
+                >
+                  {isFunding ? "…" : "Fund"}
+                </button>
+              </div>
+              <button
+                onClick={handleRefund}
+                disabled={isRefunding}
+                className="mt-2 w-full text-xs text-slate-500 hover:text-slate-800 py-1.5 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200"
+              >
+                {isRefunding ? "Refunding…" : "↩ Refund all back to Pera"}
+              </button>
+            </div>
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes walletFadeIn {
+          from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+          to   { opacity: 1; transform: translateY(0)    scale(1); }
+        }
+      `}</style>
     </div>
   );
 }

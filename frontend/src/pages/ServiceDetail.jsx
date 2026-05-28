@@ -329,161 +329,22 @@ curl -sS "${apiBase}/api/use" \\
 
           {apiKey && canProxy && (
             <div className="border-t border-surface-variant pt-6 space-y-4">
-              <h2 className="font-semibold text-primary">Try a call (TestNet)</h2>
-              <label className="block text-sm text-on-surface-variant">Prompt</label>
-              <textarea
-                className="w-full border border-outline-variant rounded-md px-3 py-2 text-sm min-h-[100px]"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Ask something…"
-              />
-              {Number.isFinite(ppt) && Number.isFinite(minC) && (
-                <p className="text-xs text-on-surface-variant mt-2">
-                  Estimated cost{" "}
-                  <span className="font-mono font-semibold text-secondary">{estimatedAlgo.toFixed(6)} ALGO</span>
-                  {minApplies && (
-                    <span className="block mt-1 text-amber-800">
-                      Minimum charge applies (your estimate is below the per-call floor).
-                    </span>
-                  )}
-                </p>
-              )}
-              {localEstimateAlgo != null && promptWordCount > 0 && (
-                <p className="text-xs text-on-surface-variant bg-surface-container-low/50 border border-outline-variant/50 rounded-md px-3 py-2 mt-2">
-                  Rough pre-flight: ~{localInputTokenEstimate} tokens from your prompt (~{promptWordCount} words × 4/3) → at
-                  least <span className="font-mono text-secondary font-semibold">{localEstimateAlgo.toFixed(6)} ALGO</span>{" "}
-                  (min floor; final bill includes the assistant reply).
-                </p>
-              )}
-              <label className="flex items-start gap-2 text-sm text-on-surface-variant cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="mt-1"
-                  checked={costAck}
-                  onChange={(e) => setCostAck(e.target.checked)}
-                />
-                <span>
-                  I understand the final charge is based on actual tokens used (prompt + response) and may differ from the
-                  estimate above.
-                </span>
-              </label>
-              <button
-                type="button"
-                disabled={invokeBusy || !prompt.trim() || !costAck}
-                onClick={runPaidInvoke}
-                className="bg-secondary text-on-secondary px-6 py-2.5 rounded-md text-sm font-medium disabled:opacity-50"
+              <h2 className="font-semibold text-primary">Chat with this AI</h2>
+              <p className="text-sm text-on-surface-variant">
+                You can now chat with this AI directly in the Sentinel Studio.
+                The Studio uses your Burner Wallet to automatically pay per response token.
+              </p>
+              <Link
+                to={`/studio/chat?serviceId=${service._id}`}
+                className="inline-flex items-center gap-2 bg-secondary text-on-secondary px-6 py-2.5 rounded-md text-sm font-medium hover:opacity-90"
               >
-                {invokeBusy ? "Working…" : "Run AI, then pay exact ALGO"}
-              </button>
+                <span className="material-symbols-outlined text-[20px]">chat</span>
+                Open in Studio Chat
+              </Link>
             </div>
           )}
         </div>
-
-        {aiPreview && payStage === "done" && lastTxId && (
-          <div className="mt-8 p-6 bg-white border border-surface-variant rounded-md space-y-3">
-            <h3 className="font-semibold text-primary">Receipt</h3>
-            {lastReceipt && (
-              <ul className="text-sm text-on-surface-variant space-y-1 font-mono">
-                <li>
-                  Paid{" "}
-                  <span className="font-semibold text-secondary">
-                    {Number(lastReceipt.chargeAlgo).toFixed(6)} ALGO
-                  </span>
-                </li>
-                <li>
-                  Tokens: {lastReceipt.promptTokens} in + {lastReceipt.completionTokens} out ={" "}
-                  {lastReceipt.totalTokens} total
-                </li>
-                <li>Rate snapshot: {Number(lastReceipt.pricePerThousandTokens).toFixed(6)} ALGO / 1k tokens</li>
-              </ul>
-            )}
-            <p className="text-sm">
-              To <span className="font-mono">{devShort}</span>
-            </p>
-            <a
-              href={`${EXPLORER_TX}${lastTxId}`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm text-secondary underline font-mono break-all"
-            >
-              View transaction on AlgoExplorer
-            </a>
-            <div className="border-t border-surface-variant pt-4 mt-4">
-              <p className="text-xs text-on-surface-variant uppercase mb-2">AI response</p>
-              <pre className="text-sm whitespace-pre-wrap bg-surface-container-low p-4 rounded-md border border-outline-variant max-h-80 overflow-y-auto">
-                {aiPreview}
-              </pre>
-            </div>
-          </div>
-        )}
       </div>
-
-      {(payStage === "quoting" ||
-        payStage === "sign" ||
-        payStage === "confirming_chain" ||
-        payStage === "release") && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="bg-white max-w-md w-full rounded-lg border border-surface-variant p-8 shadow-xl">
-            <h3 className="font-headline text-lg font-semibold text-primary mb-6">Pay per token</h3>
-            <ol className="space-y-4 text-sm">
-              <li className="flex gap-3 items-start">
-                <span className="material-symbols-outlined text-secondary shrink-0">
-                  {payStage === "quoting" ? "progress_activity" : "check_circle"}
-                </span>
-                <div>
-                  <p className="font-medium">Run AI &amp; get quote</p>
-                  <p className="text-on-surface-variant text-xs mt-0.5">
-                    Sentinel counts tokens from the provider response to set your exact charge.
-                  </p>
-                </div>
-              </li>
-              <li className="flex gap-3 items-start">
-                <span className="material-symbols-outlined text-secondary shrink-0">
-                  {payStage === "sign"
-                    ? "progress_activity"
-                    : payStage === "quoting"
-                      ? "radio_button_unchecked"
-                      : "check_circle"}
-                </span>
-                <div>
-                  <p className="font-medium">Pay in Pera Wallet</p>
-                  <p className="text-on-surface-variant text-xs mt-0.5">
-                    {quotedCharge != null
-                      ? `Approve ${quotedCharge.toFixed(6)} ALGO to ${devShort}`
-                      : "Exact ALGO shown after quote"}
-                  </p>
-                </div>
-              </li>
-              <li className="flex gap-3 items-start">
-                <span className="material-symbols-outlined text-secondary shrink-0">
-                  {payStage === "confirming_chain" ? "progress_activity" : "radio_button_unchecked"}
-                </span>
-                <div>
-                  <p className="font-medium">Confirming on Algorand</p>
-                  <p className="text-on-surface-variant text-xs mt-0.5">
-                    Payment broadcast—please do not close this window.
-                  </p>
-                </div>
-              </li>
-              <li className="flex gap-3 items-start">
-                <span className="material-symbols-outlined text-secondary shrink-0">
-                  {payStage === "release" ? "progress_activity" : "radio_button_unchecked"}
-                </span>
-                <div>
-                  <p className="font-medium">Release response</p>
-                  <p className="text-on-surface-variant text-xs mt-0.5">
-                    Verifying your payment and returning the cached AI output.
-                  </p>
-                </div>
-              </li>
-            </ol>
-          </div>
-        </div>
-      )}
 
       {showKeyModal && apiKey && (
         <div

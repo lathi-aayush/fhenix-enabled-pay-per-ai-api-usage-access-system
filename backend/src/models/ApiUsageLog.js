@@ -34,6 +34,8 @@ const apiUsageLogSchema = new mongoose.Schema(
     pricePerThousandTokens: { type: Number },
     /** Optional on-chain proof-of-intelligence log tx */
     proofTxId: { type: String },
+    /** True when this call was paid via the x402 protocol (keyless) */
+    x402Payment: { type: Boolean, default: false },
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );

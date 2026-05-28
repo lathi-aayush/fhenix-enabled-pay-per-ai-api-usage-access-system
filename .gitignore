@@ -1,0 +1,8 @@
+node_modules/
+.env
+.DS_Store
+dist/
+build/
+.vercel/
+chatbot/chat-front/node_modules/
+chatbot/chat-backend/node_modules/

@@ -73,6 +73,14 @@ router.get("/agent-context", async (_req, res) => {
         step_3_pay: "Respond to the returned paymentRef by sending the specified microAlgo amount on Algorand Testnet to the developerWallet address with the paymentRef in the transaction note.",
         step_4_claim: `POST /api/use  headers: { "Authorization": "Bearer <api_key>" }  body: { "txId": "<algorand_txid>", "paymentRef": "<payment_ref_uuid>" }`,
       },
+      how_to_use_x402: s.x402Enabled ? {
+        description: "This service supports x402 — a single-round-trip HTTP payment standard. No API key or manual wallet signing needed.",
+        endpoint: `/api/x402/use/${s._id}`,
+        step_1: "Send a POST request without any payment headers — server returns HTTP 402 with payment details.",
+        step_2: "Your x402-compatible client (e.g. @x402/fetch) auto-pays with your burner wallet and retries.",
+        step_3: "Server verifies on-chain and returns 200 + AI response.",
+        client_package: "npm install @x402/fetch @x402/avm",
+      } : null,
       creator_wallet: s.creatorWallet,
       last_updated: s.updatedAt,
     }));
@@ -189,6 +197,7 @@ router.patch(
   body("aiProvider").optional().isIn(AI_PROVIDERS),
   body("providerApiKey").optional().isString().trim().notEmpty(),
   body("isPaused").optional().isBoolean(),
+  body("x402Enabled").optional().isBoolean(),
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -208,6 +217,7 @@ router.patch(
       aiProvider,
       providerApiKey,
       isPaused,
+      x402Enabled,
     } = req.body;
     if (title !== undefined) service.title = title;
     if (description !== undefined) service.description = description;
@@ -220,6 +230,7 @@ router.patch(
     if (modelName !== undefined) service.modelName = modelName;
     if (aiProvider !== undefined) service.aiProvider = aiProvider;
     if (isPaused !== undefined) service.isPaused = isPaused;
+    if (x402Enabled !== undefined) service.x402Enabled = x402Enabled;
     if (providerApiKey !== undefined && String(providerApiKey).trim()) {
       try {
         service.encryptedApiKey = encryptSecret(String(providerApiKey).trim());

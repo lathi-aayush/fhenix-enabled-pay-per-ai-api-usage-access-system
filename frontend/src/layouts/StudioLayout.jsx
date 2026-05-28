@@ -7,6 +7,7 @@ import UserLiveWalletBar from "../components/UserLiveWalletBar.jsx";
 import ProfileDropdown from "../components/ProfileDropdown.jsx";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client.js";
+import MegaNav from "../components/MegaNav.jsx";
 
 const nav = [
   { id: "studio-home", path: "/studio", label: "Studio Home", icon: "home" },
@@ -19,6 +20,7 @@ const nav = [
     icon: "auto_awesome",
   },
   { id: "clipcraft", path: "/studio/clipcraft", label: "ClipCraft", icon: "movie_edit" },
+  { id: "chat", path: "/studio/chat", label: "AI Chat", icon: "chat" },
   { id: "projects", path: "/studio/projects", label: "Projects", icon: "folder" },
   { id: "calendar", path: "/studio/calendar", icon: "calendar_month", label: "Calendar" },
   { id: "drafts", path: "/studio/drafts", icon: "edit_note", label: "Drafts" },
@@ -65,22 +67,9 @@ export default function StudioLayout() {
 
   return (
     <div className="antialiased min-h-screen bg-[#f9f9f9]">
-      <header className="bg-white fixed top-0 left-0 right-0 z-50 w-full border-b border-slate-100 h-14 flex items-center px-4 md:pl-[240px]">
-        <Link
-          to="/"
-          className="md:hidden flex items-center gap-2 text-[#031634] font-headline font-semibold text-sm"
-          title="Back to Sentinal home"
-        >
-          <img src={logo} alt="" className="w-7 h-7 rounded-md object-contain border border-slate-200" />
-          Sentinal
-        </Link>
-        <div className="ml-auto flex items-center gap-3">
-          {user?.walletAddress && <UserLiveWalletBar walletAddress={user.walletAddress} />}
-          <ProfileDropdown />
-        </div>
-      </header>
+      <MegaNav />
 
-      <aside className="fixed left-0 top-0 bottom-0 w-[220px] bg-slate-50 border-r border-slate-100 flex flex-col pt-14 pb-6 text-[0.875rem] overflow-y-auto z-40 max-md:hidden">
+      <aside className="fixed left-0 top-14 bottom-0 w-[220px] bg-slate-50 border-r border-slate-100 flex flex-col pt-3 pb-6 text-[0.875rem] overflow-y-auto scrollbar-hide z-40 max-md:hidden">
         <div className="px-4 mb-6">
           <Link
             to="/"

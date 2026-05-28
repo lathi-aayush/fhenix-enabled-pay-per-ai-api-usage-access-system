@@ -17,6 +17,7 @@ import StudioStorage from "./pages/StudioStorage.jsx";
 import MarketplaceCreators from "./pages/MarketplaceCreators.jsx";
 import MarketplaceLayout from "./layouts/MarketplaceLayout.jsx";
 import StudioLayout from "./layouts/StudioLayout.jsx";
+import DocsLayout from "./layouts/DocsLayout.jsx";
 import StudioHome from "./pages/studio/StudioHome.jsx";
 import StudioProjects from "./pages/studio/Projects.jsx";
 import ProjectDetail from "./pages/studio/ProjectDetail.jsx";
@@ -30,7 +31,11 @@ const BloggingAgent = lazy(() => import("./pages/studio/BloggingAgent.jsx"));
 const ClipCraft = lazy(() => import("./pages/studio/ClipCraft.jsx"));
 const StudioAnalytics = lazy(() => import("./pages/studio/Analytics.jsx"));
 const PromptGenerator = lazy(() => import("./pages/studio/PromptGenerator.jsx"));
+import X402Docs from "./pages/X402Docs.jsx";
+import X402DevDocs from "./pages/X402DevDocs.jsx";
+import HowItWorks from "./pages/HowItWorks.jsx";
 const WorkflowStudioHub = lazy(() => import("./pages/WorkflowStudioHub.jsx"));
+const StudioChat = lazy(() => import("./pages/studio/StudioChat.jsx"));
 const WorkflowBuilder = lazy(() => import("./pages/WorkflowBuilder.jsx"));
 const WorkflowTemplates = lazy(() => import("./pages/WorkflowTemplates.jsx"));
 const WorkflowHistory = lazy(() => import("./pages/WorkflowHistory.jsx"));
@@ -155,6 +160,21 @@ export default function App() {
       </Route>
 
       <Route
+        path="/docs"
+        element={
+          <Guard role="user">
+            <DocsLayout />
+          </Guard>
+        }
+      >
+        <Route index element={<Navigate to="x402" replace />} />
+        <Route path="home" element={<Navigate to="x402" replace />} />
+        <Route path="x402" element={<X402Docs />} />
+        <Route path="x402-api" element={<X402DevDocs />} />
+        <Route path="how-it-works" element={<HowItWorks />} />
+      </Route>
+
+      <Route
         path="/user/services/:id"
         element={
           <Guard role="user">
@@ -270,6 +290,14 @@ export default function App() {
               description="Analyze datasets, generate summaries, and produce insight-first reports."
               icon="monitoring"
             />
+          }
+        />
+        <Route
+          path="chat"
+          element={
+            <StudioSuspense>
+              <StudioChat />
+            </StudioSuspense>
           }
         />
       </Route>

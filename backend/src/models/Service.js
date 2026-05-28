@@ -20,6 +20,8 @@ const serviceSchema = new mongoose.Schema(
     modelName: { type: String, default: "" },
     isPaused: { type: Boolean, default: false },
     isSentinalOfficial: { type: Boolean, default: false },
+    /** When true, service is available via the x402 keyless payment endpoint */
+    x402Enabled: { type: Boolean, default: false },
   },
   { timestamps: { createdAt: true, updatedAt: true } }
 );

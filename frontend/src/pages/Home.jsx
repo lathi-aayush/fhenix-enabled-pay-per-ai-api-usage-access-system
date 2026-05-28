@@ -1,15 +1,13 @@
 import React from "react";
-import logo from "../assets/logo.png";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useEffect, useState } from "react";
 import ContractStats from "../components/ContractStats.jsx";
-import ProfileDropdown from "../components/ProfileDropdown.jsx";
 import { connectPera } from "../wallet/pera.js";
 import { api } from "../api/client.js";
 import HowItWorks from "../components/HowItWorks.jsx";
-import { goToHomeSection } from "../utils/scrollToSection.js";
+import MegaNav from "../components/MegaNav.jsx";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -136,48 +134,9 @@ export default function Home() {
 
   return (
     <div className="bg-surface selection:bg-secondary-container selection:text-on-secondary-container min-h-screen">
-      <header className="bg-[#F9F9F9] dark:bg-[#1A1C1C] flex justify-between items-center w-full px-8 h-16 max-w-screen-2xl mx-auto top-0 sticky z-50">
-        <div className="flex items-center gap-12">
-          <Link to="/" className="flex items-center gap-2 text-xl font-semibold text-[#031634] dark:text-white tracking-tighter font-headline">
-            <img src={logo} alt="Sentinel Logo" className="w-8 h-8 rounded-lg object-contain bg-white p-0.5 border border-slate-200" />
-            <span>Sentinal</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-8">
-            <button
-              type="button"
-              onClick={() => goToHomeSection(navigate, "how-it-works")}
-              className="text-[#5A5A5A] dark:text-[#A0A0A0] text-sm font-medium font-body hover:text-[#031634] dark:hover:text-white transition-colors cursor-pointer"
-            >
-              How It Works
-            </button>
-            <button
-              type="button"
-              onClick={() => goToHomeSection(navigate, "marketplace")}
-              className="text-[#5A5A5A] dark:text-[#A0A0A0] text-sm font-medium font-body hover:text-[#031634] dark:hover:text-white transition-colors cursor-pointer"
-            >
-              Marketplace
-            </button>
-            <button
-              type="button"
-              onClick={() => goToHomeSection(navigate, "studio")}
-              className="text-[#5A5A5A] dark:text-[#A0A0A0] text-sm font-medium font-body hover:text-[#031634] dark:hover:text-white transition-colors cursor-pointer"
-            >
-              Studio
-            </button>
-          </nav>
-        </div>
-        <div className="flex items-center gap-4">
-          {isAuthenticated ? (
-            <ProfileDropdown />
-          ) : (
-            <span className="text-xs font-semibold text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full uppercase tracking-wider font-body">
-              Pera Wallet
-            </span>
-          )}
-        </div>
-      </header>
+      <MegaNav enterWithPera={enterWithPera} />
 
-      <main>
+      <main className="pt-14">
         <HowItWorks enterWithPera={enterWithPera} />
 
         <section className="max-w-[1100px] mx-auto px-8 pt-16 pb-16">
@@ -212,6 +171,8 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+
 
         <section id="marketplace" className="max-w-[1100px] mx-auto px-8 pb-4 grid gap-4 md:grid-cols-2 scroll-mt-20">
           <div className="bg-white border border-slate-200 rounded-2xl p-6">
