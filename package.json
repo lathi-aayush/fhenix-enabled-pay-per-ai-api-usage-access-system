@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "npm install --prefix frontend && npm run build --prefix frontend && npm install --prefix backend",
+    "postbuild": "node -e \"const fs=require('fs');const p='frontend/dist/index.html';if(!fs.existsSync(p))throw new Error('frontend/dist missing — run vite build');const d=fs.readdirSync('frontend/dist/assets').filter(f=>f.endsWith('.js'));if(!d.length)throw new Error('frontend/dist/assets has no JS chunks');console.log('[build] SPA ok:',d[0]);\""
     "start": "NODE_ENV=production node backend/src/server.js"
   }
 }

@@ -1,0 +1,10 @@
+# Render Blueprint — monorepo: build frontend + run Express API (serves SPA from frontend/dist)
+services:
+  - type: web
+    name: sentinal-api
+    runtime: node
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
