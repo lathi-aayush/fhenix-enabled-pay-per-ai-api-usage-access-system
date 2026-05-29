@@ -16,9 +16,19 @@ import AINode from "./nodes/AINode.jsx";
 import LogicNode from "./nodes/LogicNode.jsx";
 import OutputNode from "./nodes/OutputNode.jsx";
 import BlogNode from "./nodes/BlogNode.jsx";
+import PromptGenNode from "./nodes/PromptGenNode.jsx";
+import ImageGenNode from "./nodes/ImageGenNode.jsx";
 import AnimatedEdge from "./edges/AnimatedEdge.jsx";
 
-const nodeTypes = { input: InputNode, ai: AINode, logic: LogicNode, output: OutputNode, blog: BlogNode };
+const nodeTypes = {
+  input: InputNode,
+  ai: AINode,
+  logic: LogicNode,
+  output: OutputNode,
+  blog: BlogNode,
+  promptGen: PromptGenNode,
+  imageGen: ImageGenNode,
+};
 const edgeTypes = { animated: AnimatedEdge };
 
 export const NODE_DEFAULTS = {
@@ -46,6 +56,21 @@ export const NODE_DEFAULTS = {
     scheduledFor: "",
     targetAudience: "",
     keywords: [],
+    config: {},
+  },
+  promptGen: {
+    label: "Prompt Generator",
+    category: "Image Generation",
+    mode: "advanced",
+    type: "Creative Writing",
+    extraInstructions: "",
+    estimatedCredits: 0.004,
+    config: {},
+  },
+  imageGen: {
+    label: "Image Generator",
+    aspectRatio: "16:9",
+    estimatedCredits: 0.006,
     config: {},
   },
 };

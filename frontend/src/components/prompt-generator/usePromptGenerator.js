@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
@@ -9,6 +10,7 @@ import {
   generateVariations,
   improvePrompt,
 } from "../../api/promptApi.js";
+import { runCreativeWorkflow, friendlyWorkflowError } from "../../api/creativeWorkflowApi.js";
 
 function invalidateUsage(queryClient) {
   queryClient.invalidateQueries({ queryKey: ["studio-usage"] });
@@ -24,6 +26,7 @@ const DEFAULT_FORM = {
 };
 
 export function usePromptGenerator({ atCap = false } = {}) {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [form, setForm] = useState(DEFAULT_FORM);
   const [output, setOutput] = useState("");
@@ -37,6 +40,8 @@ export function usePromptGenerator({ atCap = false } = {}) {
 
   const [analysis, setAnalysis] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [workflowLoading, setWorkflowLoading] = useState(false);
+  const [workflowResult, setWorkflowResult] = useState(null);
 
   const updateForm = useCallback((patch) => {
     setForm((prev) => ({ ...prev, ...patch }));
@@ -235,7 +240,62 @@ export function usePromptGenerator({ atCap = false } = {}) {
     setEnhancedBlock("");
     setAnalysis(null);
     setError(null);
+    setWorkflowResult(null);
   }, []);
+
+  const getActivePromptText = useCallback(() => {
+    if (enhanceEnabled && enhancedBlock.trim()) return enhancedBlock;
+    return output;
+  }, [enhanceEnabled, enhancedBlock, output]);
+
+  const openCreativeWorkflow = useCallback(
+    (promptOverride) => {
+      const text = (promptOverride || getActivePromptText() || "").trim();
+      const params = new URLSearchParams();
+      if (text) params.set("prompt", text.slice(0, 12000));
+      else if (form.goal.trim()) params.set("goal", form.goal.trim());
+      else {
+        toast.error("Generate a prompt first, or enter a goal.");
+        return;
+      }
+      navigate(`/studio/creative-workflow?${params.toString()}`);
+    },
+    [form.goal, getActivePromptText, navigate]
+  );
+
+  const runPromptToImage = useCallback(async () => {
+    if (atCap) {
+      toast.error("Monthly prompt limit reached.");
+      return;
+    }
+    const text = getActivePromptText().trim();
+    if (!text && !form.goal.trim()) {
+      toast.error("Generate a prompt or enter a goal first.");
+      return;
+    }
+    setWorkflowLoading(true);
+    setWorkflowResult(null);
+    try {
+      const data = await runCreativeWorkflow({
+        workflowType: "prompt-to-image",
+        goal: form.goal.trim() || "Image from Studio prompt",
+        existingPrompt: text || undefined,
+        category: form.category,
+        mode: form.mode,
+        type: form.type,
+        extraInstructions: form.extraInstructions,
+        generateImage: true,
+      });
+      setWorkflowResult(data);
+      invalidateUsage(queryClient);
+      if (data?.image?.dataUrl) toast.success("Image generated");
+      else if (data?.imageWarning) toast.error(data.imageWarning);
+    } catch (err) {
+      toast.error(friendlyWorkflowError(err));
+    } finally {
+      setWorkflowLoading(false);
+    }
+  }, [atCap, form, getActivePromptText, queryClient]);
 
   return {
     form,
@@ -262,5 +322,9 @@ export function usePromptGenerator({ atCap = false } = {}) {
     copyToClipboard,
     downloadMarkdown,
     resetOutput,
+    workflowLoading,
+    workflowResult,
+    runPromptToImage,
+    openCreativeWorkflow,
   };
 }

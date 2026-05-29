@@ -32,6 +32,17 @@ export default function ExecutionPanel({
     (nr) => !["output", "blog"].includes(nodeMeta[nr.nodeId]?.type)
   );
 
+  const imageStep = nodeResults.find((nr) => nodeMeta[nr.nodeId]?.type === "imageGen");
+  let workflowImageUrl = null;
+  if (imageStep?.output) {
+    try {
+      const parsed = JSON.parse(imageStep.output);
+      workflowImageUrl = parsed?.image?.dataUrl || null;
+    } catch {
+      /* ignore */
+    }
+  }
+
   const finalPayload = run?.structuredResult;
   const finalFallback = outputNodeResult?.output || nodeResults[nodeResults.length - 1]?.output;
   const blogResult = extractBlogResult(run);
@@ -138,6 +149,27 @@ export default function ExecutionPanel({
                 >
                   Open in Blogging Agent →
                 </button>
+              </div>
+            )}
+
+            {workflowImageUrl && (
+              <div className="rounded-xl border-2 border-cyan-200 bg-cyan-50/50 p-3">
+                <h4 className="text-xs font-bold text-primary flex items-center gap-1 mb-2">
+                  <span className="material-symbols-outlined text-base">image</span>
+                  Generated image
+                </h4>
+                <img
+                  src={workflowImageUrl}
+                  alt="Workflow generated"
+                  className="w-full rounded-md aspect-video object-cover border border-slate-200"
+                />
+                <a
+                  href={workflowImageUrl}
+                  download="workflow-image.png"
+                  className="block text-center text-[10px] font-semibold text-[#031634] underline mt-2"
+                >
+                  Download PNG
+                </a>
               </div>
             )}
 

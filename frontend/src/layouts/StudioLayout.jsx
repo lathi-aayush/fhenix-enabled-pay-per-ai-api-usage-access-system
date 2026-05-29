@@ -19,6 +19,18 @@ const nav = [
     label: "Advanced Prompt Generator",
     icon: "auto_awesome",
   },
+  {
+    id: "viral-thumbnail",
+    path: "/studio/viral-thumbnail",
+    label: "Viral Thumbnail AI",
+    icon: "thumbnail_bar",
+  },
+  {
+    id: "creative-workflow",
+    path: "/studio/creative-workflow",
+    label: "Creative Workflow",
+    icon: "linked_services",
+  },
   { id: "clipcraft", path: "/studio/clipcraft", label: "ClipCraft", icon: "movie_edit" },
   { id: "chat", path: "/studio/chat", label: "AI Chat", icon: "chat" },
   { id: "projects", path: "/studio/projects", label: "Projects", icon: "folder" },
@@ -63,7 +75,10 @@ export default function StudioLayout() {
   const pct = limit != null && limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
   const promptPct =
     promptLimit != null && promptLimit > 0 ? Math.min(100, (promptsUsed / promptLimit) * 100) : 0;
-  const onPromptPage = pathname.startsWith("/studio/prompt-generator");
+  const onPromptPage =
+    pathname.startsWith("/studio/prompt-generator") ||
+    pathname.startsWith("/studio/viral-thumbnail") ||
+    pathname.startsWith("/studio/creative-workflow");
 
   return (
     <div className="antialiased min-h-screen bg-[#f9f9f9]">

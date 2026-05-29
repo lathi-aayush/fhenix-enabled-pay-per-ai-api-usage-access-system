@@ -131,7 +131,7 @@ async function streamGenerate({ systemInstruction, userMessage, onChunk, models 
   throw lastErr;
 }
 
-async function generateOnce({ systemInstruction, userMessage, models = getFlashModels() }) {
+export async function generateOnce({ systemInstruction, userMessage, models = getFlashModels() }) {
   let lastErr;
   for (const model of models) {
     try {
@@ -150,6 +150,14 @@ export async function generatePrompt(payload, onChunk) {
     systemInstruction: buildSystemInstruction(payload),
     userMessage: buildUserMessage(payload),
     onChunk,
+  });
+}
+
+/** Non-streaming prompt generation (workflows, chaining). */
+export async function generatePromptOnce(payload) {
+  return generateOnce({
+    systemInstruction: buildSystemInstruction(payload),
+    userMessage: buildUserMessage(payload),
   });
 }
 

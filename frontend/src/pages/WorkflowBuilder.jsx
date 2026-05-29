@@ -240,6 +240,53 @@ function BuilderInner() {
                 </select>
               </>
             )}
+            {selectedNode.type === "promptGen" && (
+              <>
+                <label className="block text-[10px] text-slate-500 mt-2">Category</label>
+                <select
+                  className="workflow-field w-full border border-surface-variant rounded-md px-2 py-1.5 text-primary text-xs"
+                  value={selectedNode.data?.category || "Image Generation"}
+                  onChange={(e) => updateSelectedData({ category: e.target.value })}
+                >
+                  <option value="Image Generation">Image Generation</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Video / YouTube">Video / YouTube</option>
+                  <option value="General">General</option>
+                </select>
+                <label className="block text-[10px] text-slate-500 mt-2">Mode</label>
+                <select
+                  className="workflow-field w-full border border-surface-variant rounded-md px-2 py-1.5 text-primary text-xs"
+                  value={selectedNode.data?.mode || "advanced"}
+                  onChange={(e) => updateSelectedData({ mode: e.target.value })}
+                >
+                  <option value="beginner">beginner</option>
+                  <option value="advanced">advanced</option>
+                  <option value="expert">expert</option>
+                </select>
+                <label className="block text-[10px] text-slate-500 mt-2">Extra instructions</label>
+                <textarea
+                  className="workflow-field w-full border border-surface-variant rounded-md px-2 py-1.5 text-primary text-xs"
+                  rows={2}
+                  value={selectedNode.data?.extraInstructions || ""}
+                  onChange={(e) => updateSelectedData({ extraInstructions: e.target.value })}
+                />
+              </>
+            )}
+            {selectedNode.type === "imageGen" && (
+              <>
+                <label className="block text-[10px] text-slate-500 mt-2">Aspect ratio</label>
+                <select
+                  className="workflow-field w-full border border-surface-variant rounded-md px-2 py-1.5 text-primary text-xs"
+                  value={selectedNode.data?.aspectRatio || "16:9"}
+                  onChange={(e) => updateSelectedData({ aspectRatio: e.target.value })}
+                >
+                  <option value="16:9">16:9</option>
+                  <option value="1:1">1:1</option>
+                  <option value="4:3">4:3</option>
+                  <option value="3:4">3:4</option>
+                </select>
+              </>
+            )}
             {selectedNode.type === "blog" && (
               <>
                 <label className="block text-[10px] text-slate-500 mt-2">Studio project</label>

@@ -94,6 +94,7 @@ export default function PromptGenerator() {
                   onImprove: () => {},
                   onDownload: () => pg.downloadMarkdown(pg.existingPrompt, "original-prompt.md"),
                   onAnalyze: () => pg.runAnalyze(pg.existingPrompt),
+                  onWorkflowToImage: pg.runPromptToImage,
                 }}
                 analyzing={pg.analyzing}
               />
@@ -102,6 +103,7 @@ export default function PromptGenerator() {
                 output={pg.enhancedBlock}
                 streaming={pg.streaming}
                 loading={pg.loading}
+                workflowLoading={pg.workflowLoading}
                 error={pg.error}
                 onRetry={handleRetry}
                 emptyHint="Enhanced prompt will stream here."
@@ -112,6 +114,7 @@ export default function PromptGenerator() {
                   onImprove: () => pg.runImprove(),
                   onDownload: () => pg.downloadMarkdown(pg.enhancedBlock, "enhanced-prompt.md"),
                   onAnalyze: () => pg.runAnalyze(pg.enhancedBlock),
+                  onWorkflowToImage: pg.runPromptToImage,
                 }}
                 analyzing={pg.analyzing}
               />
@@ -122,6 +125,7 @@ export default function PromptGenerator() {
               output={pg.output}
               streaming={pg.streaming}
               loading={pg.loading}
+              workflowLoading={pg.workflowLoading}
               error={pg.error}
               onRetry={handleRetry}
               emptyHint="Fill in a goal and click Generate prompt — or pick a quick template."
@@ -132,9 +136,33 @@ export default function PromptGenerator() {
                 onImprove: pg.runImprove,
                 onDownload: () => pg.downloadMarkdown(),
                 onAnalyze: () => pg.runAnalyze(analyzeTarget),
+                onWorkflowToImage: pg.runPromptToImage,
               }}
               analyzing={pg.analyzing}
             />
+          )}
+
+          {(pg.workflowLoading || pg.workflowResult?.image?.dataUrl) && (
+            <div className="mt-6 bg-white border border-surface-variant rounded-md p-4">
+              <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
+                <h2 className="text-sm font-semibold text-primary">Workflow · Generated image</h2>
+                <Link
+                  to="/studio/creative-workflow"
+                  className="text-[11px] font-semibold text-[#031634] underline"
+                >
+                  Open Creative Workflow
+                </Link>
+              </div>
+              {pg.workflowLoading ? (
+                <p className="text-sm animate-pulse text-on-surface-variant">Rendering image from prompt…</p>
+              ) : (
+                <img
+                  src={pg.workflowResult.image.dataUrl}
+                  alt="Generated from prompt"
+                  className="w-full max-w-2xl rounded-md aspect-video object-cover"
+                />
+              )}
+            </div>
           )}
         </div>
       </div>

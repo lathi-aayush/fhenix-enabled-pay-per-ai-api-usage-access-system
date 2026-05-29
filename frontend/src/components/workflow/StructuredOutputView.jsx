@@ -117,6 +117,22 @@ function JsonStructured({ data }) {
           <p className="text-xs text-slate-600 whitespace-pre-wrap">{data.details}</p>
         </section>
       )}
+      {data.image?.dataUrl && (
+        <section className="rounded-md bg-white border border-slate-100 p-2.5">
+          <h4 className="text-[10px] font-bold text-slate-500 uppercase mb-2">Image</h4>
+          <img
+            src={data.image.dataUrl}
+            alt="Generated"
+            className="w-full rounded-md aspect-video object-cover"
+          />
+        </section>
+      )}
+      {data.prompt && !data.image?.dataUrl && (
+        <section className="rounded-md bg-white border border-slate-100 p-2.5 max-h-40 overflow-y-auto">
+          <h4 className="text-[10px] font-bold text-slate-500 uppercase mb-1">Prompt</h4>
+          <p className="text-xs text-slate-600 whitespace-pre-wrap">{String(data.prompt).slice(0, 1200)}</p>
+        </section>
+      )}
     </div>
   );
 }
@@ -151,8 +167,14 @@ export function StructuredOutputView({ structuredResult, fallbackText }) {
   return <JsonStructured data={payload} />;
 }
 
-export function NodeOutputPreview({ output, label, type, status, expanded, onToggle }) {
+function parseCreativeOutput(output) {
   const parsed = tryParseJson(output);
+  if (parsed?.kind === "imageGen" || parsed?.kind === "promptGen") return parsed;
+  return parsed;
+}
+
+export function NodeOutputPreview({ output, label, type, status, expanded, onToggle }) {
+  const parsed = parseCreativeOutput(output);
   const isLong = String(output || "").length > 280;
 
   return (
@@ -170,7 +192,20 @@ export function NodeOutputPreview({ output, label, type, status, expanded, onTog
       </button>
       {expanded && (
         <div className="px-3 pb-3 border-t border-surface-variant bg-white">
-          {parsed && (parsed.summary || parsed.keyPoints) ? (
+          {parsed?.kind === "imageGen" && parsed.image?.dataUrl ? (
+            <div className="space-y-2">
+              <img
+                src={parsed.image.dataUrl}
+                alt="Generated"
+                className="w-full rounded-md aspect-video object-cover"
+              />
+              {parsed.imageWarning && (
+                <p className="text-[10px] text-amber-700">{parsed.imageWarning}</p>
+              )}
+            </div>
+          ) : parsed?.kind === "promptGen" && parsed.prompt ? (
+            <MarkdownSections text={parsed.prompt} />
+          ) : parsed && (parsed.summary || parsed.keyPoints) ? (
             <JsonStructured data={parsed} />
           ) : String(output || "").includes("## ") ? (
             <MarkdownSections text={output} />

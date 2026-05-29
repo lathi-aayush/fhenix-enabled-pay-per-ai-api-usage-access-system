@@ -3,6 +3,8 @@ import { NODE_DEFAULTS } from "./WorkflowCanvas.jsx";
 
 const PALETTE = [
   { type: "input", label: "Input", icon: "input", desc: "Text or URL trigger" },
+  { type: "promptGen", label: "Prompt Generator", icon: "auto_awesome", desc: "Gemini prompt (Studio)" },
+  { type: "imageGen", label: "Image Generator", icon: "image", desc: "Gemini 16:9 image render" },
   { type: "ai", label: "AI Agent", icon: "smart_toy", desc: "Groq LLM step" },
   { type: "logic", label: "Logic", icon: "call_split", desc: "Branch or delay" },
   { type: "output", label: "Output", icon: "output", desc: "Structured JSON result" },

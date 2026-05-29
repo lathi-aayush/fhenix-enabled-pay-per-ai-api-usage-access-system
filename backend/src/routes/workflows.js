@@ -195,12 +195,88 @@ const DEFAULT_TEMPLATES = [
       ],
     },
   },
+  {
+    name: "Creative: Prompt → Image",
+    category: "Creative",
+    description:
+      "Automated Studio pipeline — Input goal → Advanced Prompt Generator (Gemini) → Image Generator (16:9)",
+    tags: ["creative", "prompt", "image", "gemini", "studio"],
+    estimatedCreditsPerRun: 0.012,
+    isFeatured: true,
+    nodeStructure: {
+      nodes: [
+        {
+          id: "cr_in",
+          type: "input",
+          position: { x: 60, y: 220 },
+          data: {
+            label: "Image goal",
+            inputType: "text",
+            value: "A photorealistic 16:9 hero visual for a fintech SaaS landing page, bold lighting",
+            config: {},
+          },
+        },
+        {
+          id: "cr_prompt",
+          type: "promptGen",
+          position: { x: 300, y: 220 },
+          data: {
+            label: "Prompt Generator",
+            category: "Image Generation",
+            mode: "advanced",
+            type: "Creative Writing",
+            extraInstructions: "Optimize for Gemini image generation. Include composition, lighting, and style.",
+            estimatedCredits: 0.004,
+            config: {},
+          },
+        },
+        {
+          id: "cr_image",
+          type: "imageGen",
+          position: { x: 540, y: 220 },
+          data: {
+            label: "Image Generator",
+            aspectRatio: "16:9",
+            estimatedCredits: 0.006,
+            config: {},
+          },
+        },
+        {
+          id: "cr_out",
+          type: "output",
+          position: { x: 780, y: 220 },
+          data: {
+            label: "Result",
+            outputType: "structured",
+            outputFormat: "summary",
+            config: {},
+          },
+        },
+      ],
+      edges: [
+        { id: "cr_e1", source: "cr_in", target: "cr_prompt", animated: true },
+        { id: "cr_e2", source: "cr_prompt", target: "cr_image", animated: true },
+        { id: "cr_e3", source: "cr_image", target: "cr_out", animated: true },
+      ],
+    },
+  },
 ];
+
+const CREATIVE_TEMPLATE_NAME = "Creative: Prompt → Image";
 
 async function ensureTemplates() {
   const count = await AgentTemplate.countDocuments();
   if (count === 0) {
     await AgentTemplate.insertMany(DEFAULT_TEMPLATES);
+    return;
+  }
+  const creativeTpl = DEFAULT_TEMPLATES.find((t) => t.name === CREATIVE_TEMPLATE_NAME);
+  if (creativeTpl) {
+    const exists = await AgentTemplate.findOne({ name: CREATIVE_TEMPLATE_NAME });
+    if (!exists) {
+      await AgentTemplate.create(creativeTpl);
+      templateCache.at = 0;
+    }
   }
 }
 

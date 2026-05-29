@@ -9,6 +9,7 @@ export default function PromptToolbar({
   onImprove,
   onDownload,
   onAnalyze,
+  onWorkflowToImage,
   analyzing,
   variant = "full",
 }) {
@@ -39,6 +40,16 @@ export default function PromptToolbar({
       <button type="button" className={btn} disabled={disabled || analyzing} onClick={onAnalyze}>
         {analyzing ? "Analyzing…" : "Analyze"}
       </button>
+      {onWorkflowToImage && (
+        <button
+          type="button"
+          className={`${btn} border-[#031634]/30 text-[#031634]`}
+          disabled={disabled || loading}
+          onClick={onWorkflowToImage}
+        >
+          Prompt → Image
+        </button>
+      )}
     </div>
   );
 }

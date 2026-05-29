@@ -34,7 +34,8 @@ export default function WorkflowStudioHub() {
         <div>
           <h1 className="font-headline text-2xl font-semibold text-primary">Workflow Studio</h1>
           <p className="text-sm text-on-surface-variant mt-1">
-            Build pipelines that research topics, summarize video, and publish blogs via Blogging Agent.
+            Build pipelines with Groq AI, Blog Agent, and Studio creative nodes — Prompt Generator → Image
+            Generator (Gemini).
           </p>
         </div>
         <div className="flex gap-2">

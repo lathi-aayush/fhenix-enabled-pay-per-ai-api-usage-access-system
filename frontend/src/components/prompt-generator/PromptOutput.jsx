@@ -92,7 +92,8 @@ export default function PromptOutput({
 }
 
 export function PromptOutputWithToolbar(props) {
-  const { output, loading, streaming, error, onRetry, handlers, analyzing, toolbarVariant } = props;
+  const { output, loading, streaming, error, onRetry, handlers, analyzing, toolbarVariant, workflowLoading } =
+    props;
   const disabled = !output?.trim();
 
   return (
@@ -108,7 +109,7 @@ export function PromptOutputWithToolbar(props) {
         <PromptToolbar
           variant={toolbarVariant}
           disabled={disabled}
-          loading={loading}
+          loading={loading || workflowLoading}
           analyzing={analyzing}
           onCopy={handlers.onCopy}
           onRegenerate={handlers.onRegenerate}
@@ -116,6 +117,7 @@ export function PromptOutputWithToolbar(props) {
           onImprove={handlers.onImprove}
           onDownload={handlers.onDownload}
           onAnalyze={handlers.onAnalyze}
+          onWorkflowToImage={handlers.onWorkflowToImage}
         />
       }
     />

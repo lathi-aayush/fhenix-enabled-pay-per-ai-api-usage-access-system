@@ -9,6 +9,7 @@ import {
   formatStructuredForDisplay,
 } from "./structuredOutput.js";
 import { publishWorkflowToBlog } from "./workflowBlogService.js";
+import { executePromptGenNode, executeImageGenNode } from "./workflowCreativeNodes.js";
 
 function rawFromContext(text) {
   const m = String(text || "").match(/URL:\s*(https?:\/\/[^\s]+)/i);
@@ -138,6 +139,39 @@ async function executeNode(node, context, run, meta = {}) {
       completedAt: new Date(),
     };
   }
+  if (node.type === "promptGen") {
+    const result = await executePromptGenNode(node, upstream);
+    if (run) logLine(run, `Prompt Generator completed (${result.creativePayload?.prompt?.length || 0} chars)`);
+    return {
+      output: result.output,
+      displayOutput: result.creativePayload?.prompt || result.output,
+      creativePayload: result.creativePayload,
+      tokensUsed: result.tokensUsed,
+      creditsDeducted: result.creditsDeducted,
+      startedAt,
+      completedAt: new Date(),
+    };
+  }
+  if (node.type === "imageGen") {
+    const result = await executeImageGenNode(node, upstream);
+    if (run) {
+      logLine(
+        run,
+        result.creativePayload?.image
+          ? "Image Generator completed"
+          : `Image Generator warning: ${result.creativePayload?.imageWarning || "no image"}`
+      );
+    }
+    return {
+      output: result.output,
+      displayOutput: result.displayOutput || result.output,
+      creativePayload: result.creativePayload,
+      tokensUsed: result.tokensUsed,
+      creditsDeducted: result.creditsDeducted,
+      startedAt,
+      completedAt: new Date(),
+    };
+  }
   if (node.type === "blog") {
     if (!userId) throw new Error("User context required for blog publish");
     const blogResult = await publishWorkflowToBlog({
@@ -256,7 +290,7 @@ export async function executeWorkflow(workflowId, runId, userId) {
           type: "node",
           nodeId,
           status: "success",
-          output: String(result.output || "").slice(0, 500),
+          output: String(result.displayOutput || result.output || "").slice(0, 500),
           tokensUsed: result.tokensUsed,
           creditsDeducted: result.creditsDeducted,
         });

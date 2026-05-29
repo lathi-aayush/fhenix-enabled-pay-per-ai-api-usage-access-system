@@ -50,6 +50,8 @@ export function buildStructuredRunResult({ workflowName, nodeResults, nodeMap, o
       const node = nodeMap?.[r.nodeId];
       const parsed = tryParseJson(r.output);
       const blogParsed = parsed?.blogPostId ? parsed : null;
+      const creativeParsed =
+        parsed?.kind === "imageGen" || parsed?.kind === "promptGen" ? parsed : null;
       return {
         nodeId: r.nodeId,
         label: node?.data?.label || r.nodeId,
@@ -59,6 +61,26 @@ export function buildStructuredRunResult({ workflowName, nodeResults, nodeMap, o
         creditsDeducted: r.creditsDeducted ?? 0,
         ...(blogParsed
           ? { structured: { blog: blogParsed, title: blogParsed.title, summary: `Blog created (${blogParsed.status})` }, text: null }
+          : creativeParsed?.kind === "imageGen"
+            ? {
+                structured: {
+                  title: "Generated image",
+                  summary: creativeParsed.imageWarning || "Image ready",
+                  image: creativeParsed.image,
+                  imagePrompt: creativeParsed.imagePrompt,
+                  prompt: creativeParsed.prompt,
+                },
+                text: null,
+              }
+          : creativeParsed?.kind === "promptGen"
+            ? {
+                structured: {
+                  title: "Generated prompt",
+                  summary: String(creativeParsed.prompt || "").slice(0, 400),
+                  prompt: creativeParsed.prompt,
+                },
+                text: null,
+              }
           : parsed
             ? { structured: parsed, text: null }
             : { text: r.output || "" }),
@@ -68,7 +90,10 @@ export function buildStructuredRunResult({ workflowName, nodeResults, nodeMap, o
   const blogNode = (nodeResults || []).find((r) => nodeMap?.[r.nodeId]?.type === "blog");
   const outputNode = (nodeResults || []).find((r) => nodeMap?.[r.nodeId]?.type === "output");
   const aiNodes = steps.filter((s) => s.type === "ai");
-  const finalStep = blogNode
+  const imageNode = (nodeResults || []).find((r) => nodeMap?.[r.nodeId]?.type === "imageGen");
+  const finalStep = imageNode
+    ? steps.find((s) => s.nodeId === imageNode.nodeId)
+    : blogNode
     ? steps.find((s) => s.nodeId === blogNode.nodeId)
     : outputNode
       ? steps.find((s) => s.nodeId === outputNode.nodeId)

@@ -51,3 +51,14 @@ The production backend must be **redeployed** with this commit. Old deploys do n
 3. Drag Input → AI → Output, connect, set input text in node config.
 4. Fund burner wallet from header bar.
 5. Run workflow → confirm → watch Execution panel + history.
+
+## Creative workflow nodes (Gemini / Studio)
+
+| Node type | Role |
+|-----------|------|
+| `promptGen` | Advanced Prompt Generator — upstream text is the goal |
+| `imageGen` | Image Generator — 16:9 render from upstream prompt |
+
+Template **Creative: Prompt → Image**: Input → Prompt Generator → Image Generator → Output.
+
+Requires `GOOGLE_API_KEY` on the backend.

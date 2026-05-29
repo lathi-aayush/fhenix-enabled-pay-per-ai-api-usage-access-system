@@ -4,6 +4,8 @@ import { checkBlogQuota, checkPromptQuota } from "../middleware/studioQuota.js";
 import * as studio from "../controllers/studio.controller.js";
 import * as studioSubscription from "../controllers/studioSubscription.controller.js";
 import * as studioPrompt from "../controllers/studioPrompt.controller.js";
+import * as studioThumbnail from "../controllers/studioThumbnail.controller.js";
+import * as studioWorkflow from "../controllers/studioWorkflow.controller.js";
 import { workflowsRouter, runsRouter, templatesRouter } from "./workflows.js";
 import clipcraftRoutes from "../studio/clipcraft/routes/clipcraft.routes.js";
 
@@ -26,6 +28,12 @@ router.post("/prompt/enhance", checkPromptQuota, studioPrompt.postPromptEnhance)
 router.post("/prompt/improve", checkPromptQuota, studioPrompt.postPromptImprove);
 router.post("/prompt/analyze", checkPromptQuota, studioPrompt.postPromptAnalyze);
 router.post("/prompt/variations", checkPromptQuota, studioPrompt.postPromptVariations);
+
+router.post("/thumbnail/generate", checkPromptQuota, studioThumbnail.postThumbnailGenerate);
+router.post("/thumbnail/variations", checkPromptQuota, studioThumbnail.postThumbnailVariations);
+router.post("/thumbnail/regenerate-image", checkPromptQuota, studioThumbnail.postThumbnailRegenerateImage);
+
+router.post("/workflow/creative", checkPromptQuota, studioWorkflow.postCreativeWorkflow);
 
 router.post("/blog/generate", checkBlogQuota, studio.postGenerateStream);
 router.post("/blog/save", studio.postBlogSave);
