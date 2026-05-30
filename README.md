@@ -34,6 +34,7 @@
 13. [Production notes](#13-production-notes)
 14. [Git workflow and commits](#14-git-workflow-and-commits)
 15. [Further reading](#15-further-reading)
+16. [Agentic Pipeline & multimodal workflows (detailed)](#16-agentic-pipeline--multimodal-workflows-detailed)
 
 ---
 
@@ -41,8 +42,8 @@
 
 | Area | Purpose |
 |------|---------|
-| **`frontend/`** | Vite + React 18 + Tailwind. **Marketplace** (`/dashboard/*`) for API discovery, keys, usage, billing. **Studio** (`/studio/*`) for blogging, workflows, ClipCraft, **Advanced Prompt Generator**, AI chat (x402), analytics. **Docs** (`/docs/*`) for x402 and How It Works. |
-| **`backend/`** | Express API, MongoDB, JWT auth, Algorand helpers, AI proxy, **x402** routes, **Studio** (Groq blogs, Gemini prompts, ClipCraft pipeline, subscriptions), BullMQ publishing worker. |
+| **`frontend/`** | Vite + React 18 + Tailwind. **Marketplace** (`/dashboard/*`) for API discovery, keys, usage, billing. **Studio** (`/studio/*`) for blogging, **Workflow Studio** (DAG builder + agentic nodes), **Agentic Pipeline** (7-phase multimodal builder), ClipCraft, **Advanced Prompt Generator**, AI chat (x402), analytics. **Docs** (`/docs/*`) for x402 and How It Works. |
+| **`backend/`** | Express API, MongoDB, JWT auth, Algorand helpers, AI proxy, **x402** routes, **Studio** (Groq blogs, Gemini prompts, **agentic orchestrator**, **workflow executor**, GCS asset uploads, ClipCraft, subscriptions), BullMQ publishing worker. |
 | **`contract/`** | Puya / **algopy** smart contract (`SentinelContract`) + deploy script + `artifacts/`. |
 
 **Ecosystem split (product):**
@@ -50,7 +51,7 @@
 | Product | Description |
 |---------|-------------|
 | **Marketplace** | Browse, buy, and use creator AI APIs. Pay-per-use in ALGO (`/api/use`) or **x402** (`/api/x402/use/:serviceId`) for agents. |
-| **Studio** | Groq blog generation (SSE), multi-platform publishing, **Gemini prompt tools** (server-side), Workflow Studio, ClipCraft, plan upgrades in ALGO. |
+| **Studio** | Groq blog generation (SSE), multi-platform publishing, **Gemini prompt tools**, **Workflow Studio** (pay-per-run in ALGO via burner wallet), **Agentic Pipeline** (text → image → video → audio chains), ClipCraft, plan upgrades in ALGO. |
 | **Docs** | In-app guides for x402 integration and platform overview. |
 
 ---
@@ -113,23 +114,31 @@ pay-per-usage-ai-api-access-system-using-algorand/
 │       ├── constants/        ← studioPlans.js, studioLimits.js
 │       ├── middleware/       ← auth, studioQuota (blog + prompt)
 │       ├── models/
-│       ├── routes/             ← auth, services, use, x402.js, studio.routes.js, …
-│       ├── controllers/        ← studio, studioPrompt, studioSubscription
-│       ├── services/           ← aiProxy, geminiPromptService, blog.service, x402Middleware, …
-│       ├── providers/          ← groqProvider.js
-│       ├── studio/clipcraft/   ← ClipCraft pipeline (optional CLIPCRAFT_ENABLED)
-│       ├── queues/ + workers/  ← BullMQ publishing
-│       └── utils/
+│       ├── routes/             ← auth, services, use, x402.js, studio.routes.js,
+│       │                         agenticPipeline.routes.js, workflows.js (templates + SSE)
+│       ├── controllers/        ← studio, studioPrompt, studioSubscription, agenticPipeline
+│       ├── services/
+│       │   ├── agents/           ← textAgent, imageAgent, videoAgent, audioAgent, codeAgent
+│       │   ├── agenticOrchestrator.js, routerService.js, evaluatorService.js
+│       │   ├── deliveryService.js, gcsAssetService.js, memoryService.js
+│       │   ├── workflowExecutor.js, workflowAgenticNodes.js, workflowCreativeNodes.js
+│       │   └── geminiImageService.js, geminiPromptService.js, …
+│       ├── middleware/upload.js  ← pipeline image uploads
+│       ├── models/               ← PipelineRun.js, WorkflowRun.js, UserMemory.js
+│       ├── studio/clipcraft/     ← ClipCraft (optional CLIPCRAFT_ENABLED)
+│       ├── outputs/              ← pipeline/ + workflow/ static assets (gitignored)
+│       └── utils/                ← pcmToWav.js, vertexAuth.js, scriptSceneParser.js
 ├── frontend/
 │   ├── package.json
-│   ├── vite.config.js          ← dev: proxies /api → VITE_PROXY_TARGET (default :5001)
+│   ├── vite.config.js          ← proxies /api and /outputs → backend
 │   └── src/
-│       ├── App.jsx
-│       ├── layouts/            ← MarketplaceLayout, StudioLayout, DocsLayout
-│       ├── pages/              ← marketplace, studio/*, X402Docs, HowItWorks
-│       ├── components/prompt-generator/
-│       ├── api/                ← client.js, promptApi.js, workflowApi.js
-│       └── wallet/             ← pera.js, burner.js
+│       ├── pages/studio/AgenticPipeline/
+│       ├── components/agentic-pipeline/
+│       ├── components/workflow/  ← canvas, nodes, ExecutionPanel, templates
+│       ├── hooks/                ← useAgenticPipeline.js, useWorkflowExecutor.js
+│       ├── utils/                ← mediaUrl.js, workflowUi.js, completionSound.js
+│       ├── api/                  ← agenticPipeline.js, workflowApi.js
+│       └── wallet/               ← pera.js, burner.js
 └── contract/
     ├── sentinel_contract.py
     ├── deploy.py
@@ -149,7 +158,10 @@ flowchart TB
     API[Express API]
     PROXY[AI proxy + metering]
     X402[x402 middleware]
-    STUDIO[Studio: Groq + Gemini prompts]
+    STUDIO[Studio: blogs + prompts]
+    AGENTIC[Agentic orchestrator]
+    WF[Workflow executor]
+    GCS[GCS asset service]
     CC[ClipCraft runtime]
     WORKER[BullMQ worker]
   end
@@ -158,20 +170,31 @@ flowchart TB
     REDIS[(Redis)]
     ALGO[Algorand TestNet]
     GROQ[Groq]
-    GEMINI[Google Gemini Flash]
+    GEMINI[Google Gemini]
+    VERTEX[Vertex Imagen / Veo]
+    BUCKET[(GCS bucket)]
   end
-  FE -->|/api via Vite proxy in dev| API
+  FE -->|/api + /outputs via Vite proxy| API
   API --> MONGO
   API --> PROXY
   API --> X402
   API --> STUDIO
+  API --> AGENTIC
+  API --> WF
+  AGENTIC --> GCS
+  WF --> GCS
+  GCS --> BUCKET
+  AGENTIC --> GEMINI
+  AGENTIC --> VERTEX
+  WF --> GEMINI
+  WF --> VERTEX
   STUDIO --> GROQ
   STUDIO --> GEMINI
   API --> CC
   WORKER --> REDIS
   WORKER --> MONGO
   PROXY --> GROQ
-  FE -->|Pera Wallet| ALGO
+  FE -->|Pera Wallet + burner| ALGO
   API --> ALGO
 ```
 
@@ -183,6 +206,23 @@ flowchart TB
 
 **Prompt Generator:** `/api/studio/prompt/*` (Gemini on server; `GOOGLE_API_KEY`; quota middleware).
 
+**Agentic Pipeline:** `POST /api/studio/agentic/run` (SSE) → memory → router → agents → eval → GCS/local delivery.
+
+**Workflow Studio:** Burner-wallet ALGO estimate → pay → `POST /api/studio/workflows/:id/run` → SSE `workflow-runs/:id/stream` → structured **Output** node.
+
+```mermaid
+flowchart LR
+  subgraph agentic [Agentic Pipeline]
+    IN[Input + optional image]
+    MEM[Memory embed]
+    RTR[Intent router]
+    AG[Agents chain]
+    EV[Evaluator]
+    DL[Delivery GCS or local]
+  end
+  IN --> MEM --> RTR --> AG --> EV --> DL
+```
+
 ---
 
 ## 5. Prerequisites
@@ -192,8 +232,10 @@ flowchart TB
 | **Node.js** | ≥ 20 |
 | **MongoDB** | Atlas or local |
 | **Redis** | Studio publishing queue (BullMQ) |
-| **Google AI Studio key** | Prompt Generator (`GOOGLE_API_KEY` on backend) |
-| **Groq API key** | Studio blogs (`GROQ_API_KEY`) |
+| **Google AI Studio key** | Prompt Generator, Agentic text/TTS/images fallback (`GOOGLE_API_KEY`) |
+| **Groq API key** | Studio blogs + Workflow **AI Agent** nodes (`GROQ_API_KEY`) |
+| **GCP project (optional)** | Vertex Imagen/Veo + GCS (`GOOGLE_CLOUD_PROJECT`, service account JSON, bucket) |
+| **Vertex API key (optional)** | Express-mode Vertex auth (`VERTEX_API_KEY`) if not using JSON credentials |
 | **Python 3.10+** | Optional: `contract/` deploy |
 | **Algorand TestNet** | Pera Wallet + ALGO for demos and plan upgrades |
 
@@ -250,6 +292,8 @@ python deploy.py
 | `GET /api/health` | `{"ok":true}` |
 | `GET /api/services/agent-context` | JSON catalog |
 | Studio → **Advanced Prompt Generator** | Generates after `GOOGLE_API_KEY` is set |
+| Studio → **Agentic Pipeline** | SSE run completes; outputs play/download |
+| Studio → **Workflows → template → Run** | Burner ALGO; Execution panel shows results |
 | Studio → **Plan & upgrade** | Shows blog + prompt quotas |
 
 ---
@@ -282,8 +326,9 @@ python deploy.py
 | Variable | Purpose |
 |----------|---------|
 | `GROQ_API_KEY` | Blogging Agent (Groq SSE) |
-| `GOOGLE_API_KEY` | **Advanced Prompt Generator** (Gemini Flash on server) |
+| `GOOGLE_API_KEY` | Prompt Generator, Agentic Pipeline, workflow Gemini nodes, default images |
 | `GEMINI_MODEL` | Optional override (`gemini-2.5-flash`, etc.) |
+| `GEMINI_IMAGE_MODEL` | Optional image model for thumbnails / Image Generator |
 | `REDIS_URL` | Publishing queue |
 
 ### 7.4 ClipCraft (optional)
@@ -293,7 +338,36 @@ python deploy.py
 | `CLIPCRAFT_ENABLED` | `true` to start ClipCraft runtime |
 | See `backend/.env.example` | Provider mode, credits, queue adapters |
 
-### 7.5 Frontend (`frontend/.env`)
+### 7.5 Agentic Pipeline, workflows, GCS, and Vertex
+
+| Variable | Purpose |
+|----------|---------|
+| `GOOGLE_API_KEY` | **Required** for Gemini: text router, eval, memory, TTS, **default workflow images** (Image Generator + agentic image fallback) |
+| `GOOGLE_CLOUD_PROJECT` | GCP project ID (e.g. `sentinal-ai-497820`) for Vertex Imagen/Veo |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON (relative to `backend/.env`) — **recommended for Veo** |
+| `VERTEX_API_KEY` | Optional Vertex Studio / express API key (used if ADC is missing) |
+| `VERTEX_LOCATION` | Default `us-central1` |
+| `VERTEX_IMAGEN_ENABLED` | `true` to try **Imagen** on Vertex before Gemini images; default `false` |
+| `VERTEX_IMAGEN_MODEL` | e.g. `imagen-3.0-generate-002` |
+| `GCS_ASSETS_BUCKET` | Bucket for all heavy assets + **Veo output** (`gs://bucket/sentinal/veo-output/`) |
+| `GCS_ASSET_PREFIX` | Object prefix (default `sentinal`) |
+| `GCS_SIGNED_URL_TTL_SEC` | Signed URL lifetime (default `3600`) |
+| `VEO_MODEL_IDS` | Comma-separated Veo models to try (newest first) |
+| `PIPELINE_OUTPUT_DIR` | Local fallback when GCS off (`./outputs/pipeline`) |
+| `CODE_SANDBOX` | `docker` for Agentic Code agent (optional) |
+
+**Auth summary**
+
+| Capability | Primary auth | Fallback |
+|------------|--------------|----------|
+| Text, router, eval, memory | `GOOGLE_API_KEY` | — |
+| Images (workflows) | `GOOGLE_API_KEY` (Gemini image models) | Vertex Imagen if `VERTEX_IMAGEN_ENABLED=true` |
+| Audio (TTS) | `GOOGLE_API_KEY` | PCM wrapped to valid WAV in `pcmToWav.js` |
+| Video (Veo) | Service account + **Veo allowlist** + `GCS_ASSETS_BUCKET` | — |
+
+**Veo is not unlocked by an API key alone.** Request access in [Vertex Model Garden](https://console.cloud.google.com/vertex-ai/model-garden) for your project. Grant the service account **Vertex AI User** and **Storage Object Admin** on the bucket.
+
+### 7.6 Frontend (`frontend/.env`)
 
 | Variable | Purpose |
 |----------|---------|
@@ -334,6 +408,12 @@ python deploy.py
 | `/api/contract`, `/api/wallet`, `/api/prediction` | Chain stats, wallet, forecasts |
 | `/api/studio` | Blogs, projects, platforms, analytics, calendar, **subscription**, **workflows**, **clipcraft** |
 | `/api/studio/prompt` | **generate**, **enhance**, **improve**, **analyze**, **variations** (auth + quota) |
+| `/api/studio/agentic` | **Agentic Pipeline**: `POST /run` (SSE), `GET /runs`, `GET /runs/:id` |
+| `/api/studio/workflows` | CRUD workflows, `POST /:id/estimate`, `POST /:id/run`, payment gate |
+| `/api/studio/workflow-runs` | Run history, `GET /:id/stream` (SSE), `GET /:id` |
+| `/api/studio/workflow-templates` | Seeded templates (Agentic, Creative, YouTube, etc.) |
+| `/api/studio/workflow/creative` | One-shot prompt → image (quota) |
+| `/outputs/pipeline`, `/outputs/workflow` | Static generated media (proxied in dev via Vite) |
 
 Studio usage: `GET /api/studio/usage` → `tier`, `monthlyBlogsUsed`, `monthlyBlogLimit`, `monthlyPromptsUsed`, `monthlyPromptLimit`.
 
@@ -352,7 +432,12 @@ Home (Agent Context JSON), browse, keys, usage, creators, service detail, billin
 | Path | Feature |
 |------|---------|
 | `/studio` | Studio home |
-| `/studio/workflows` | Workflow Studio (builder, templates, history) |
+| `/studio/workflows` | Workflow Studio hub |
+| `/studio/workflows/templates` | Pre-built DAG templates |
+| `/studio/workflows/history` | Past runs + execution replay |
+| `/studio/workflows/:id` | Visual builder (React Flow) |
+| `/studio/agentic-pipeline` | Standalone 7-phase Agentic Pipeline UI |
+| `/studio/creative-workflow` | Prompt → image quick flow |
 | `/studio/blogging-agent` | Groq blog editor + publish |
 | `/studio/prompt-generator` | Advanced Prompt Generator (Gemini, subscription quota) |
 | `/studio/clipcraft` | ClipCraft video clips pipeline |
@@ -421,7 +506,8 @@ Includes per-service pricing, models, `how_to_use`, and `generated_at`. Copy fro
 ### Checklist
 
 - `npm run build` in `frontend/`; `NODE_ENV=production` on backend.
-- Set **`GOOGLE_API_KEY`** on backend for Prompt Generator.
+- Set **`GOOGLE_API_KEY`** on backend for Prompt Generator, Agentic Pipeline, and Gemini images.
+- For production multimodal: **`GCS_ASSETS_BUCKET`**, service account JSON, Veo allowlist on GCP project.
 - Redis (TLS) for Studio publishing.
 - Strong `JWT_SECRET` and `ENCRYPTION_KEY`.
 - CORS: `sentinalai.dev`, Render URLs, and `http://localhost:5173` are in `backend/src/config/corsOrigins.js` defaults.
@@ -454,3 +540,256 @@ Includes per-service pricing, models, `how_to_use`, and `generated_at`. Copy fro
 - **[x402.org](https://x402.org)** — x402 specification.
 - **[Google AI Studio](https://aistudio.google.com/apikey)** — Gemini API key for Prompt Generator.
 - **[Algorand TestNet Dispenser](https://bank.testnet.algorand.network/)** — TestNet ALGO.
+
+---
+
+## 16. Agentic Pipeline & multimodal workflows (detailed)
+
+This section documents everything built for **multimodal AI in Studio**: the standalone **Agentic Pipeline**, **Workflow Studio agentic nodes**, **Google Cloud Storage** for assets, **Vertex AI** (Imagen/Veo), and the **execution UX** (panel, sounds, Result node).
+
+### 16.1 Standalone Agentic Pipeline (`/studio/agentic-pipeline`)
+
+A **7-phase** server-orchestrated pipeline. The user submits text (and optional reference image); the backend streams progress over **SSE** and stores the run in MongoDB (`PipelineRun`).
+
+| Phase | What happens |
+|-------|----------------|
+| 1 | Input received |
+| 2 | **Memory** — embed user text, fetch similar past chunks (`UserMemory`, `text-embedding-004`) |
+| 3 | **Router** — Gemini decides agent chain (`text`, `image`, `video`, `audio`, `code`) + keyword fallback for “script + keyframes + video + narrate” |
+| 4 | **Agents** — run chain in order; each agent receives prior output |
+| 5 | **Evaluator** — quality score; up to 2 retries on failure |
+| 6 | **Memory write** — summary stored for future runs |
+| 7 | **Delivery** — assets uploaded to GCS or saved under `backend/outputs/pipeline/` |
+
+**API**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/studio/agentic/run` | Start run (`multipart`: `inputText`, optional `image`). SSE progress + `complete` event (counts against **prompt quota** via `checkPromptQuota`) |
+| `GET` | `/api/studio/agentic/runs` | List runs for user |
+| `GET` | `/api/studio/agentic/runs/:id` | Full run including `outputs`, `structuredResult`, eval fields |
+
+**Agents** (`backend/src/services/agents/`)
+
+| Agent | Model / service | Output |
+|-------|-----------------|--------|
+| **Text** | Gemini Flash | Script, research, markdown scenes (`scriptSceneParser.js`) |
+| **Image** | Vertex Imagen (optional) → **Gemini image** fallback | Base64 or URLs after GCS upload |
+| **Video** | Vertex **Veo** (`predictLongRunning` + poll) | `gs://…` URI → signed HTTPS URL |
+| **Audio** | Gemini TTS | Valid **WAV** (raw L16 PCM wrapped with RIFF header) |
+| **Code** | Gemma + optional Docker sandbox | Python snippet in `meta.code` |
+
+**Key backend files**
+
+- `agenticOrchestrator.js` — main loop
+- `routerService.js` — `inferChainFromPrompt()` for multimodal keywords
+- `evaluatorService.js` — JSON-safe eval parsing
+- `deliveryService.js` — package results; triggers GCS upload
+- `gcsAssetService.js` — upload + signed URLs
+- `controllers/agenticPipeline.controller.js` — HTTP + SSE
+
+**SSE events** (both Agentic Pipeline and workflow runs use a similar pattern)
+
+| Event | Payload (typical) |
+|-------|-------------------|
+| `phase` | Current phase name + message |
+| `agent` | Agent id + status (`running` / `success` / `error`) |
+| `log` | Human-readable line for UI console |
+| `complete` | `runId`, `outputs`, `structuredResult`, eval score |
+| `error` | Message + optional partial outputs |
+
+**Frontend**
+
+- `pages/studio/AgenticPipeline/` — builder + run history
+- `hooks/useAgenticPipeline.js` — SSE client, completion **sound** (`completionSound.js`)
+- `components/agentic-pipeline/OutputViewer.jsx` — images, video, audio with **download**
+- `api/agenticPipeline.js` — REST helpers for runs list/detail
+
+---
+
+### 16.2 Workflow Studio — agentic & creative nodes
+
+Workflows are **DAGs** (React Flow). Each run costs **estimated ALGO** from the user’s **burner wallet** (same pattern as other Studio on-chain payments).
+
+**Node types**
+
+| Node | Backend handler | Notes |
+|------|-----------------|-------|
+| **Input** | Pass-through; optional YouTube URL enrichment | |
+| **Prompt Generator** | `workflowCreativeNodes.js` → Gemini | |
+| **Image Generator** | Gemini `generateImageFromPrompt` → `publishCreativeImage()` | GCS or `/outputs/workflow/` |
+| **Agentic · Text** | `runTextAgent` | |
+| **Agentic · Image** | `runImageAgent` | Keyframes from script scenes |
+| **Agentic · Video** | `runVideoAgent` | Requires Veo allowlist + GCS bucket |
+| **Agentic · Audio** | `runAudioAgent` | TTS → WAV → GCS/local URL |
+| **Agentic · Code** | `runCodeAgent` | |
+| **AI Agent** | Groq completion | Structured output formats |
+| **Logic** | Delay / branch placeholder | |
+| **Output** | `buildStructuredRunResult()` | Aggregates upstream into `structuredResult` |
+| **Blog** | `workflowBlogService.js` | Creates Studio blog post |
+
+**Execution flow**
+
+1. `POST /api/studio/workflows/:id/estimate` — token/credit estimate + DAG validation  
+2. User confirms → burner sends ALGO → `POST /api/studio/workflows/:id/run`  
+3. `workflowExecutor.js` runs topological order; **SSE** events on `/api/studio/workflow-runs/:runId/stream`  
+4. Heavy JSON (images/audio) **compacted** before MongoDB save (`compactOutputForStorage`)  
+5. Agentic assets published via `publishAgenticAssets()` / `publishCreativeImage()`  
+6. On complete: `structuredResult` on `WorkflowRun` + all node statuses synced  
+
+**Frontend execution UX**
+
+- `hooks/useWorkflowExecutor.js` — estimate, pay, run, SSE subscribe
+- `components/workflow/controls/ExecutionPanel.jsx` — logs, media previews, structured JSON
+- `utils/workflowUi.js` — `openWorkflowExecutionPanel` custom event (toolbar / Output node / tab)
+- `WorkflowBuilder.jsx` — listens for panel open; **Re-run** reopens panel when `hasRunData`
+
+**Templates** (seeded in `workflows.js`, category **Agentic** among others)
+
+- Agentic: Script → Images → Video → Audio  
+- Agentic: Wildlife Cinematic Clip  
+- Agentic: Podcast Voiceover  
+- Agentic: Keyframes Only (Fast)  
+- Social Thumbnail + Caption, Research Report, YouTube Short, Python Sandbox, SEO Blog, etc.
+
+---
+
+### 16.3 Google Cloud Storage (GCS)
+
+When `GCS_ASSETS_BUCKET` and `GOOGLE_CLOUD_PROJECT` are set, generated binaries are **not** stored inline in MongoDB (avoids 16MB limit and “offset out of range” save errors).
+
+| Path pattern | Content |
+|--------------|---------|
+| `sentinal/pipeline/{runId}/{agent}/…` | Agentic Pipeline assets |
+| `sentinal/workflow/{runId}/{nodeId}/…` | Workflow agentic node assets |
+| `sentinal/creative/{runId}/{nodeId}.jpg` | Image Generator node |
+| `sentinal/veo-output/` | Veo render destination (`storageUri`) |
+
+Clients receive **v4 signed HTTPS URLs** (`GCS_SIGNED_URL_TTL_SEC`, default 1 hour).
+
+If GCS is disabled, files are served from:
+
+- `GET /outputs/pipeline/*`
+- `GET /outputs/workflow/*`
+
+(Vite dev proxy forwards `/outputs` to the backend.)
+
+**Frontend media helpers**
+
+- `utils/mediaUrl.js` — resolves `http` signed URLs, `/outputs/…` paths, and `data:` URLs  
+- `components/shared/AudioPlayerBlock.jsx` — player + **Download audio** link  
+
+---
+
+### 16.4 Vertex AI vs Gemini API keys
+
+| Key | Where | Used for |
+|-----|-------|----------|
+| `GOOGLE_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) | Gemini text, TTS, eval, memory, **images (default)** |
+| `VERTEX_API_KEY` | Vertex AI Studio / GCP Credentials | Optional; `vertexAuth.js` uses Bearer ADC first, then `?key=` |
+| Service account JSON | `GOOGLE_APPLICATION_CREDENTIALS` | **Veo**, Imagen (if enabled), GCS uploads |
+
+There is **no** separate `VERTEX_API_KEY` required if the service account JSON is configured.
+
+**Video (Veo) checklist**
+
+1. Enable **Vertex AI API** and **Cloud Storage API**  
+2. Create bucket → set `GCS_ASSETS_BUCKET`  
+3. IAM: **Vertex AI User** + **Storage Object Admin** on bucket  
+4. **Request Veo access** in Model Garden (allowlist)  
+5. Restart backend  
+
+**Images without Vertex**
+
+Leave `VERTEX_IMAGEN_ENABLED=false` (default). Image Generator and agentic image nodes use **Gemini image models** (`GEMINI_IMAGE_MODEL` optional).
+
+---
+
+### 16.5 Execution panel UX (workflows)
+
+| Feature | Behavior |
+|---------|----------|
+| **Execution panel** | Right sidebar: logs, final structured output, step-by-step previews |
+| **Re-open when closed** | Toolbar **View results**, right-edge **Results** tab, click **Result** node or green **“open panel”** banner |
+| **Completion sound** | Web Audio chime when workflow or Agentic Pipeline finishes |
+| **Output node** | Shows **DONE** + green ring; compiles upstream into panel |
+| **Status sync** | On `complete` SSE, all nodes (including Output) map to `success` |
+| **Save resilience** | If MongoDB save fails, run still completes in UI with warning; assets already on GCS |
+
+---
+
+### 16.6 Timing expectations (not ALGO cost)
+
+| Step | Typical wall time |
+|------|-------------------|
+| Text / router | ~5–20 s |
+| 3 keyframe images | ~1–3 min |
+| Veo video | ~1–5+ min (often the bottleneck) |
+| TTS audio | ~10–40 s |
+| Full chain (text + 3 images + video + audio) | ~6–12 min |
+
+ALGO shown in the UI is **estimated cost**, not duration.
+
+---
+
+### 16.7 Local development checklist (multimodal)
+
+```bash
+# backend/.env (minimum for agentic text + images + audio)
+GOOGLE_API_KEY=...
+GOOGLE_CLOUD_PROJECT=your-project
+GOOGLE_APPLICATION_CREDENTIALS=../your-service-account.json
+GCS_ASSETS_BUCKET=your-bucket
+VERTEX_API_KEY=...          # optional
+VERTEX_IMAGEN_ENABLED=false
+
+cd backend && npm run dev
+cd frontend && npm run dev   # proxies /api and /outputs
+```
+
+| Test | Route |
+|------|-------|
+| Agentic Pipeline | `/studio/agentic-pipeline` |
+| Workflow templates | `/studio/workflows/templates` → Run |
+| Builder | `/studio/workflows/:id` |
+
+**Verify backend startup logs**
+
+```
+[env] GOOGLE_API_KEY: loaded
+[env] GOOGLE_APPLICATION_CREDENTIALS: loaded
+[env] GCS_ASSETS_BUCKET: your-bucket (pipeline + workflow assets → signed URLs)
+[env] Workflow images: Gemini (GOOGLE_API_KEY). Set VERTEX_IMAGEN_ENABLED=true for Imagen.
+[env] Veo video: configured (requires Model Garden allowlist on project)
+```
+
+---
+
+### 16.8 Security notes
+
+- Never commit `backend/.env`, service account JSON (`sentinal-ai-*.json`), or `backend/outputs/`  
+- `.gitignore` should include `backend/uploads/`, `backend/outputs/`, `*.json` credentials  
+- Rotate keys if credentials were ever committed  
+- Signed GCS URLs expire; re-fetch run to refresh links  
+
+---
+
+### 16.9 Troubleshooting (common issues)
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| Result node stays **IDLE**, panel stuck on “Running” | MongoDB `save()` failed on huge base64 in `nodeResults` | Enable **GCS**; ensure `compactOutputForStorage` runs; restart backend |
+| Audio plays **0:00** or won’t download | Gemini TTS returns raw PCM, not WAV | Fixed in `pcmToWav.js` + `audioAgent.js` — pull latest, re-run |
+| `isGcsConfigured is not defined` | Missing import in executor | Update `workflowExecutor.js` |
+| Workflow images fail with Vertex permission | Imagen IAM / billing | Keep `VERTEX_IMAGEN_ENABLED=false`; use Gemini images |
+| Veo always errors | Project not on **Veo allowlist** | Request access in Model Garden; need bucket + service account |
+| `/outputs/...` 404 in browser | Vite not proxying | Use `npm run dev` in frontend; `vite.config.js` proxies `/outputs` |
+| CORS errors on localhost | `VITE_API_URL` points at static site | Unset `VITE_API_URL`; use Vite proxy or `VITE_PROXY_TARGET` |
+
+---
+
+### 16.10 Related documentation
+
+- **`DOCUMENTATION.md`** — broader API reference  
+- **`backend/.env.example`** — all env flags (Agentic + GCS + Vertex block at bottom)  
+- **`LLM_PROJECT_CONTEXT.md`** — condensed context for AI assistants  
