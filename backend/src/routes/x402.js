@@ -30,6 +30,7 @@ import rateLimit from "express-rate-limit";
 import mongoose from "mongoose";
 import { Service } from "../models/Service.js";
 import { ApiUsageLog } from "../models/ApiUsageLog.js";
+import { notifyCreatorPurchaseWebhooks } from "../services/creatorWebhookDispatcher.js";
 import { forwardChatCompletion, forwardChatCompletionStream } from "../services/aiProxy.js";
 import {
   extractTokenUsage,
@@ -301,6 +302,7 @@ router.post("/use/:serviceId", x402RateLimit, async (req, res) => {
         apiKey: providerKey,
         model: service.modelName,
         body: aiBody,
+        customEndpointUrl: service.customEndpointUrl || "",
       }, req, res);
       providerKey = null; // clear from memory ASAP
 
@@ -316,6 +318,7 @@ router.post("/use/:serviceId", x402RateLimit, async (req, res) => {
         apiKey: providerKey,
         model: service.modelName,
         body: aiBody,
+        customEndpointUrl: service.customEndpointUrl || "",
       });
       providerKey = null; // clear from memory ASAP
     }
@@ -383,6 +386,13 @@ router.post("/use/:serviceId", x402RateLimit, async (req, res) => {
       totalTokens: usage.totalTokens,
       chargeAlgo: actualChargeAlgo,
       pricePerThousandTokens: Number(service.pricePerThousandTokens),
+    });
+
+    notifyCreatorPurchaseWebhooks({
+      creatorWallet,
+      usageLog: logDoc,
+      service,
+      x402Payment: true,
     });
 
     // 11. Async proof-of-intelligence (fire-and-forget)

@@ -55,12 +55,12 @@ const menus = {
         title: "Docs & Guides",
         items: [
           { icon: "menu_book", label: "x402 Protocol Docs",  sub: "Full API reference",              path: "/docs/x402" },
-          { icon: "science",   label: "Live Playground",     sub: "Test live x402 transactions",     path: "/x402-test" },
           { icon: "terminal",  label: "Code Examples",       sub: "cURL, JS, Python snippets",       path: "/docs/x402-api" },
+          { icon: "code",      label: "Developer SDK",       sub: "JS/TS client library & demo",     path: "/sdk-demo" },
         ],
       },
     ],
-    cta: { label: "Open x402 Playground →", path: "/x402-test" },
+    cta: { label: "Explore API Docs →", path: "/docs/x402" },
   },
 };
 
@@ -76,7 +76,7 @@ function DropdownPanel({ data, open, onNavigate, onMouseEnter, onMouseLeave, isA
         opacity: open ? 1 : 0,
         transform: open ? "translateY(0) scale(1)" : "translateY(-6px) scale(0.98)",
         pointerEvents: open ? "all" : "none",
-        transition: "opacity 160ms ease, transform 160ms ease",
+        transition: "opacity 300ms ease-out, transform 300ms ease-out",
         transformOrigin: "top center",
       }}
       className="absolute left-1/2 -translate-x-1/2 top-full pt-2 w-[620px] z-50"
@@ -198,7 +198,7 @@ export default function MegaNav({ enterWithPera }) {
   };
 
   const scheduleClose = () => {
-    closeTimer.current = setTimeout(() => setOpenMenu(null), 180);
+    closeTimer.current = setTimeout(() => setOpenMenu(null), 350);
   };
 
   /** Handle item click — gate auth-required routes */
@@ -262,58 +262,102 @@ export default function MegaNav({ enterWithPera }) {
           </Link>
 
           <nav className="hidden md:flex items-center gap-0.5">
-            {/* Mega-dropdown items */}
-            {Object.entries(menus).map(([key, data]) => (
-              <div
-                key={key}
-                className="relative"
-                onMouseEnter={() => keepOpen(key)}
-                onMouseLeave={scheduleClose}
+            {/* Product Dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={() => keepOpen("Product")}
+              onMouseLeave={scheduleClose}
+            >
+              <button
+                type="button"
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                  openMenu === "Product"
+                    ? "bg-slate-100 text-slate-900"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                }`}
               >
-                <button
-                  type="button"
-                  className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                    openMenu === key
-                      ? "bg-slate-100 text-slate-900"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                  }`}
+                Product
+                <span
+                  className="material-symbols-outlined text-[14px] transition-transform duration-200"
+                  style={{ transform: openMenu === "Product" ? "rotate(180deg)" : "rotate(0deg)" }}
                 >
-                  {key}
-                  <span
-                    className="material-symbols-outlined text-[14px] transition-transform duration-200"
-                    style={{ transform: openMenu === key ? "rotate(180deg)" : "rotate(0deg)" }}
-                  >
-                    expand_more
-                  </span>
-                </button>
+                  expand_more
+                </span>
+              </button>
+              <DropdownPanel
+                data={menus.Product}
+                open={openMenu === "Product"}
+                onNavigate={handleItemClick}
+                onMouseEnter={() => keepOpen("Product")}
+                onMouseLeave={scheduleClose}
+                isAuthenticated={isAuthenticated}
+              />
+            </div>
 
-                {/* Panel: has its own mouse handlers to keep it open when cursor is on it */}
-                <DropdownPanel
-                  data={data}
-                  open={openMenu === key}
-                  onNavigate={handleItemClick}
-                  onMouseEnter={() => keepOpen(key)}
-                  onMouseLeave={scheduleClose}
-                  isAuthenticated={isAuthenticated}
-                />
-              </div>
-            ))}
-
-            {/* "How It Works" plain link */}
-            <Link
-              to="/docs/how-it-works"
-              className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
+            {/* Use Cases Dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={() => keepOpen("Use Cases")}
+              onMouseLeave={scheduleClose}
             >
-              How It Works
-            </Link>
-            <Link
-              to="/sdk-demo"
-              className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
+              <button
+                type="button"
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                  openMenu === "Use Cases"
+                    ? "bg-slate-100 text-slate-900"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                }`}
+              >
+                Use Cases
+                <span
+                  className="material-symbols-outlined text-[14px] transition-transform duration-200"
+                  style={{ transform: openMenu === "Use Cases" ? "rotate(180deg)" : "rotate(0deg)" }}
+                >
+                  expand_more
+                </span>
+              </button>
+              <DropdownPanel
+                data={menus["Use Cases"]}
+                open={openMenu === "Use Cases"}
+                onNavigate={handleItemClick}
+                onMouseEnter={() => keepOpen("Use Cases")}
+                onMouseLeave={scheduleClose}
+                isAuthenticated={isAuthenticated}
+              />
+            </div>
+
+
+            {/* Resources Dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={() => keepOpen("Resources")}
+              onMouseLeave={scheduleClose}
             >
-              SDK
-            </Link>
-
-
+              <button
+                type="button"
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                  openMenu === "Resources"
+                    ? "bg-slate-100 text-slate-900"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                }`}
+              >
+                Resources
+                <span
+                  className="material-symbols-outlined text-[14px] transition-transform duration-200"
+                  style={{ transform: openMenu === "Resources" ? "rotate(180deg)" : "rotate(0deg)" }}
+                >
+                  expand_more
+                </span>
+              </button>
+              <DropdownPanel
+                data={menus.Resources}
+                open={openMenu === "Resources"}
+                onNavigate={handleItemClick}
+                onMouseEnter={() => keepOpen("Resources")}
+                onMouseLeave={scheduleClose}
+                isAuthenticated={isAuthenticated}
+              />
+            </div>
           </nav>
         </div>
 

@@ -37,7 +37,12 @@ const AgenticPipeline = lazy(() => import("./pages/studio/AgenticPipeline/index.
 const ViralThumbnailAI = lazy(() => import("./pages/studio/ViralThumbnailAI.jsx"));
 import X402Docs from "./pages/X402Docs.jsx";
 import X402DevDocs from "./pages/X402DevDocs.jsx";
+import WithdrawalDocs from "./pages/WithdrawalDocs.jsx";
 import HowItWorks from "./pages/HowItWorks.jsx";
+import CliDocs from "./pages/CliDocs.jsx";
+import MigrationDocs from "./pages/MigrationDocs.jsx";
+import FaqDocs from "./pages/FaqDocs.jsx";
+import PricingDocs from "./pages/PricingDocs.jsx";
 import SdkDemo from "./pages/SdkDemo.jsx";
 const WorkflowStudioHub = lazy(() => import("./pages/WorkflowStudioHub.jsx"));
 const StudioChat = lazy(() => import("./pages/studio/StudioChat.jsx"));
@@ -172,6 +177,11 @@ export default function App() {
         <Route path="how-it-works" element={<HowItWorks />} />
         <Route path="x402" element={<X402Docs />} />
         <Route path="x402-api" element={<X402DevDocs />} />
+        <Route path="withdrawal" element={<WithdrawalDocs />} />
+        <Route path="cli" element={<CliDocs />} />
+        <Route path="migration" element={<MigrationDocs />} />
+        <Route path="faq" element={<FaqDocs />} />
+        <Route path="pricing" element={<PricingDocs />} />
       </Route>
 
       <Route

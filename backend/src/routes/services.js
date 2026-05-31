@@ -8,7 +8,7 @@ import { canonicalWalletAddress, sameWallet } from "../utils/userWallet.js";
 
 const router = Router();
 
-const AI_PROVIDERS = ["groq", "openai", "anthropic", "together"];
+const AI_PROVIDERS = ["groq", "openai", "anthropic", "together", "custom"];
 
 export function toPublicService(doc) {
   const o =
@@ -177,6 +177,7 @@ router.post(
   body("aiProvider").isIn(AI_PROVIDERS),
   body("providerApiKey").isString().trim().notEmpty(),
   body("modelName").isString().trim().notEmpty(),
+  body("customEndpointUrl").optional().isString(),
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -190,8 +191,21 @@ router.post(
       aiProvider,
       providerApiKey,
       modelName,
+      customEndpointUrl = "",
     } = req.body;
-    
+
+    // Custom provider requires a valid endpoint URL
+    if (aiProvider === "custom") {
+      try {
+        const u = new URL(String(customEndpointUrl).trim());
+        if (!u.protocol.startsWith("http")) throw new Error();
+      } catch {
+        return res.status(400).json({
+          errors: [{ msg: "Custom provider requires a valid http/https endpoint URL" }],
+        });
+      }
+    }
+
     let creatorWallet;
     try {
       creatorWallet = canonicalWalletAddress(req.user.walletAddress);
@@ -218,6 +232,7 @@ router.post(
       aiProvider,
       encryptedApiKey,
       modelName: String(modelName).trim(),
+      customEndpointUrl: aiProvider === "custom" ? String(customEndpointUrl).trim() : "",
       isPaused: false,
     });
     const { encryptedApiKey: _omit, ...safe } = service.toObject();
@@ -227,6 +242,7 @@ router.post(
     });
   }
 );
+
 
 router.patch(
   "/:id",
@@ -242,6 +258,7 @@ router.patch(
   body("providerApiKey").optional().isString().trim().notEmpty(),
   body("isPaused").optional().isBoolean(),
   body("x402Enabled").optional().isBoolean(),
+  body("customEndpointUrl").optional().isString(),
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -262,6 +279,7 @@ router.patch(
       providerApiKey,
       isPaused,
       x402Enabled,
+      customEndpointUrl,
     } = req.body;
     if (title !== undefined) service.title = title;
     if (description !== undefined) service.description = description;
@@ -275,6 +293,7 @@ router.patch(
     if (aiProvider !== undefined) service.aiProvider = aiProvider;
     if (isPaused !== undefined) service.isPaused = isPaused;
     if (x402Enabled !== undefined) service.x402Enabled = x402Enabled;
+    if (customEndpointUrl !== undefined) service.customEndpointUrl = String(customEndpointUrl).trim();
     if (providerApiKey !== undefined && String(providerApiKey).trim()) {
       try {
         service.encryptedApiKey = encryptSecret(String(providerApiKey).trim());

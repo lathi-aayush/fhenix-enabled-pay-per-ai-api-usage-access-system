@@ -13,8 +13,10 @@ const serviceSchema = new mongoose.Schema(
     totalRevenue: { type: Number, default: 0 },
     aiProvider: {
       type: String,
-      enum: ["groq", "openai", "anthropic", "together"],
+      enum: ["groq", "openai", "anthropic", "together", "custom"],
     },
+    /** For aiProvider === "custom": full base URL, e.g. https://my-server.com/v1 */
+    customEndpointUrl: { type: String, default: "" },
     /** AES-256-GCM payload; never exposed via API */
     encryptedApiKey: { type: String },
     modelName: { type: String, default: "" },

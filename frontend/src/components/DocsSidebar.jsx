@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
-export default function DocsSidebar() {
+export default function DocsSidebar({ isCollapsed, setIsCollapsed }) {
   const location = useLocation();
   const [expanded, setExpanded] = useState({
     protocol: true,
@@ -13,9 +13,25 @@ export default function DocsSidebar() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <aside className="w-64 shrink-0 hidden md:block border-r border-slate-200 h-[calc(100vh-56px)] overflow-y-auto bg-white sticky top-14">
-      <div className="px-4 py-8">
-        <ul className="space-y-1 text-[13px] font-medium text-slate-600">
+    <aside className={`w-64 shrink-0 hidden md:flex flex-col border-r border-slate-200 h-[calc(100vh-56px)] bg-white sticky top-14 transition-all duration-300 z-40 ${isCollapsed ? "-ml-64" : "ml-0"}`}>
+      {/* Floating Toggle Button */}
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="absolute top-4 w-8 h-8 bg-white/80 dark:bg-[#1A1C1C]/80 backdrop-blur border border-slate-200/80 dark:border-slate-800/80 shadow-md rounded-xl flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-300 cursor-pointer z-50 text-slate-600 dark:text-slate-300"
+        style={{ left: isCollapsed ? "calc(100% + 12px)" : "calc(100% - 44px)" }}
+        title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+      >
+        <span className="material-symbols-outlined text-[18px]">
+          {isCollapsed ? "menu" : "menu_open"}
+        </span>
+      </button>
+
+      <div className={`flex-1 overflow-y-auto flex flex-col pt-8 transition-opacity duration-300 ${isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+        <div className="px-6 mb-8">
+          <h3 className="text-slate-900 font-semibold">Documentation</h3>
+          <p className="text-slate-500 text-xs">Sentinel Protocol Guides</p>
+        </div>
+        <ul className="space-y-1 text-[13px] font-medium text-slate-600 px-4 pb-8">
           <li>
             <Link to="/docs" className={`block px-3 py-1.5 rounded transition-colors ${isActive('/docs') ? 'bg-indigo-50/50 text-indigo-700 font-semibold' : 'hover:bg-slate-50'}`}>
               Home
@@ -26,13 +42,18 @@ export default function DocsSidebar() {
               How It Works
             </Link>
           </li>
+          <li>
+            <Link to="/docs/withdrawal" className={`block px-3 py-1.5 rounded transition-colors ${isActive('/docs/withdrawal') ? 'bg-indigo-50/50 text-indigo-700 font-semibold' : 'hover:bg-slate-50'}`}>
+              Payouts & Withdrawals
+            </Link>
+          </li>
           
           <li className="pt-4 pb-1">
             <button 
               onClick={() => toggle("protocol")}
               className="flex items-center justify-between w-full px-3 py-1.5 rounded hover:bg-slate-50 transition-colors"
             >
-              <span className={`text-slate-900 ${location.pathname.includes('x402') ? 'font-semibold' : ''}`}>x402 Protocol</span>
+              <span className={`text-slate-900 ${location.pathname.includes('x402') || location.pathname.includes('cli') || location.pathname.includes('migration') ? 'font-semibold' : ''}`}>Sentinel Protocol</span>
               <span className="material-symbols-outlined text-[16px] text-slate-400">
                 {expanded.protocol ? "expand_more" : "chevron_right"}
               </span>
@@ -54,6 +75,22 @@ export default function DocsSidebar() {
                     className={`block px-3 py-1.5 rounded transition-colors ${isActive('/docs/x402-api') ? 'bg-indigo-50/50 text-indigo-700 font-semibold' : 'hover:bg-slate-50 text-slate-500 hover:text-slate-800'}`}
                   >
                     API Reference
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/docs/cli" 
+                    className={`block px-3 py-1.5 rounded transition-colors ${isActive('/docs/cli') ? 'bg-indigo-50/50 text-indigo-700 font-semibold' : 'hover:bg-slate-50 text-slate-500 hover:text-slate-800'}`}
+                  >
+                    CLI Tool
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/docs/migration" 
+                    className={`block px-3 py-1.5 rounded transition-colors ${isActive('/docs/migration') ? 'bg-indigo-50/50 text-indigo-700 font-semibold' : 'hover:bg-slate-50 text-slate-500 hover:text-slate-800'}`}
+                  >
+                    Migration Guide
                   </Link>
                 </li>
               </ul>
@@ -106,7 +143,17 @@ export default function DocsSidebar() {
               </ul>
             )}
           </li>
-          
+
+          <li className="pt-4">
+            <Link to="/docs/pricing" className={`block px-3 py-1.5 rounded transition-colors ${isActive('/docs/pricing') ? 'bg-indigo-50/50 text-indigo-700 font-semibold' : 'hover:bg-slate-50'}`}>
+              Pricing & Micro-payments
+            </Link>
+          </li>
+          <li>
+            <Link to="/docs/faq" className={`block px-3 py-1.5 rounded transition-colors ${isActive('/docs/faq') ? 'bg-indigo-50/50 text-indigo-700 font-semibold' : 'hover:bg-slate-50'}`}>
+              FAQ
+            </Link>
+          </li>
         </ul>
       </div>
     </aside>

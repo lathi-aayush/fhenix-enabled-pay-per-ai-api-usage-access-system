@@ -18,21 +18,30 @@ function contentToString(content) {
 }
 
 /**
- * Forwards a chat-style request to Groq, OpenAI, or Anthropic.
+ * Forwards a chat-style request to Groq, OpenAI, Anthropic, Together AI, or a custom
+ * OpenAI-compatible endpoint (e.g. vLLM, Ollama, RunPod, HuggingFace TGI, fine-tuned models).
  * Accepts an OpenAI-compatible { messages, model?, max_tokens?, temperature? } body.
  */
-export async function forwardChatCompletion({ provider, apiKey, model, body }) {
+export async function forwardChatCompletion({ provider, apiKey, model, body, customEndpointUrl }) {
   const messages = openAiStyleMessages(body);
   const maxTokens = body.max_tokens ?? 1024;
   const temperature = body.temperature;
 
-  if (provider === "groq" || provider === "openai" || provider === "together") {
-    const url =
-      provider === "groq"
-        ? "https://api.groq.com/openai/v1/chat/completions"
-        : provider === "together"
-          ? "https://api.together.xyz/v1/chat/completions"
-          : "https://api.openai.com/v1/chat/completions";
+  if (provider === "groq" || provider === "openai" || provider === "together" || provider === "custom") {
+    let url;
+    if (provider === "custom") {
+      // Strip trailing slash and append the OpenAI-compatible path
+      const base = String(customEndpointUrl || "").replace(/\/+$/, "");
+      if (!base) throw Object.assign(new Error("Custom endpoint URL not configured"), { status: 500 });
+      url = `${base}/chat/completions`;
+    } else {
+      url =
+        provider === "groq"
+          ? "https://api.groq.com/openai/v1/chat/completions"
+          : provider === "together"
+            ? "https://api.together.xyz/v1/chat/completions"
+            : "https://api.openai.com/v1/chat/completions";
+    }
     const payload = {
       model: model || body.model,
       messages,
@@ -134,20 +143,27 @@ import { createParser } from "eventsource-parser";
  * Forwards a chat-style request to the AI provider and pipes an SSE stream to the Express response.
  * Returns a promise that resolves with { content, usage } when the stream finishes.
  */
-export async function forwardChatCompletionStream({ provider, apiKey, model, body }, req, res) {
+export async function forwardChatCompletionStream({ provider, apiKey, model, body, customEndpointUrl }, req, res) {
   const messages = openAiStyleMessages(body);
   const maxTokens = body.max_tokens ?? 1024;
   const temperature = body.temperature;
   let fullContent = "";
   let usage = null;
 
-  if (provider === "groq" || provider === "openai" || provider === "together") {
-    const url =
-      provider === "groq"
-        ? "https://api.groq.com/openai/v1/chat/completions"
-        : provider === "together"
-          ? "https://api.together.xyz/v1/chat/completions"
-          : "https://api.openai.com/v1/chat/completions";
+  if (provider === "groq" || provider === "openai" || provider === "together" || provider === "custom") {
+    let url;
+    if (provider === "custom") {
+      const base = String(customEndpointUrl || "").replace(/\/+$/, "");
+      if (!base) throw Object.assign(new Error("Custom endpoint URL not configured"), { status: 500 });
+      url = `${base}/chat/completions`;
+    } else {
+      url =
+        provider === "groq"
+          ? "https://api.groq.com/openai/v1/chat/completions"
+          : provider === "together"
+            ? "https://api.together.xyz/v1/chat/completions"
+            : "https://api.openai.com/v1/chat/completions";
+    }
     
     const payload = {
       model: model || body.model,

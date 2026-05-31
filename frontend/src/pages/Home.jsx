@@ -9,12 +9,39 @@ import { connectPera } from "../wallet/pera.js";
 import { api } from "../api/client.js";
 import HowItWorks from "../components/HowItWorks.jsx";
 import MegaNav from "../components/MegaNav.jsx";
+import InteractiveBackground from "../components/InteractiveBackground.jsx";
+import LiveTxFeed from "../components/LiveTxFeed.jsx";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      ease: [0.16, 1, 0.3, 1],
+    },
+  },
+};
 
 export default function Home() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, register, user, logout, isAuthenticated } = useAuth();
   const [busy, setBusy] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [activeLegalTab, setActiveLegalTab] = useState("risk");
 
   const [showReg, setShowReg] = useState(false);
   const [regRole, setRegRole] = useState("user");
@@ -24,6 +51,8 @@ export default function Home() {
   const [nameError, setNameError] = useState("");
   const [checkingName, setCheckingName] = useState(false);
   const [regRedirect, setRegRedirect] = useState("/dashboard/home");
+
+
 
   useEffect(() => {
     if (!location.hash) return;
@@ -134,147 +163,202 @@ export default function Home() {
   }
 
   return (
-    <div className="bg-white selection:bg-indigo-50 selection:text-indigo-900 min-h-screen relative overflow-hidden">
+    <div className="bg-[#fafafc] selection:bg-indigo-50 selection:text-indigo-900 min-h-screen relative overflow-hidden">
       <MegaNav enterWithPera={enterWithPera} />
 
       <main className="pt-14">
-        {/* Full-bleed background decorations spanning 100% viewport width */}
-        <div className="absolute top-0 left-0 right-0 h-[700px] pointer-events-none overflow-hidden -z-10 w-full">
+        {/* Full-page ambient mesh background overlay */}
+        <div className="absolute inset-0 pointer-events-none z-0">
           {/* Subtle full-bleed SVG Grid Overlay */}
-          <svg className="absolute inset-0 w-full h-full stroke-slate-200/40 [mask-image:radial-gradient(100%_100%_at_top_center,white,transparent_80%)]" xmlns="http://www.w3.org/2000/svg">
+          <svg className="absolute inset-0 w-full h-full stroke-slate-200/30 [mask-image:linear-gradient(to_bottom,white_20%,transparent_90%)]" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <pattern id="grid-pattern" width="40" height="40" patternUnits="userSpaceOnUse" x="50%" y="-1">
+              <pattern id="grid-pattern-full" width="40" height="40" patternUnits="userSpaceOnUse" x="50%" y="-1">
                 <path d="M.5 40V.5H40" fill="none" strokeDasharray="3 3" />
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="url(#grid-pattern)" />
+            <rect width="100%" height="100%" fill="url(#grid-pattern-full)" />
           </svg>
 
-          {/* Extremely soft dynamic moving mesh blobs positioned relative to the full viewport width */}
-          <div className="absolute top-[-25%] left-[-15%] w-[65vw] h-[65vw] rounded-full bg-indigo-500/[0.04] blur-[150px] animate-blob" />
-          <div className="absolute bottom-[-10%] right-[-15%] w-[60vw] h-[60vw] rounded-full bg-emerald-500/[0.03] blur-[140px] animate-blob animation-delay-2000" />
-          <div className="absolute top-[30%] left-[10%] w-[55vw] h-[55vw] rounded-full bg-violet-500/[0.04] blur-[130px] animate-blob animation-delay-4000" />
+          {/* Extremely soft dynamic moving mesh blobs positioned at different scroll levels */}
+          {/* Top section (Hero) */}
+          <div className="absolute top-[-5%] left-[-10%] w-[50vw] h-[50vw] min-w-[400px] min-h-[400px] rounded-full bg-indigo-300/[0.12] blur-[130px] animate-blob" />
+          <div className="absolute top-[10%] right-[-10%] w-[45vw] h-[45vw] min-w-[350px] min-h-[350px] rounded-full bg-emerald-200/[0.08] blur-[120px] animate-blob animation-delay-2000" />
+          <div className="absolute top-[25%] left-[5%] w-[40vw] h-[40vw] min-w-[300px] min-h-[300px] rounded-full bg-violet-300/[0.1] blur-[110px] animate-blob animation-delay-4000" />
+
+          {/* Middle section (Marketplace & Studio) */}
+          <div className="absolute top-[45%] right-[-5%] w-[45vw] h-[45vw] min-w-[350px] min-h-[350px] rounded-full bg-indigo-200/[0.08] blur-[140px] animate-blob animation-delay-2000" />
+          <div className="absolute top-[55%] left-[-5%] w-[45vw] h-[45vw] min-w-[350px] min-h-[350px] rounded-full bg-emerald-200/[0.07] blur-[130px] animate-blob" />
+
+          {/* Bottom section (How It Works & Stats) */}
+          <div className="absolute top-[75%] right-[10%] w-[50vw] h-[50vw] min-w-[400px] min-h-[400px] rounded-full bg-violet-200/[0.09] blur-[150px] animate-blob animation-delay-4000" />
+          <div className="absolute bottom-[5%] left-[5%] w-[40vw] h-[40vw] min-w-[350px] min-h-[350px] rounded-full bg-indigo-300/[0.07] blur-[120px] animate-blob" />
         </div>
 
-        <section className="relative max-w-5xl mx-auto px-6 pt-32 pb-24 text-center">
-          <div className="flex flex-col items-center gap-6 relative z-10">
-            <motion.span 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="inline-block py-1.5 px-4 rounded-full bg-indigo-50/80 backdrop-blur-sm border border-indigo-200/50 text-indigo-700 text-xs font-bold tracking-[0.2em] uppercase mb-2 shadow-sm"
+        {/* Constrain Interactive Background Canvas to the Hero/Top fold */}
+        <div className="absolute top-0 left-0 right-0 h-[780px] pointer-events-none overflow-hidden z-0 w-full">
+          <InteractiveBackground />
+        </div>
+
+        <section className="relative max-w-6xl mx-auto px-6 pt-8 pb-16">
+          <div className="grid md:grid-cols-2 gap-12 items-start relative z-10">
+
+            {/* LEFT: Headline & CTAs */}
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="flex flex-col gap-8"
             >
-              Build AI Products
-            </motion.span>
-            
-            <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="font-headline text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-slate-900 via-[#031634] to-indigo-600 leading-[1.1] tracking-tight drop-shadow-sm"
-            >
-              Automate <br className="hidden md:block" />
-              Creative Work.
-            </motion.h1>
-            
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="font-body text-lg md:text-xl text-slate-500 max-w-2xl mx-auto mt-2 leading-relaxed"
-            >
-              APIs, creator tools, publishing agents, and AI workflows powered by <strong className="text-slate-700 font-semibold">SentinelAI</strong>.
-            </motion.p>
-            
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-wrap justify-center gap-4 mt-8"
-            >
-              <button
-                type="button"
-                onClick={() => (isAuthenticated ? navigate("/dashboard/home") : enterWithPera("user"))}
-                className="group px-8 py-4 bg-[#031634] text-white rounded-full text-[15px] font-semibold hover:bg-indigo-600 hover:shadow-xl hover:shadow-indigo-500/20 transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-2"
+              <motion.div
+                variants={itemVariants}
+                className="inline-flex items-center gap-3 w-fit"
               >
-                Explore Marketplace
-                <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  isAuthenticated ? navigate("/studio") : enterWithPera("user", { redirect: "/studio" })
-                }
-                className="group px-8 py-4 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-full text-[15px] font-semibold text-slate-700 hover:bg-white hover:border-slate-300 hover:shadow-md hover:text-slate-900 transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-2"
+                <span className="inline-flex items-center gap-1.5 py-1.5 px-4 rounded-full bg-white/80 backdrop-blur-sm border border-slate-200/80 shadow-sm text-[10px] font-bold tracking-[0.15em] uppercase text-slate-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                  <span className="text-indigo-600">Marketplace</span>
+                  <span className="text-slate-300">·</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span className="text-emerald-600">AI Studio</span>
+                  <span className="text-slate-300">·</span>
+                  <span className="flex h-1.5 w-1.5 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                  </span>
+                  <span className="text-emerald-600">Live on Algorand</span>
+                </span>
+              </motion.div>
+
+              <motion.h1
+                variants={itemVariants}
+                className="font-headline text-[3rem] md:text-[3.75rem] font-extrabold leading-[1.08] tracking-tight text-slate-900"
               >
-                Open Studio
-                <span className="material-symbols-outlined text-[18px] text-emerald-500 group-hover:rotate-12 transition-transform">auto_awesome</span>
-              </button>
+                APIs, AI Studio &
+                <br />
+                <span className="bg-gradient-to-r from-indigo-600 via-violet-500 to-emerald-500 bg-clip-text text-transparent">
+                  pay per API call.
+                </span>
+              </motion.h1>
+
+              <motion.p
+                variants={itemVariants}
+                className="font-body text-[15px] text-slate-500 max-w-[420px] leading-relaxed"
+              >
+                A <strong className="text-slate-700">decentralized API marketplace</strong> for developers and an{" "}
+                <strong className="text-slate-700">AI creative Studio</strong> for creators — both settled per-request on Algorand. No monthly plans, no lock-in.
+              </motion.p>
+
+              {/* 3 value pillars — lightweight inline row */}
+              <motion.div
+                variants={itemVariants}
+                className="flex items-center gap-6"
+              >
+                {[
+                  { icon: "toll",      label: "Pay Per Call",    iconColor: "text-indigo-500" },
+                  { icon: "lock_open", label: "No Subscription", iconColor: "text-violet-500" },
+                  { icon: "verified",  label: "On-Chain Proof",  iconColor: "text-emerald-500" },
+                ].map((p, i) => (
+                  <div key={i} className="flex items-center gap-1.5">
+                    <span className={`material-symbols-outlined ${p.iconColor} text-[17px]`}>{p.icon}</span>
+                    <span className="text-[11.5px] font-semibold text-slate-600">{p.label}</span>
+                  </div>
+                ))}
+              </motion.div>
+
+              <motion.div
+                variants={itemVariants}
+                className="flex flex-wrap gap-3"
+              >
+                <button
+                  type="button"
+                  onClick={() => (isAuthenticated ? navigate("/dashboard/home") : enterWithPera("user"))}
+                  className="group px-6 py-3 bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-full text-[13px] font-semibold hover:from-indigo-600 hover:to-violet-600 hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 hover:-translate-y-px flex items-center gap-2 shadow-md shadow-slate-900/20"
+                >
+                  Browse Marketplace
+                  <span className="material-symbols-outlined text-[15px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => isAuthenticated ? navigate("/studio") : enterWithPera("user", { redirect: "/studio" })}
+                  className="group px-6 py-3 bg-white border border-slate-200 rounded-full text-[13px] font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700 hover:shadow-md transition-all duration-300 hover:-translate-y-px flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-[15px] text-emerald-500">auto_awesome</span>
+                  Open AI Studio
+                </button>
+              </motion.div>
             </motion.div>
+
+            {/* RIGHT: Live On-Chain Transaction Feed */}
+            <motion.div
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="hidden md:block"
+            >
+              <LiveTxFeed />
+            </motion.div>
+
           </div>
         </section>
 
         {/* Continuous Horizontal Logo / Tech Marquee */}
-        <section className="relative w-full overflow-hidden py-8 border-y border-slate-100 bg-slate-50/50 backdrop-blur-sm -mt-6 mb-16">
-          <div className="max-w-5xl mx-auto px-6">
-            <p className="text-center text-[10px] font-bold tracking-[0.2em] text-slate-400 uppercase mb-4">
-              Decentralized Infrastructure Supporting World-Class AI
-            </p>
-            <div className="relative w-full flex items-center overflow-hidden">
-              {/* Left/Right blur gradients for smooth fading edges */}
-              <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none" />
-              <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none" />
-              
-              <div className="flex animate-marquee gap-16 whitespace-nowrap">
-                {/* First list of items */}
-                {[
-                  { name: "Algorand L1", icon: "hub" },
-                  { name: "Pera Wallet", icon: "account_balance_wallet" },
-                  { name: "DeepSeek V3", icon: "psychology" },
-                  { name: "Llama 3.3", icon: "memory" },
-                  { name: "Groq Inference", icon: "bolt" },
-                  { name: "Stable Diffusion", icon: "image" },
-                  { name: "Whisper Speech", icon: "graphic_eq" },
-                  { name: "n8n Workflows", icon: "account_tree" },
-                  { name: "LangChain Agents", icon: "mediation" }
-                ].map((tech, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-slate-500 font-semibold text-[13px] tracking-wide">
-                    <span className="material-symbols-outlined text-[18px] text-indigo-500">{tech.icon}</span>
-                    <span>{tech.name}</span>
-                  </div>
-                ))}
-                {/* Duplicate list of items to enable continuous scrolling */}
-                {[
-                  { name: "Algorand L1", icon: "hub" },
-                  { name: "Pera Wallet", icon: "account_balance_wallet" },
-                  { name: "DeepSeek V3", icon: "psychology" },
-                  { name: "Llama 3.3", icon: "memory" },
-                  { name: "Groq Inference", icon: "bolt" },
-                  { name: "Stable Diffusion", icon: "image" },
-                  { name: "Whisper Speech", icon: "graphic_eq" },
-                  { name: "n8n Workflows", icon: "account_tree" },
-                  { name: "LangChain Agents", icon: "mediation" }
-                ].map((tech, idx) => (
-                  <div key={`dup-${idx}`} className="flex items-center gap-2 text-slate-500 font-semibold text-[13px] tracking-wide">
-                    <span className="material-symbols-outlined text-[18px] text-indigo-500">{tech.icon}</span>
-                    <span>{tech.name}</span>
-                  </div>
-                ))}
-              </div>
+        <section className="relative w-full overflow-hidden py-6 border-y border-slate-200/50 bg-white/40 backdrop-blur-md mb-16 z-10">
+          <div className="relative w-full flex items-center overflow-hidden">
+            <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-[#fafafc] to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-[#fafafc] to-transparent z-10 pointer-events-none" />
+            <div className="flex animate-marquee gap-14 whitespace-nowrap">
+              {[
+                { name: "Algorand L1", icon: "hub", color: "text-indigo-500" },
+                { name: "0.001 ALGO / tx", icon: "toll", color: "text-emerald-500" },
+                { name: "Pera Wallet", icon: "account_balance_wallet", color: "text-violet-500" },
+                { name: "DeepSeek V3", icon: "psychology", color: "text-indigo-500" },
+                { name: "Groq Inference", icon: "bolt", color: "text-amber-500" },
+                { name: "x402 Protocol", icon: "lock", color: "text-rose-500" },
+                { name: "Stable Diffusion", icon: "image", color: "text-cyan-500" },
+                { name: "n8n Workflows", icon: "account_tree", color: "text-emerald-500" },
+                { name: "No Subscription", icon: "block", color: "text-slate-400" },
+                { name: "On-Chain Proof", icon: "verified", color: "text-indigo-500" },
+              ].flatMap((tech, idx) => [
+                <div key={idx} className="flex items-center gap-2 text-slate-500 font-semibold text-[12px] tracking-wide">
+                  <span className={`material-symbols-outlined text-[16px] ${tech.color}`}>{tech.icon}</span>
+                  <span>{tech.name}</span>
+                </div>,
+                <div key={`sep-${idx}`} className="w-1 h-1 rounded-full bg-slate-300/60" />
+              ])}
+              {[
+                { name: "Algorand L1", icon: "hub", color: "text-indigo-500" },
+                { name: "0.001 ALGO / tx", icon: "toll", color: "text-emerald-500" },
+                { name: "Pera Wallet", icon: "account_balance_wallet", color: "text-violet-500" },
+                { name: "DeepSeek V3", icon: "psychology", color: "text-indigo-500" },
+                { name: "Groq Inference", icon: "bolt", color: "text-amber-500" },
+                { name: "x402 Protocol", icon: "lock", color: "text-rose-500" },
+                { name: "Stable Diffusion", icon: "image", color: "text-cyan-500" },
+                { name: "n8n Workflows", icon: "account_tree", color: "text-emerald-500" },
+                { name: "No Subscription", icon: "block", color: "text-slate-400" },
+                { name: "On-Chain Proof", icon: "verified", color: "text-indigo-500" },
+              ].flatMap((tech, idx) => [
+                <div key={`dup-${idx}`} className="flex items-center gap-2 text-slate-500 font-semibold text-[12px] tracking-wide">
+                  <span className={`material-symbols-outlined text-[16px] ${tech.color}`}>{tech.icon}</span>
+                  <span>{tech.name}</span>
+                </div>,
+                <div key={`sep2-${idx}`} className="w-1 h-1 rounded-full bg-slate-300/60" />
+              ])}
             </div>
           </div>
         </section>
 
-        <section id="marketplace" className="max-w-4xl mx-auto px-6 pb-12 grid gap-6 md:grid-cols-2 scroll-mt-20">
+
+
+
+        <section id="marketplace" className="max-w-4xl mx-auto px-6 pb-12 grid gap-6 md:grid-cols-2 scroll-mt-20 relative z-10">
           {/* Marketplace Card */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="group relative bg-white border border-slate-200 rounded-[20px] p-6 hover:border-indigo-300 hover:shadow-2xl hover:shadow-indigo-500/10 hover-glow-card transition-all duration-500 overflow-hidden cursor-pointer"
+            className="group relative bg-white/70 backdrop-blur-md border border-slate-200/80 rounded-[20px] p-6 hover:border-indigo-300 hover:shadow-2xl hover:shadow-indigo-500/10 hover-glow-card transition-all duration-500 overflow-hidden cursor-pointer"
           >
-            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-indigo-100 to-transparent rounded-bl-full -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-indigo-100/30 to-transparent rounded-bl-full -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="w-12 h-12 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 shadow-sm">
               <span className="material-symbols-outlined text-indigo-600 text-xl">api</span>
             </div>
@@ -298,9 +382,9 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="group relative bg-white border border-slate-200 rounded-[20px] p-6 hover:border-emerald-300 hover:shadow-2xl hover:shadow-emerald-500/10 hover-glow-card transition-all duration-500 overflow-hidden cursor-pointer"
+            className="group relative bg-white/70 backdrop-blur-md border border-slate-200/80 rounded-[20px] p-6 hover:border-emerald-300 hover:shadow-2xl hover:shadow-emerald-500/10 hover-glow-card transition-all duration-500 overflow-hidden cursor-pointer"
           >
-            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-emerald-100 to-transparent rounded-bl-full -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-emerald-100/30 to-transparent rounded-bl-full -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="w-12 h-12 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 shadow-sm">
               <span className="material-symbols-outlined text-emerald-600 text-xl">edit_square</span>
             </div>
@@ -321,7 +405,7 @@ export default function Home() {
           </motion.div>
         </section>
 
-        <section id="roles" className="max-w-4xl mx-auto px-6 py-8 flex flex-col items-center scroll-mt-20">
+        <section id="roles" className="max-w-4xl mx-auto px-6 py-8 flex flex-col items-center scroll-mt-20 relative z-10">
           <div className="w-full grid md:grid-cols-2 gap-6">
             <motion.button
               initial={{ opacity: 0, y: 20 }}
@@ -331,9 +415,9 @@ export default function Home() {
               type="button"
               disabled={busy}
               onClick={() => enterWithPera("creator")}
-              className="relative flex flex-col text-left bg-white border border-slate-200 p-6 rounded-[20px] hover:border-[#031634]/30 hover-glow-card transition-all duration-500 group cursor-pointer disabled:opacity-50 hover:-translate-y-1 hover:shadow-2xl overflow-hidden"
+              className="relative flex flex-col text-left bg-white/70 backdrop-blur-md border border-slate-200/80 p-6 rounded-[20px] hover:border-[#031634]/30 hover-glow-card transition-all duration-500 group cursor-pointer disabled:opacity-50 hover:-translate-y-1 hover:shadow-2xl overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               
               <div className="flex flex-col gap-4 z-10 relative h-full">
                 <div className="flex justify-between items-start">
@@ -352,7 +436,7 @@ export default function Home() {
                   </p>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-[#031634] font-bold group-hover:text-indigo-600 transition-colors">
+                <div className="mt-4 pt-4 border-t border-slate-100/50 flex items-center justify-between text-[#031634] font-bold group-hover:text-indigo-600 transition-colors">
                   <span className="text-xs font-semibold tracking-wide uppercase">Connect Pera Wallet</span>
                   <span className="material-symbols-outlined text-lg group-hover:translate-x-2 transition-transform">
                     arrow_forward
@@ -369,9 +453,9 @@ export default function Home() {
               type="button"
               disabled={busy}
               onClick={() => enterWithPera("user")}
-              className="relative flex flex-col text-left bg-white border border-slate-200 p-6 rounded-[20px] hover:border-indigo-300 hover-glow-card transition-all duration-500 group cursor-pointer disabled:opacity-50 hover:-translate-y-1 hover:shadow-2xl overflow-hidden"
+              className="relative flex flex-col text-left bg-white/70 backdrop-blur-md border border-slate-200/80 p-6 rounded-[20px] hover:border-indigo-300 hover-glow-card transition-all duration-500 group cursor-pointer disabled:opacity-50 hover:-translate-y-1 hover:shadow-2xl overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               
               <div className="flex flex-col gap-4 z-10 relative h-full">
                 <div className="flex justify-between items-start">
@@ -390,7 +474,7 @@ export default function Home() {
                   </p>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-indigo-600 font-bold group-hover:text-indigo-700 transition-colors">
+                <div className="mt-4 pt-4 border-t border-slate-100/50 flex items-center justify-between text-indigo-600 font-bold group-hover:text-indigo-700 transition-colors">
                   <span className="text-xs font-semibold tracking-wide uppercase">Connect Pera Wallet</span>
                   <span className="material-symbols-outlined text-lg group-hover:translate-x-2 transition-transform">
                     arrow_forward
@@ -415,7 +499,7 @@ export default function Home() {
         <ContractStats />
       </main>
 
-      <footer className="bg-white border-t border-slate-100 py-16 px-8 mt-32">
+      <footer className="bg-white/60 border-t border-slate-200/60 backdrop-blur-md py-16 px-8 mt-32 relative z-10">
         <div className="max-w-screen-2xl mx-auto">
           <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
             <div>
@@ -501,14 +585,37 @@ export default function Home() {
               <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Legal</p>
               <ul className="space-y-3 text-sm flex flex-col items-start">
                 <li>
-                  <a href="#" className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium cursor-pointer">
+                  <button
+                    onClick={() => {
+                      setActiveLegalTab("tos");
+                      setShowDisclaimer(true);
+                    }}
+                    className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium cursor-pointer text-left focus:outline-none"
+                  >
                     Terms of Service
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium cursor-pointer">
+                  <button
+                    onClick={() => {
+                      setActiveLegalTab("privacy");
+                      setShowDisclaimer(true);
+                    }}
+                    className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium cursor-pointer text-left focus:outline-none"
+                  >
                     Privacy Policy
-                  </a>
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => {
+                      setActiveLegalTab("risk");
+                      setShowDisclaimer(true);
+                    }}
+                    className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium cursor-pointer text-left focus:outline-none"
+                  >
+                    Risk Disclosure
+                  </button>
                 </li>
               </ul>
             </div>
@@ -601,6 +708,147 @@ export default function Home() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showDisclaimer && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[9999]">
+          <div className="bg-white dark:bg-[#1A1C1C] border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl max-w-lg w-full p-8 relative flex flex-col gap-6">
+            
+            {/* Header */}
+            <div className="flex flex-col gap-2">
+              <span className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 font-bold tracking-wider text-[10px] rounded-full w-max uppercase">
+                Legal & Safety
+              </span>
+              <h2 className="text-2xl font-bold font-headline text-slate-900 dark:text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-indigo-500">gavel</span>
+                Legal Center
+              </h2>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-slate-100 dark:border-slate-800">
+              <button
+                onClick={() => setActiveLegalTab("tos")}
+                className={`flex-1 pb-3 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+                  activeLegalTab === "tos"
+                    ? "border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400"
+                    : "border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                }`}
+              >
+                Terms of Service
+              </button>
+              <button
+                onClick={() => setActiveLegalTab("privacy")}
+                className={`flex-1 pb-3 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+                  activeLegalTab === "privacy"
+                    ? "border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400"
+                    : "border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                }`}
+              >
+                Privacy Policy
+              </button>
+              <button
+                onClick={() => setActiveLegalTab("risk")}
+                className={`flex-1 pb-3 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+                  activeLegalTab === "risk"
+                    ? "border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400"
+                    : "border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                }`}
+              >
+                Risk Disclosure
+              </button>
+            </div>
+
+            {/* Content Area */}
+            <div className="max-h-[300px] overflow-y-auto pr-2 flex flex-col gap-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed py-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
+              {activeLegalTab === "tos" && (
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-1">1. Acceptance of Terms</h4>
+                    <p>
+                      By connecting your wallet to Sentinel, you agree to comply with these terms. The platform serves as a peer-to-peer developer marketplace mapping AI APIs to Algorand smart contracts.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-1">2. Developer & Creator Responsibilities</h4>
+                    <p>
+                      Creators who list AI models must ensure they have legitimate access to upstream AI service keys. Listing malicious, illegal, or copyright-violating endpoints is strictly prohibited and will lead to listing suspension.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-1">3. Protocol Fees</h4>
+                    <p>
+                      Transactions may involve smart contract executing fees and standard network gas charges paid directly to the Algorand blockchain. Sentinel does not custody or hold user funds.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {activeLegalTab === "privacy" && (
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-1">1. Decentralized & Self-Custodial</h4>
+                    <p>
+                      Sentinel does not collect or store personal data, passwords, or emails. All authorization relies on cryptographic signatures from your Algorand wallet.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-1">2. Local Storage</h4>
+                    <p>
+                      Burner wallet details and cryptographic seed phrases are stored locally on your device's browser cache. This data is never sent to our servers.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-1">3. On-Chain Transparency</h4>
+                    <p>
+                      All pay-per-usage API call counts and wallet interaction metrics are logged publicly and permanently on the Algorand blockchain.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {activeLegalTab === "risk" && (
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-1">1. On-Chain Settlements & Non-Refundability</h4>
+                    <p>
+                      All pay-per-usage transactions are processed and settled directly on the Algorand blockchain. Once a transaction is broadcasted, it is irreversible. Sentinel cannot refund ALGO or custom tokens spent on API keys or requests.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-1">2. Local Storage & Burner Wallets</h4>
+                    <p>
+                      If you generate or use a temporary burner wallet, the private seed phrase is saved solely in your local browser storage. Clearing browser data, caching, or using private browsing will erase this wallet. You must back up your seed phrase; lost keys cannot be recovered by the platform.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-1">3. Upstream AI API Dependencies</h4>
+                    <p>
+                      Sentinel serves as a decentralized gateway proxy to external AI models (e.g. OpenAI, Anthropic, Groq). We do not control or guarantee the uptime, speed, correctness, safety, or content filters of upstream AI providers.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-1">4. Smart Contract Execution & Logging</h4>
+                    <p>
+                      By using this platform, you interact with Algorand Smart Contracts. Transaction details, including masked wallet addresses, transaction IDs, and call logs, are publicly recorded on the blockchain forever.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowDisclaimer(false)}
+                className="px-6 py-3 bg-[#031634] hover:bg-[#031634]/90 dark:bg-white dark:text-[#031634] text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

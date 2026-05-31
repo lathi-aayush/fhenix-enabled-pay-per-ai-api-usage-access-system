@@ -43,7 +43,15 @@ export default function X402Docs() {
     <div className="flex h-full">
       {/* Center content */}
       <div className="flex-1 max-w-4xl px-8 py-10 lg:px-12 mx-auto min-h-screen pb-32">
-        <h1 className="text-3xl font-semibold text-slate-900 mb-6 tracking-tight">Getting Started with x402 Protocol</h1>
+        
+        {/* Breadcrumbs */}
+        <div className="text-[12px] text-slate-400 font-medium mb-3 flex items-center gap-1.5">
+          <span>Sentinel Protocol</span>
+          <span className="material-symbols-outlined text-[10px]">chevron_right</span>
+          <span className="text-slate-600 font-semibold">Getting Started</span>
+        </div>
+
+        <h1 className="text-3xl font-bold text-slate-900 mb-6 tracking-tight">Getting Started with Sentinel Protocol (x402)</h1>
         
         <p className="text-[15px] text-slate-600 mb-8 leading-relaxed">
           Machine-payable API system enabling AI Agents to unlock pay-per-use services autonomously.
@@ -54,14 +62,14 @@ export default function X402Docs() {
           
           {/* Section: Overview */}
           <section>
-            <h2 id="overview" className="text-2xl font-semibold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">Overview</h2>
+            <h2 id="overview" className="text-2xl font-bold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">Overview</h2>
             <div className="relative overflow-hidden bg-slate-50 text-slate-900 rounded-xl p-8 border border-slate-200">
               <div className="relative flex flex-col md:flex-row items-center gap-6">
                 <div className="flex-1 space-y-3">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">
                     Keyless Machine-to-Machine Payments
                   </span>
-                  <h3 className="text-xl font-semibold tracking-tight">AI Agents as First-Class Economic Citizens</h3>
+                  <h3 className="text-xl font-bold tracking-tight">AI Agents as First-Class Economic Citizens</h3>
                   <p className="text-[14px] text-slate-600 max-w-2xl leading-relaxed">
                     x402 acts as a standard for agents to programmatically negotiate API fees using crypto. By tying microtransactions to ALGO, it circumvents credit card limits, subscriptions, and API key management completely.
                   </p>
@@ -73,9 +81,55 @@ export default function X402Docs() {
             </div>
           </section>
 
-          {/* Section: Handshake */}
+          {/* Section: Download */}
           <section>
-            <h2 id="handshake" className="text-2xl font-semibold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">The x402 Challenge-Response Handshake</h2>
+            <h2 id="download" className="text-2xl font-bold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">Download & SDK Setup</h2>
+            <p className="text-[14px] text-slate-600 mb-4 leading-relaxed">
+              To integrate the x402 protocol, download our official Client SDK package from npm:
+            </p>
+            <ul className="space-y-3 text-[14px] text-slate-600 leading-relaxed list-disc pl-5">
+              <li><strong>Node.js Compatibility:</strong> Supports Node.js version 18.0 or higher. Supports ES Modules and CommonJS.</li>
+              <li><strong>Algorand Client SDK:</strong> Integrates directly with the Algorand SDK (`algosdk`) to support client-side transaction signing.</li>
+              <li><strong>Browser Compatibility:</strong> Compatible with Chrome, Firefox, Safari, and Edge.</li>
+            </ul>
+          </section>
+
+          {/* Section: Installation */}
+          <section>
+            <h2 id="installation" className="text-2xl font-bold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">Installation</h2>
+            <p className="text-[14px] text-slate-600 mb-4 leading-relaxed">
+              Install the package globally or as a project dependency using your preferred package manager:
+            </p>
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 font-mono text-[13px] text-slate-800 mb-4">
+              npm install @sentinalapi/sdk
+            </div>
+            <p className="text-[13px] text-slate-500 leading-relaxed">
+              *Note: If you run into build errors during package installation on Windows platforms, ensure that you have configured C++ build tools correctly or use WSL2.
+            </p>
+          </section>
+
+          {/* Section: Creating a Project */}
+          <section>
+            <h2 id="create-project" className="text-2xl font-bold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">Creating a Project & Handshake</h2>
+            <p className="text-[14px] text-slate-600 mb-4 leading-relaxed">
+              To instantiate your agent's payment logic, follow these steps to establish a connection with the gatekeeper API:
+            </p>
+            <ol className="space-y-4 text-[14px] text-slate-700 leading-relaxed list-decimal pl-5">
+              <li>
+                <strong>Initialize Burner Wallet:</strong> Create or import a 25-word mnemonic seed phrase. Fund it with a small amount of ALGO for transactional micro-budgets.
+              </li>
+              <li>
+                <strong>Configure upstream service endpoint:</strong> Specify the gated AI model URL (e.g. `api/contract/stats`) you wish to call.
+              </li>
+              <li>
+                <strong>Execute Challenge-Response Handshake:</strong> Make the call. The client catch-handler intercepts the `402 Payment Required` challenge, extracts the Algorand cost and receiver details, signs a micro-transaction, and retries the request with the `X-Payment` transaction ID.
+              </li>
+            </ol>
+          </section>
+
+          {/* Section: Handshake details */}
+          <section>
+            <h2 id="handshake" className="text-2xl font-bold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">The x402 Challenge-Response Handshake</h2>
             <div className="grid gap-6 md:grid-cols-3">
               <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-3">
                 <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm">1</div>
@@ -105,7 +159,7 @@ export default function X402Docs() {
 
           {/* Section: Creators */}
           <section>
-            <h2 id="creators" className="text-2xl font-semibold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">How to Apply: Creator Monetization</h2>
+            <h2 id="creators" className="text-2xl font-bold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">How to Apply: Creator Monetization</h2>
             <ul className="space-y-4 text-[14px] text-slate-700 leading-relaxed list-disc pl-5">
               <li>
                 <strong>Opt-In Services:</strong> Navigate to your Creator dashboard, select any API service you created, and toggle <strong>Enable x402 Access</strong>.
@@ -121,7 +175,7 @@ export default function X402Docs() {
 
           {/* Section: Security */}
           <section>
-            <h2 id="security" className="text-2xl font-semibold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">Trust, Sandboxing & Security</h2>
+            <h2 id="security" className="text-2xl font-bold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">Trust, Sandboxing & Security</h2>
             <ul className="space-y-4 text-[14px] text-slate-700 leading-relaxed list-disc pl-5">
               <li>
                 <strong>Replay Prevention:</strong> The backend verifies transaction hash uniqueness. Once a transaction is validated, the same ID can never be used again.
@@ -137,14 +191,14 @@ export default function X402Docs() {
 
           {/* Section: Agent Workflows */}
           <section>
-            <h2 id="agents" className="text-2xl font-semibold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">Agent Workflows</h2>
+            <h2 id="agents" className="text-2xl font-bold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">Agent Use Cases & Workflows</h2>
             <p className="text-[14px] text-slate-600 mb-6 leading-relaxed">
               Learn how to build autonomous agents that can fund their own execution, purchase access to APIs seamlessly, and operate without centralized credit card billing. The x402 system ensures your agents can buy knowledge and computation on the fly.
             </p>
             
             <div className="space-y-8">
               <div>
-                <h3 id="langchain" className="text-[17px] font-semibold text-slate-900 mb-3">Langchain Integration</h3>
+                <h3 id="langchain" className="text-[17px] font-bold text-slate-900 mb-3">Langchain Integration</h3>
                 <p className="text-[14px] text-slate-600 mb-4 leading-relaxed">
                   You can wrap the x402 payment flow directly into a custom Langchain tool. When the LLM decides it needs data from a gated API, the tool catches the 402, parses the cost, signs the transaction with its local burner wallet, and returns the successfully purchased data to the context window.
                 </p>
@@ -167,7 +221,7 @@ class X402APITool(BaseTool):
               </div>
 
               <div>
-                <h3 id="n8n" className="text-[17px] font-semibold text-slate-900 mb-3">n8n & Workflow Automation</h3>
+                <h3 id="n8n" className="text-[17px] font-bold text-slate-900 mb-3">n8n & Workflow Automation</h3>
                 <p className="text-[14px] text-slate-600 mb-4 leading-relaxed">
                   For visual builders, x402 can be integrated as a custom n8n node. This allows you to build complex automation pipelines where certain steps autonomously pay for themselves based on the value they provide, completely eliminating API key sharing and centralized billing bottlenecks.
                 </p>
@@ -207,8 +261,23 @@ async execute(this: IExecuteFunctions) {
               </a>
             </li>
             <li>
+              <a href="#download" onClick={(e) => handleClick(e, 'download')} className={navLinkClass("download")}>
+                Download & SDK Setup
+              </a>
+            </li>
+            <li>
+              <a href="#installation" onClick={(e) => handleClick(e, 'installation')} className={navLinkClass("installation")}>
+                Installation
+              </a>
+            </li>
+            <li>
+              <a href="#create-project" onClick={(e) => handleClick(e, 'create-project')} className={navLinkClass("create-project")}>
+                Creating a Project
+              </a>
+            </li>
+            <li>
               <a href="#handshake" onClick={(e) => handleClick(e, 'handshake')} className={navLinkClass("handshake")}>
-                Challenge-Response Handshake
+                Challenge Handshake
               </a>
             </li>
             <li>

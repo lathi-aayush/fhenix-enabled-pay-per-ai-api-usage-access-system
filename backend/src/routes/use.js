@@ -5,6 +5,7 @@ import algosdk from "algosdk";
 import { AccessToken } from "../models/AccessToken.js";
 import { Service } from "../models/Service.js";
 import { ApiUsageLog } from "../models/ApiUsageLog.js";
+import { notifyCreatorPurchaseWebhooks } from "../services/creatorWebhookDispatcher.js";
 import {
   algoToMicroAlgos,
   decodeNote,
@@ -148,6 +149,7 @@ async function invokeFlow(req, res) {
       apiKey: providerKey,
       model: service.modelName,
       body: aiBody,
+      customEndpointUrl: service.customEndpointUrl || "",
     });
     providerKey = null;
 
@@ -344,6 +346,13 @@ async function completeFlow(req, res) {
     const ts = logDoc.createdAt ? new Date(logDoc.createdAt) : new Date();
     const promptSnap = String(pending.promptText ?? "");
     const responseSnap = String(pending.responseText ?? "");
+    notifyCreatorPurchaseWebhooks({
+      creatorWallet,
+      usageLog: logDoc,
+      service,
+      x402Payment: false,
+    });
+
     void (async () => {
       try {
         const proofTxId = await submitProofOfIntelligence({

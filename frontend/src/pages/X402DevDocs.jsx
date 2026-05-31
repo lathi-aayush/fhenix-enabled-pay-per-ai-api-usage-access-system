@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -201,6 +201,43 @@ export default function X402DevDocs() {
   const navigate = useNavigate();
   const [lang, setLang] = useState("js");
   const [copied, setCopied] = useState(false);
+  const [activeId, setActiveId] = useState("");
+
+  // Simple scrollspy for the right sidebar
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveId(entry.target.id);
+          }
+        });
+      },
+      { rootMargin: "0px 0px -80% 0px" }
+    );
+
+    const headings = document.querySelectorAll("h2[id], h3[id]");
+    headings.forEach((h) => observer.observe(h));
+
+    return () => observer.disconnect();
+  }, []);
+
+  const handleClick = (e, id) => {
+    e.preventDefault();
+    const element = document.getElementById(id);
+    if (element) {
+      // Offset for fixed header
+      const y = element.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top: y, behavior: "smooth" });
+    }
+  };
+
+  const navLinkClass = (id) =>
+    `block py-1 text-[13px] transition-colors border-l-2 pl-3 -ml-[2px] ${
+      activeId === id
+        ? "border-indigo-600 text-indigo-700 font-medium"
+        : "border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300"
+    }`;
 
   const copy = () => {
     navigator.clipboard.writeText(codeTemplates[lang]);
@@ -210,153 +247,152 @@ export default function X402DevDocs() {
   };
 
   return (
-    <div className="max-w-5xl space-y-8">
-      {/* Header */}
-      <div className="border-b border-slate-100 pb-5">
-        <div className="flex items-center gap-2 mb-1">
-          <button
-            type="button"
-            onClick={() => navigate("/docs/x402")}
-            className="text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1"
-          >
-            <span className="material-symbols-outlined text-[13px]">arrow_back</span>
-            x402 Playground
-          </button>
-          <span className="text-slate-200">/</span>
-          <span className="text-xs text-slate-500 font-medium">Developer API</span>
+    <div className="flex h-full w-full">
+      {/* Center content */}
+      <div className="flex-1 max-w-4xl px-8 py-10 lg:px-12 mx-auto min-h-screen pb-32">
+        
+        {/* Breadcrumbs */}
+        <div className="text-[12px] text-slate-400 font-medium mb-3 flex items-center gap-1.5">
+          <span>Sentinel Protocol</span>
+          <span className="material-symbols-outlined text-[10px]">chevron_right</span>
+          <span className="text-slate-600 font-semibold">API Reference</span>
         </div>
-        <h1 className="font-headline text-2xl font-semibold text-primary mt-2">
-          x402 API Reference
-        </h1>
-        <p className="text-on-surface-variant text-sm mt-1 max-w-2xl">
+
+        <h1 className="text-3xl font-bold text-slate-900 mb-6 tracking-tight">x402 API Reference</h1>
+        
+        <p className="text-[15px] text-slate-600 mb-8 leading-relaxed">
           Complete reference for integrating the x402 payment protocol into your agents, apps, and automation pipelines.
           Payment replaces authentication — no API keys required.
         </p>
-      </div>
 
-      {/* Flow explainer */}
-      <div className="bg-gradient-to-br from-indigo-50 to-slate-50 border border-indigo-100 rounded-xl p-6">
-        <h2 className="font-semibold text-slate-900 text-sm mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-indigo-500 text-base">sync_alt</span>
-          The Two-Round Handshake
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {[
-            { step: "1", color: "blue",    icon: "send",        title: "Call the endpoint",  desc: "Make a POST request with no special headers. You get HTTP 402 back." },
-            { step: "2", color: "amber",   icon: "currency_bitcoin", title: "Pay on-chain",  desc: "Sign & broadcast an Algorand transaction to the creator's wallet." },
-            { step: "3", color: "emerald", icon: "check_circle", title: "Receive response", desc: "Retry with the X-Payment header. Server verifies on-chain and returns AI output." },
-          ].map(({ step, color, icon, title, desc }) => (
-            <div key={step} className={`bg-${color}-50 border border-${color}-100 rounded-lg p-4 space-y-2`}>
-              <div className={`w-8 h-8 rounded-lg bg-${color}-100 text-${color}-700 flex items-center justify-center font-bold text-sm font-headline`}>
-                {step}
+        <div className="space-y-12 text-slate-800">
+          
+          {/* Section: Handshake */}
+          <section>
+            <h2 id="handshake" className="text-2xl font-bold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">The x402 Handshake</h2>
+            <div className="bg-gradient-to-br from-indigo-50 to-slate-50 border border-indigo-100 rounded-xl p-6 mb-6">
+              <h3 className="font-semibold text-slate-900 text-sm mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-indigo-500 text-base">sync_alt</span>
+                The Two-Round Handshake Flow
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {[
+                  { step: "1", color: "blue",    icon: "send",        title: "Call the endpoint",  desc: "Make a POST request with no special headers. You get HTTP 402 back." },
+                  { step: "2", color: "amber",   icon: "currency_bitcoin", title: "Pay on-chain",  desc: "Sign & broadcast an Algorand transaction to the creator's wallet." },
+                  { step: "3", color: "emerald", icon: "check_circle", title: "Receive response", desc: "Retry with the X-Payment header. Server verifies on-chain and returns AI output." },
+                ].map(({ step, color, icon, title, desc }) => (
+                  <div key={step} className={`bg-${color}-50 border border-${color}-100 rounded-lg p-4 space-y-2`}>
+                    <div className={`w-8 h-8 rounded-lg bg-${color}-100 text-${color}-700 flex items-center justify-center font-bold text-sm font-headline`}>
+                      {step}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`material-symbols-outlined text-${color}-600 text-base`}>{icon}</span>
+                      <span className="text-sm font-semibold text-slate-800">{title}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">{desc}</p>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className={`material-symbols-outlined text-${color}-600 text-base`}>{icon}</span>
-                <span className="text-sm font-semibold text-slate-800">{title}</span>
-              </div>
-              <p className="text-[11px] text-slate-500 leading-relaxed">{desc}</p>
             </div>
-          ))}
-        </div>
-      </div>
+          </section>
 
-      {/* API Endpoints */}
-      <div className="space-y-4">
-        <h2 className="font-semibold text-slate-900 flex items-center gap-2 text-sm">
-          <span className="material-symbols-outlined text-primary text-base">api</span>
-          Endpoints
-        </h2>
-        {API_ENDPOINTS.map((ep) => (
-          <div key={ep.path} className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
-            <div className="px-5 py-4 border-b border-slate-50">
-              <div className="flex items-center gap-2 mb-1">
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${METHOD_COLOR[ep.method]}`}>
-                  {ep.method}
-                </span>
-                <code className="text-sm font-mono text-slate-800">{ep.path}</code>
-              </div>
-              <p className="text-xs text-slate-500 mt-1">{ep.description}</p>
-            </div>
-            <div className={`grid gap-0 ${ep.body ? "md:grid-cols-2" : "grid-cols-1"}`}>
-              {ep.body && (
-                <div className="border-r border-slate-50 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Request Body</p>
-                  <pre className="bg-slate-950 text-slate-200 rounded p-3 text-[10px] font-mono overflow-x-auto">
-                    {ep.body}
-                  </pre>
-                  {ep.headers && (
-                    <>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 mt-3">Headers (Round 2 only)</p>
-                      <pre className="bg-slate-950 text-indigo-300 rounded p-3 text-[10px] font-mono overflow-x-auto">
-                        {ep.headers}
+          {/* Section: Endpoints */}
+          <section>
+            <h2 id="endpoints" className="text-2xl font-bold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">API Endpoints</h2>
+            <div className="space-y-4">
+              {API_ENDPOINTS.map((ep) => (
+                <div key={ep.path} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                  <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${METHOD_COLOR[ep.method]}`}>
+                        {ep.method}
+                      </span>
+                      <code className="text-sm font-mono text-slate-800">{ep.path}</code>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">{ep.description}</p>
+                  </div>
+                  <div className={`grid gap-0 ${ep.body ? "md:grid-cols-2" : "grid-cols-1"}`}>
+                    {ep.body && (
+                      <div className="border-r border-slate-100 p-4">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Request Body</p>
+                        <pre className="bg-slate-950 text-slate-200 rounded p-3 text-[10px] font-mono overflow-x-auto">
+                          {ep.body}
+                        </pre>
+                        {ep.headers && (
+                          <>
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 mt-3">Headers (Round 2 only)</p>
+                            <pre className="bg-slate-950 text-indigo-300 rounded p-3 text-[10px] font-mono overflow-x-auto">
+                              {ep.headers}
+                            </pre>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Response</p>
+                      <pre className="bg-slate-950 text-emerald-300 rounded p-3 text-[10px] font-mono overflow-x-auto leading-relaxed">
+                        {ep.response}
                       </pre>
-                    </>
-                  )}
+                    </div>
+                  </div>
                 </div>
-              )}
-              <div className="p-4">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Response</p>
-                <pre className="bg-slate-950 text-emerald-300 rounded p-3 text-[10px] font-mono overflow-x-auto leading-relaxed">
-                  {ep.response}
-                </pre>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Code Examples */}
-      <div className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-50">
-          <h2 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-base">terminal</span>
-            Full Integration Example
-          </h2>
-          <div className="flex items-center gap-2">
-            {/* Language tabs */}
-            <div className="flex bg-slate-100 rounded-lg p-0.5 gap-0.5">
-              {[
-                { key: "js",     label: "Node.js" },
-                { key: "python", label: "Python"  },
-                { key: "curl",   label: "cURL"    },
-              ].map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setLang(key)}
-                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-                    lang === key
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  {label}
-                </button>
               ))}
             </div>
-            <button
-              onClick={copy}
-              className="flex items-center gap-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg transition-colors"
-            >
-              <span className="material-symbols-outlined text-[13px]">
-                {copied ? "check" : "content_copy"}
-              </span>
-              {copied ? "Copied!" : "Copy"}
-            </button>
-          </div>
-        </div>
-        <pre className="bg-slate-950 text-slate-100 p-5 overflow-x-auto font-mono text-[11px] leading-relaxed min-h-[320px]">
-          {codeTemplates[lang]}
-        </pre>
-      </div>
+          </section>
 
-      {/* X-Payment Header format */}
-      <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm space-y-3">
-        <h2 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-base">security</span>
-          X-Payment Header Format
-        </h2>
-        <p className="text-xs text-slate-500">The header value is a base64-encoded JSON payload:</p>
-        <pre className="bg-slate-950 text-indigo-300 rounded p-4 font-mono text-[11px] leading-relaxed overflow-x-auto">
+          {/* Section: Integration */}
+          <section>
+            <h2 id="integration" className="text-2xl font-bold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">Full Client Integration</h2>
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/50">
+                <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-base">terminal</span>
+                  Full Client Integration
+                </h3>
+                <div className="flex items-center gap-2">
+                  {/* Language tabs */}
+                  <div className="flex bg-slate-100 rounded-lg p-0.5 gap-0.5">
+                    {[
+                      { key: "js",     label: "Node.js" },
+                      { key: "python", label: "Python"  },
+                      { key: "curl",   label: "cURL"    },
+                    ].map(({ key, label }) => (
+                      <button
+                        key={key}
+                        onClick={() => setLang(key)}
+                        className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                          lang === key
+                            ? "bg-white text-slate-900 shadow-sm"
+                            : "text-slate-500 hover:text-slate-700"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={copy}
+                    className="flex items-center gap-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[13px]">
+                      {copied ? "check" : "content_copy"}
+                    </span>
+                    {copied ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+              </div>
+              <pre className="bg-slate-950 text-slate-100 p-5 overflow-x-auto font-mono text-[11px] leading-relaxed min-h-[320px]">
+                {codeTemplates[lang]}
+              </pre>
+            </div>
+          </section>
+
+          {/* Section: Format */}
+          <section>
+            <h2 id="format" className="text-2xl font-bold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">X-Payment Header Format</h2>
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-3">
+              <p className="text-xs text-slate-500">The header value is a base64-encoded JSON payload:</p>
+              <pre className="bg-slate-950 text-indigo-300 rounded p-4 font-mono text-[11px] leading-relaxed overflow-x-auto">
 {`// 1. Encode your signed Algorand transaction bytes to base64:
 const b64tx = btoa(String.fromCharCode(...signedTxnBytes));
 
@@ -371,20 +407,39 @@ const X_PAYMENT = btoa(JSON.stringify(payload));
 
 // 4. Attach as header:
 // X-Payment: <X_PAYMENT value>`}
-        </pre>
+              </pre>
+            </div>
+          </section>
+        </div>
       </div>
 
-      {/* Footer CTA */}
-      <div className="flex items-center gap-4 py-4">
-        <button
-          type="button"
-          onClick={() => navigate("/docs/x402")}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
-        >
-          <span className="material-symbols-outlined text-[16px]">science</span>
-          Open Live Playground
-        </button>
-        <span className="text-xs text-slate-400">Test a real x402 payment with your burner wallet</span>
+      {/* Right Sidebar (On this Page) */}
+      <div className="w-64 shrink-0 hidden xl:block px-8 py-10 sticky top-14 h-[calc(100vh-56px)] overflow-y-auto border-l border-slate-200 bg-slate-50/50">
+        <h4 className="text-[11px] font-bold text-slate-900 uppercase tracking-wider mb-4 font-body">On this Page</h4>
+        <div className="border-l-2 border-slate-200 pl-3">
+          <ul className="space-y-1">
+            <li>
+              <a href="#handshake" onClick={(e) => handleClick(e, 'handshake')} className={navLinkClass("handshake")}>
+                The Handshake Flow
+              </a>
+            </li>
+            <li>
+              <a href="#endpoints" onClick={(e) => handleClick(e, 'endpoints')} className={navLinkClass("endpoints")}>
+                API Endpoints
+              </a>
+            </li>
+            <li>
+              <a href="#integration" onClick={(e) => handleClick(e, 'integration')} className={navLinkClass("integration")}>
+                Client Integration
+              </a>
+            </li>
+            <li>
+              <a href="#format" onClick={(e) => handleClick(e, 'format')} className={navLinkClass("format")}>
+                X-Payment Format
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );

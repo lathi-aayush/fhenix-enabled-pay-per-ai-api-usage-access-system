@@ -1,12 +1,24 @@
+import crypto from "crypto";
 import { Router } from "express";
-import { param, query, validationResult } from "express-validator";
+import { body, param, query, validationResult } from "express-validator";
 import { Service } from "../models/Service.js";
 import { ApiUsageLog } from "../models/ApiUsageLog.js";
 import { User } from "../models/User.js";
+import { CreatorWebhook, CREATOR_WEBHOOK_EVENTS } from "../models/CreatorWebhook.js";
+import { WebhookDelivery } from "../models/WebhookDelivery.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { canonicalWalletAddress, creatorServicesOwnedBy } from "../utils/userWallet.js";
+import { maskWebhookSecret, sendTestWebhook } from "../services/creatorWebhookDispatcher.js";
+import {
+  computeCreatorWithdrawalBalances,
+  listCreatorWithdrawals,
+  MIN_WITHDRAWAL_ALGO,
+  requestCreatorWithdrawal,
+} from "../services/creatorWithdrawalService.js";
 
 const router = Router();
+const MAX_WEBHOOKS_PER_CREATOR = 10;
+const REGISTERABLE_EVENTS = CREATOR_WEBHOOK_EVENTS.filter((e) => e !== "webhook.test");
 
 function stripServiceForPublic(s) {
   const { encryptedApiKey: _e, ...rest } = s;
@@ -207,6 +219,257 @@ router.get(
         serviceId: l.serviceId?._id,
       }))
     );
+  }
+);
+
+function serializeWebhook(doc, { includeSecret = false } = {}) {
+  const row = doc.toObject ? doc.toObject() : doc;
+  return {
+    id: row._id,
+    url: row.url,
+    description: row.description ?? "",
+    events: row.events ?? [],
+    enabled: row.enabled !== false,
+    secretPreview: maskWebhookSecret(row.secret),
+    secret: includeSecret ? row.secret : undefined,
+    lastDeliveryAt: row.lastDeliveryAt ?? null,
+    lastDeliveryStatus: row.lastDeliveryStatus ?? null,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+router.get("/webhooks", requireAuth, requireRole("creator"), async (req, res) => {
+  const list = await CreatorWebhook.find({ creatorWallet: req.user.walletAddress })
+    .sort({ createdAt: -1 })
+    .lean();
+  res.json(list.map((row) => serializeWebhook(row)));
+});
+
+router.post(
+  "/webhooks",
+  requireAuth,
+  requireRole("creator"),
+  body("url").isString().trim().isURL({ protocols: ["http", "https"], require_protocol: true }),
+  body("description").optional({ values: "null" }).isString().trim().isLength({ max: 200 }),
+  body("events")
+    .optional()
+    .isArray({ min: 1, max: REGISTERABLE_EVENTS.length })
+    .custom((events) => events.every((e) => REGISTERABLE_EVENTS.includes(e))),
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const count = await CreatorWebhook.countDocuments({ creatorWallet: req.user.walletAddress });
+    if (count >= MAX_WEBHOOKS_PER_CREATOR) {
+      return res.status(400).json({ error: `Maximum ${MAX_WEBHOOKS_PER_CREATOR} webhooks per creator` });
+    }
+
+    const secret = `whsec_${crypto.randomBytes(24).toString("hex")}`;
+    const doc = await CreatorWebhook.create({
+      creatorWallet: req.user.walletAddress,
+      url: req.body.url.trim(),
+      secret,
+      description: String(req.body.description ?? "").trim(),
+      events: req.body.events?.length ? req.body.events : ["api.purchase.completed"],
+    });
+
+    res.status(201).json(serializeWebhook(doc, { includeSecret: true }));
+  }
+);
+
+router.get(
+  "/webhooks/deliveries",
+  requireAuth,
+  requireRole("creator"),
+  query("limit").optional().isInt({ min: 1, max: 100 }),
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 30, 1), 100);
+    const rows = await WebhookDelivery.find({ creatorWallet: req.user.walletAddress })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+    res.json(
+      rows.map((r) => ({
+        id: r._id,
+        webhookId: r.webhookId,
+        event: r.event,
+        url: r.url,
+        success: r.success,
+        httpStatus: r.httpStatus ?? null,
+        errorMessage: r.errorMessage ?? null,
+        attemptCount: r.attemptCount,
+        payloadId: r.payloadId,
+        createdAt: r.createdAt,
+      }))
+    );
+  }
+);
+
+router.patch(
+  "/webhooks/:id",
+  requireAuth,
+  requireRole("creator"),
+  param("id").isMongoId(),
+  body("url").optional().isString().trim().isURL({ protocols: ["http", "https"], require_protocol: true }),
+  body("description").optional({ values: "null" }).isString().trim().isLength({ max: 200 }),
+  body("enabled").optional().isBoolean(),
+  body("events")
+    .optional()
+    .isArray({ min: 1, max: REGISTERABLE_EVENTS.length })
+    .custom((events) => events.every((e) => REGISTERABLE_EVENTS.includes(e))),
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const doc = await CreatorWebhook.findOne({
+      _id: req.params.id,
+      creatorWallet: req.user.walletAddress,
+    });
+    if (!doc) {
+      return res.status(404).json({ error: "Webhook not found" });
+    }
+
+    if (typeof req.body.url === "string") doc.url = req.body.url.trim();
+    if (typeof req.body.description === "string") doc.description = req.body.description.trim();
+    if (typeof req.body.enabled === "boolean") doc.enabled = req.body.enabled;
+    if (Array.isArray(req.body.events) && req.body.events.length > 0) doc.events = req.body.events;
+
+    await doc.save();
+    res.json(serializeWebhook(doc));
+  }
+);
+
+router.delete(
+  "/webhooks/:id",
+  requireAuth,
+  requireRole("creator"),
+  param("id").isMongoId(),
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const doc = await CreatorWebhook.findOneAndDelete({
+      _id: req.params.id,
+      creatorWallet: req.user.walletAddress,
+    });
+    if (!doc) {
+      return res.status(404).json({ error: "Webhook not found" });
+    }
+    res.json({ ok: true });
+  }
+);
+
+router.post(
+  "/webhooks/:id/test",
+  requireAuth,
+  requireRole("creator"),
+  param("id").isMongoId(),
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const doc = await CreatorWebhook.findOne({
+      _id: req.params.id,
+      creatorWallet: req.user.walletAddress,
+    });
+    if (!doc) {
+      return res.status(404).json({ error: "Webhook not found" });
+    }
+
+    const result = await sendTestWebhook(doc);
+    res.json({
+      success: result.success,
+      httpStatus: result.httpStatus ?? null,
+      errorMessage: result.errorMessage ?? null,
+      attemptCount: result.attemptCount,
+    });
+  }
+);
+
+router.get(
+  "/withdrawals",
+  requireAuth,
+  requireRole("creator"),
+  query("limit").optional().isInt({ min: 1, max: 200 }),
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const limit = parseInt(req.query.limit, 10) || 50;
+    const [balances, history] = await Promise.all([
+      computeCreatorWithdrawalBalances(req.user.walletAddress),
+      listCreatorWithdrawals(req.user.walletAddress, { limit }),
+    ]);
+
+    res.json({
+      totalEarned: balances.totalEarned,
+      totalWithdrawn: balances.totalWithdrawn,
+      withdrawable: balances.withdrawable,
+      pendingWithdrawals: balances.pendingWithdrawals,
+      minWithdrawalAlgo: MIN_WITHDRAWAL_ALGO,
+      creatorWallet: req.user.walletAddress,
+      withdrawals: history,
+    });
+  }
+);
+
+router.post(
+  "/withdraw",
+  requireAuth,
+  requireRole("creator"),
+  body("amount").isFloat({ gt: 0 }),
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    if (!req.user.userId) {
+      return res.status(400).json({ error: "User account required for withdrawals" });
+    }
+
+    try {
+      const result = await requestCreatorWithdrawal({
+        creatorWallet: req.user.walletAddress,
+        userId: req.user.userId,
+        amountAlgo: Number(req.body.amount),
+      });
+      res.status(201).json(result);
+    } catch (err) {
+      const status = err.status || 500;
+      if (status === 400) {
+        return res.status(400).json({
+          error: err.message,
+          totalEarned: err.balances?.totalEarned,
+          totalWithdrawn: err.balances?.totalWithdrawn,
+          withdrawable: err.balances?.withdrawable,
+        });
+      }
+      if (status === 502) {
+        return res.status(502).json({
+          error: err.message,
+          withdrawalId: err.withdrawalId ?? null,
+        });
+      }
+      console.error("[creator] withdraw", err?.message || err);
+      return res.status(500).json({ error: err.message || "Withdrawal failed" });
+    }
   }
 );
 

@@ -3,11 +3,6 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { api } from "../api/client.js";
 
-function shortAddr(addr) {
-  if (!addr || addr.length < 12) return null;
-  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
-}
-
 function useInView(threshold = 0.15) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -101,8 +96,8 @@ export default function ContractStats() {
 
   async function load() {
     try {
-      const { data: d } = await api.get("/api/contract/stats");
-      setData(d);
+      const { data: resData } = await api.get("/api/contract/stats");
+      setData(resData);
       setErr(null);
     } catch (e) {
       setErr(e?.response?.data?.error || "Could not load platform stats");
@@ -288,6 +283,8 @@ export default function ContractStats() {
           </div>
         </motion.div>
       </div>
+
+
     </section>
   );
 }

@@ -20,33 +20,47 @@ function activeTabFromPath(pathname) {
   return hit?.id ?? "home";
 }
 
-export default function MarketplaceSidebar() {
+export default function MarketplaceSidebar({ isCollapsed, setIsCollapsed }) {
   const { pathname } = useLocation();
   const activeTab = activeTabFromPath(pathname);
 
   return (
-    <aside className="fixed left-0 top-14 bottom-0 w-64 bg-slate-50 border-r border-slate-100 flex-col py-8 text-[0.875rem] overflow-y-auto max-md:hidden md:flex">
-      <div className="px-6 mb-8">
-        <h3 className="text-slate-900 font-semibold">Marketplace</h3>
-        <p className="text-slate-500 text-xs">Developer Infrastructure</p>
+    <aside className={`fixed left-0 top-14 bottom-0 w-64 bg-slate-50 border-r border-slate-100 flex flex-col py-8 text-[0.875rem] max-md:hidden md:flex transition-transform duration-300 z-40 ${isCollapsed ? "-translate-x-full" : "translate-x-0"}`}>
+      {/* Floating Toggle Button */}
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="absolute top-4 w-8 h-8 bg-white/80 dark:bg-[#1A1C1C]/80 backdrop-blur border border-slate-200/80 dark:border-slate-800/80 shadow-md rounded-xl flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-300 cursor-pointer z-50 text-slate-600 dark:text-slate-300"
+        style={{ left: isCollapsed ? "calc(100% + 12px)" : "calc(100% - 44px)" }}
+        title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+      >
+        <span className="material-symbols-outlined text-[18px]">
+          {isCollapsed ? "menu" : "menu_open"}
+        </span>
+      </button>
+
+      <div className={`flex-1 overflow-y-auto flex flex-col transition-opacity duration-300 ${isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+        <div className="px-6 mb-8">
+          <h3 className="text-slate-900 font-semibold">Marketplace</h3>
+          <p className="text-slate-500 text-xs">Developer Infrastructure</p>
+        </div>
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <Link
+              key={tab.id}
+              to={tab.path}
+              className={`flex items-center gap-3 px-6 py-3 transition-colors ${
+                isActive
+                  ? "text-slate-900 font-semibold bg-slate-100 border-r-2 border-slate-900"
+                  : "text-slate-500 hover:bg-slate-100"
+              }`}
+            >
+              <span className="material-symbols-outlined">{tab.icon}</span>
+              {tab.label}
+            </Link>
+          );
+        })}
       </div>
-      {tabs.map((tab) => {
-        const isActive = activeTab === tab.id;
-        return (
-          <Link
-            key={tab.id}
-            to={tab.path}
-            className={`flex items-center gap-3 px-6 py-3 transition-colors ${
-              isActive
-                ? "text-slate-900 font-semibold bg-slate-100 border-r-2 border-slate-900"
-                : "text-slate-500 hover:bg-slate-100"
-            }`}
-          >
-            <span className="material-symbols-outlined">{tab.icon}</span>
-            {tab.label}
-          </Link>
-        );
-      })}
     </aside>
   );
 }
