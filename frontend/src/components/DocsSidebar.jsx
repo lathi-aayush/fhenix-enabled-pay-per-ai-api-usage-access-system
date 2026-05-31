@@ -79,6 +79,16 @@ export default function DocsSidebar({ isCollapsed, setIsCollapsed }) {
                 </li>
                 <li>
                   <Link 
+                    to="/docs/playground" 
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors ${isActive('/docs/playground') ? 'bg-indigo-50/50 text-indigo-700 font-semibold' : 'hover:bg-slate-50 text-slate-500 hover:text-slate-800'}`}
+                  >
+                    <span>⚡</span>
+                    <span>x402 Sandbox</span>
+                    <span className="ml-auto text-[9px] font-bold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider">New</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link 
                     to="/docs/cli" 
                     className={`block px-3 py-1.5 rounded transition-colors ${isActive('/docs/cli') ? 'bg-indigo-50/50 text-indigo-700 font-semibold' : 'hover:bg-slate-50 text-slate-500 hover:text-slate-800'}`}
                   >

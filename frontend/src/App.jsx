@@ -37,6 +37,7 @@ const AgenticPipeline = lazy(() => import("./pages/studio/AgenticPipeline/index.
 const ViralThumbnailAI = lazy(() => import("./pages/studio/ViralThumbnailAI.jsx"));
 import X402Docs from "./pages/X402Docs.jsx";
 import X402DevDocs from "./pages/X402DevDocs.jsx";
+import X402Playground from "./pages/X402Playground.jsx";
 import WithdrawalDocs from "./pages/WithdrawalDocs.jsx";
 import HowItWorks from "./pages/HowItWorks.jsx";
 import CliDocs from "./pages/CliDocs.jsx";
@@ -181,6 +182,7 @@ export default function App() {
         <Route path="how-it-works" element={<HowItWorks />} />
         <Route path="x402" element={<X402Docs />} />
         <Route path="x402-api" element={<X402DevDocs />} />
+        <Route path="playground" element={<X402Playground />} />
         <Route path="withdrawal" element={<WithdrawalDocs />} />
         <Route path="cli" element={<CliDocs />} />
         <Route path="migration" element={<MigrationDocs />} />
