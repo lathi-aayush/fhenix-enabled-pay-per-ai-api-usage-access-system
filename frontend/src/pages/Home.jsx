@@ -126,8 +126,8 @@ export default function Home() {
         navigate(afterLogin);
         return;
       }
-      toast.error("Log out first, then enter as the other role.");
-      return;
+      // If we don't have capability (e.g. user wants to switch to creator role),
+      // we let the Pera wallet connection proceed to switch/upgrade their role.
     }
 
     setBusy(true);
