@@ -1,5 +1,6 @@
 // Trigger reload to restart backend
 import "./loadEnv.js";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -99,33 +100,54 @@ app.use("/outputs/workflow", express.static(workflowOutputDir));
 
 if (process.env.NODE_ENV === "production") {
   const dist = path.join(__dirname, "..", "..", "frontend", "dist");
+  const indexHtml = path.join(dist, "index.html");
 
-  /** Hashed Vite assets — long cache; missing files must not fall through to SPA HTML. */
-  const isStaticAsset = (p) => /\.(js|mjs|css|map|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot)$/i.test(p);
-
-  app.use(
-    express.static(dist, {
-      index: false,
-      setHeaders(res, filePath) {
-        if (filePath.replace(/\\/g, "/").endsWith("/index.html")) {
-          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        } else if (filePath.includes(`${path.sep}assets${path.sep}`)) {
-          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-        }
-      },
-    })
-  );
-
-  app.get("*", (req, res, next) => {
-    if (req.path.startsWith("/api")) return next();
-    if (isStaticAsset(req.path)) {
-      return res.status(404).type("text/plain").send("Asset not found");
-    }
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.sendFile(path.join(dist, "index.html"), (err) => {
-      if (err) next(err);
+  if (!fs.existsSync(indexHtml)) {
+    console.warn(
+      "[server] frontend/dist/index.html missing — running API-only. " +
+        "On Render, set buildCommand to `npm run build` from the repo root (not backend/)."
+    );
+    app.get("/", (_req, res) => {
+      res.status(200).json({
+        ok: true,
+        message: "Sentinel API. Frontend bundle not built on this service.",
+        health: "/api/health",
+      });
     });
-  });
+  } else {
+    /** Hashed Vite assets — long cache; missing files must not fall through to SPA HTML. */
+    const isStaticAsset = (p) =>
+      /\.(js|mjs|css|map|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot)$/i.test(p);
+
+    app.use(
+      express.static(dist, {
+        index: false,
+        setHeaders(res, filePath) {
+          if (filePath.replace(/\\/g, "/").endsWith("/index.html")) {
+            res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+          } else if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+            res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+          }
+        },
+      })
+    );
+
+    app.get("*", (req, res, next) => {
+      if (req.path.startsWith("/api")) return next();
+      if (isStaticAsset(req.path)) {
+        return res.status(404).type("text/plain").send("Asset not found");
+      }
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.sendFile(indexHtml, (err) => {
+        if (err) {
+          if (err.code === "ENOENT") {
+            return res.status(503).json({ error: "Frontend bundle unavailable" });
+          }
+          return next(err);
+        }
+      });
+    });
+  }
 }
 
 app.use((err, _req, res, _next) => {

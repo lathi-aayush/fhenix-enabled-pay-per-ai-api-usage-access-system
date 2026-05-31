@@ -25,12 +25,26 @@ function getAlgodClient() {
   return new algosdk.Algodv2(token, server, "");
 }
 
+function treasuryConfigError(message, code) {
+  return Object.assign(new Error(message), { status: 503, code });
+}
+
 function getPlatformTreasuryKey() {
   const mn = process.env.PLATFORM_MNEMONIC?.trim();
   if (!mn) {
-    throw new Error("Platform treasury is not configured (PLATFORM_MNEMONIC missing)");
+    throw treasuryConfigError(
+      "Creator withdrawals are not enabled on this server (PLATFORM_MNEMONIC is not set).",
+      "TREASURY_NOT_CONFIGURED"
+    );
   }
-  return algosdk.mnemonicToSecretKey(mn);
+  try {
+    return algosdk.mnemonicToSecretKey(mn);
+  } catch {
+    throw treasuryConfigError(
+      "Platform treasury mnemonic is invalid. Use the full 25-word Algorand recovery phrase from Pera.",
+      "TREASURY_INVALID_MNEMONIC"
+    );
+  }
 }
 
 async function getCreatorServiceIds(creatorWallet) {
@@ -145,6 +159,9 @@ export async function requestCreatorWithdrawal({ creatorWallet, userId, amountAl
       balances,
     });
   }
+
+  // Fail fast before creating a pending row if treasury cannot sign payouts.
+  getPlatformTreasuryKey();
 
   const withdrawal = await Withdrawal.create({
     creatorWallet: wallet,

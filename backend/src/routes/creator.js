@@ -461,6 +461,12 @@ router.post(
           withdrawable: err.balances?.withdrawable,
         });
       }
+      if (status === 503) {
+        return res.status(503).json({
+          error: err.message,
+          code: err.code || "TREASURY_NOT_CONFIGURED",
+        });
+      }
       if (status === 502) {
         return res.status(400).json({
           error: err.message,

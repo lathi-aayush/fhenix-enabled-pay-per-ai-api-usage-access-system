@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import algosdk from "algosdk";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const envPath = path.resolve(__dirname, "..", ".env");
@@ -70,4 +71,17 @@ if (process.env.GOOGLE_CLOUD_PROJECT?.trim() && gcsBucket) {
   console.log("[env] Veo video: configured (requires Model Garden allowlist on project)");
 } else if (process.env.GOOGLE_CLOUD_PROJECT?.trim()) {
   console.warn("[env] Veo video: set GCS_ASSETS_BUCKET for Veo output storage");
+}
+
+const platformMn = process.env.PLATFORM_MNEMONIC?.trim();
+if (!platformMn) {
+  console.warn("[env] PLATFORM_MNEMONIC: not set (creator withdrawals disabled)");
+} else {
+  try {
+    const algosdk = await import("algosdk");
+    const { addr } = algosdk.default.mnemonicToSecretKey(platformMn);
+    console.log("[env] PLATFORM_MNEMONIC: valid treasury", addr.slice(0, 8) + "…");
+  } catch {
+    console.warn("[env] PLATFORM_MNEMONIC: invalid (must be 25-word Algorand phrase)");
+  }
 }
