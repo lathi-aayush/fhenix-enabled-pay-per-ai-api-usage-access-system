@@ -462,12 +462,32 @@ export default function Home() {
                 </li>
                 <li>
                   <a
-                    href="https://github.com/DE-V8/pay-per-usage-ai-api-access-system-using-algorand"
+                    href="https://github.com/lathi-aayush/pay-per-usage-ai-api-access-system-using-algorand/tree/main"
                     className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium cursor-pointer"
                     target="_blank"
                     rel="noreferrer"
                   >
                     GitHub
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="mailto:wesentinal@gmail.com"
+                    className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-[15px] text-indigo-500">mail</span>
+                    Contact Us
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://www.instagram.com/sentinal_apimarketplace?igsh=ejNrdW95ZWEwNWYz"
+                    className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium cursor-pointer flex items-center gap-1.5"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span className="material-symbols-outlined text-[15px] text-pink-500">photo_camera</span>
+                    Instagram
                   </a>
                 </li>
               </ul>
