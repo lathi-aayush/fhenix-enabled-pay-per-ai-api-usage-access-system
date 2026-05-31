@@ -11,7 +11,7 @@ const router = Router();
 router.post(
   "/generate",
   requireAuth,
-  requireRole("user"),
+  requireRole("user", "creator"),
   body("serviceId").isMongoId(),
   async (req, res) => {
     const errors = validationResult(req);

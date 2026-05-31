@@ -19,7 +19,7 @@ const router = Router();
 router.post(
   "/topup/create",
   requireAuth,
-  requireRole("user"),
+  requireRole("user", "creator"),
   async (req, res) => {
     try {
       const { contractAddress, appId } = getContractConfig();
@@ -69,7 +69,7 @@ router.post(
 router.post(
   "/topup/verify",
   requireAuth,
-  requireRole("user"),
+  requireRole("user", "creator"),
   body("txId").isString().trim().notEmpty(),
   body("paymentIntentId").isUUID(),
   async (req, res) => {

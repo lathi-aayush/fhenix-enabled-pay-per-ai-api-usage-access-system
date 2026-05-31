@@ -8,7 +8,7 @@ import { canonicalWalletAddress } from "../utils/userWallet.js";
 
 const router = Router();
 
-router.get("/algo-balance", requireAuth, requireRole("user"), async (req, res) => {
+router.get("/algo-balance", requireAuth, requireRole("user", "creator"), async (req, res) => {
   try {
     if (!req.user.walletAddress) {
       return res.json({ balanceMicroAlgos: 0, balanceAlgo: 0 });
@@ -28,7 +28,7 @@ router.get("/algo-balance", requireAuth, requireRole("user"), async (req, res) =
   }
 });
 
-router.get("/proxy-keys", requireAuth, requireRole("user"), async (req, res) => {
+router.get("/proxy-keys", requireAuth, requireRole("user", "creator"), async (req, res) => {
   try {
     if (!req.user.walletAddress) {
       return res.json([]);
@@ -65,7 +65,7 @@ router.get("/proxy-keys", requireAuth, requireRole("user"), async (req, res) => 
   }
 });
 
-router.get("/transactions", requireAuth, requireRole("user"), async (req, res) => {
+router.get("/transactions", requireAuth, requireRole("user", "creator"), async (req, res) => {
   try {
     if (!req.user.walletAddress) {
       return res.json({
@@ -148,7 +148,7 @@ router.get("/transactions", requireAuth, requireRole("user"), async (req, res) =
   }
 });
 
-router.get("/usage", requireAuth, requireRole("user"), async (req, res) => {
+router.get("/usage", requireAuth, requireRole("user", "creator"), async (req, res) => {
   try {
     if (!req.user.walletAddress) {
       return res.json([]);

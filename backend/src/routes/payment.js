@@ -20,7 +20,7 @@ const router = Router();
 router.post(
   "/create",
   requireAuth,
-  requireRole("user"),
+  requireRole("user", "creator"),
   body("serviceId").isMongoId(),
   async (req, res) => {
     const errors = validationResult(req);
@@ -88,7 +88,7 @@ router.post(
 router.post(
   "/verify",
   requireAuth,
-  requireRole("user"),
+  requireRole("user", "creator"),
   body("txId").isString().trim().notEmpty(),
   body("paymentIntentId").isUUID(),
   async (req, res) => {
