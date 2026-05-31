@@ -169,6 +169,11 @@ export default function StudioLayout() {
           <Link to="/dashboard/home" className="text-[11px] text-secondary hover:underline block text-center">
             Switch to Marketplace →
           </Link>
+          {user?.role === "creator" && (
+            <Link to="/creator" className="text-[11px] text-indigo-600 hover:underline block text-center font-semibold mt-1">
+              Go to Creator Dashboard →
+            </Link>
+          )}
         </div>
       </aside>
 

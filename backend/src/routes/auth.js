@@ -93,7 +93,11 @@ router.post(
     } else {
       const updates = {};
       if (user.walletAddress !== canonical) updates.walletAddress = canonical;
-      if (user.role !== role) updates.role = role;
+      // A creator should never be demoted to a user on login.
+      // But a standard user can be upgraded to a creator.
+      if (user.role === "user" && role === "creator") {
+        updates.role = "creator";
+      }
       if (Object.keys(updates).length > 0) {
         user = await User.findByIdAndUpdate(user._id, { $set: updates }, { new: true });
       }

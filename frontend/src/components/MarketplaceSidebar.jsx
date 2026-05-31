@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const tabs = [
   { id: "home", path: "/dashboard/home", icon: "home", label: "Home" },
@@ -22,6 +23,7 @@ function activeTabFromPath(pathname) {
 
 export default function MarketplaceSidebar({ isCollapsed, setIsCollapsed }) {
   const { pathname } = useLocation();
+  const { user } = useAuth();
   const activeTab = activeTabFromPath(pathname);
 
   return (
@@ -60,6 +62,17 @@ export default function MarketplaceSidebar({ isCollapsed, setIsCollapsed }) {
             </Link>
           );
         })}
+        {user?.role === "creator" && (
+          <div className="mt-auto px-6 py-4 border-t border-slate-200">
+            <Link
+              to="/creator"
+              className="flex items-center gap-3 py-2 text-indigo-600 hover:text-indigo-800 font-semibold transition-colors"
+            >
+              <span className="material-symbols-outlined">dashboard</span>
+              <span>Creator Dashboard →</span>
+            </Link>
+          </div>
+        )}
       </div>
     </aside>
   );

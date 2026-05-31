@@ -74,6 +74,10 @@ function Guard({ role, children }) {
   if (!user) {
     return <Navigate to="/" replace />;
   }
+  // A Creator is also a valid user who can browse the marketplace and use studio tools
+  if (role === "user" && (user.role === "user" || user.role === "creator")) {
+    return children;
+  }
   if (user.role !== role) {
     return <Navigate to={user.role === "user" ? "/dashboard/home" : "/creator"} replace />;
   }

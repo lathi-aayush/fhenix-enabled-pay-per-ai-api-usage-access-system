@@ -232,7 +232,7 @@ export default function ProfileDropdown() {
                 <Link
                   to="/creator"
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-2 py-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white text-xs font-medium transition-colors"
+                  className="flex items-center gap-2 py-1.5 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 text-xs font-semibold transition-colors"
                 >
                   <span className="material-symbols-outlined text-sm">dashboard</span>
                   Creator Dashboard
@@ -244,6 +244,31 @@ export default function ProfileDropdown() {
                 >
                   <span className="material-symbols-outlined text-sm">add_box</span>
                   Publish API
+                </Link>
+                <div className="h-px bg-slate-100 dark:bg-slate-800 my-1" />
+                <Link
+                  to="/studio"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2 py-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white text-xs font-medium transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">movie_edit</span>
+                  AI Studio
+                </Link>
+                <Link
+                  to="/dashboard/browse"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2 py-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white text-xs font-medium transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">storefront</span>
+                  Browse Marketplace
+                </Link>
+                <Link
+                  to="/dashboard/keys"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-2 py-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white text-xs font-medium transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">key</span>
+                  My API Keys &amp; usage
                 </Link>
               </>
             ) : (

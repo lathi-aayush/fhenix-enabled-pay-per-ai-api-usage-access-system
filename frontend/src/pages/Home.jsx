@@ -119,12 +119,14 @@ export default function Home() {
     const afterLogin =
       options.redirect || (role === "creator" ? "/creator" : "/dashboard/home");
 
-    if (isAuthenticated && user && user.role !== role) {
+    if (isAuthenticated && user) {
+      const currentRole = user.role;
+      const hasCapability = currentRole === role || (role === "user" && currentRole === "creator");
+      if (hasCapability) {
+        navigate(afterLogin);
+        return;
+      }
       toast.error("Log out first, then enter as the other role.");
-      return;
-    }
-    if (isAuthenticated && user && user.role === role) {
-      navigate(afterLogin);
       return;
     }
 
@@ -452,7 +454,7 @@ export default function Home() {
               transition={{ duration: 0.5, delay: 0.4 }}
               type="button"
               disabled={busy}
-              onClick={() => enterWithPera("user", { redirect: "/dashboard/browse" })}
+              onClick={() => (isAuthenticated ? navigate("/dashboard/browse") : enterWithPera("user", { redirect: "/dashboard/browse" }))}
               className="relative flex flex-col text-left bg-white/70 backdrop-blur-md border border-slate-200/80 p-6 rounded-[20px] hover:border-indigo-300 hover-glow-card transition-all duration-500 group cursor-pointer disabled:opacity-50 hover:-translate-y-1 hover:shadow-2xl overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
