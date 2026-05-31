@@ -415,43 +415,80 @@ export default function Home() {
         <ContractStats />
       </main>
 
-      <footer className="bg-surface border-t border-surface-variant py-12 px-8 mt-24">
+      <footer className="bg-white border-t border-slate-100 py-16 px-8 mt-32">
         <div className="max-w-screen-2xl mx-auto">
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <span className="text-lg font-semibold text-primary tracking-tight font-headline">Sentinel</span>
-              <p className="text-sm text-on-surface-variant mt-2 leading-relaxed">
+              <span className="text-xl font-bold tracking-tight font-headline text-slate-900">Sentinel</span>
+              <p className="text-sm text-slate-400 mt-3 leading-relaxed max-w-xs">
                 Pay-per-use AI APIs on Algorand. No subscriptions, no lock-in.
               </p>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-3">Platform</p>
-              <ul className="space-y-2 text-sm">
-                <li><Link to="/dashboard/browse" className="text-on-surface-variant hover:text-primary transition-colors">Marketplace</Link></li>
-                <li><Link to="/studio" className="text-on-surface-variant hover:text-primary transition-colors">Studio</Link></li>
-                <li><Link to="/docs/x402" className="text-on-surface-variant hover:text-primary transition-colors">x402 Docs</Link></li>
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Platform</p>
+              <ul className="space-y-3 text-sm flex flex-col items-start">
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => (isAuthenticated ? navigate("/dashboard/browse") : enterWithPera("user", { redirect: "/dashboard/browse" }))}
+                    className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium text-left cursor-pointer"
+                  >
+                    Marketplace
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => (isAuthenticated ? navigate("/studio") : enterWithPera("user", { redirect: "/studio" }))}
+                    className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium text-left cursor-pointer"
+                  >
+                    Studio
+                  </button>
+                </li>
+                <li>
+                  <Link to="/docs/x402" className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium cursor-pointer">
+                    x402 Docs
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-3">Resources</p>
-              <ul className="space-y-2 text-sm">
-                <li><Link to="/docs/how-it-works" className="text-on-surface-variant hover:text-primary transition-colors">How It Works</Link></li>
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Resources</p>
+              <ul className="space-y-3 text-sm flex flex-col items-start">
                 <li>
-                  <a href="https://github.com" className="text-on-surface-variant hover:text-primary transition-colors" target="_blank" rel="noreferrer">
+                  <Link to="/docs/how-it-works" className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium cursor-pointer">
+                    How It Works
+                  </Link>
+                </li>
+                <li>
+                  <a
+                    href="https://github.com/DE-V8/pay-per-usage-ai-api-access-system-using-algorand"
+                    className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium cursor-pointer"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     GitHub
                   </a>
                 </li>
               </ul>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-3">Legal</p>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="text-on-surface-variant hover:text-primary transition-colors">Terms of Service</a></li>
-                <li><a href="#" className="text-on-surface-variant hover:text-primary transition-colors">Privacy Policy</a></li>
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Legal</p>
+              <ul className="space-y-3 text-sm flex flex-col items-start">
+                <li>
+                  <a href="#" className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium cursor-pointer">
+                    Terms of Service
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium cursor-pointer">
+                    Privacy Policy
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
-          <p className="text-[11px] text-on-surface-variant font-medium tracking-wide font-body uppercase mt-10 pt-6 border-t border-surface-variant">
+          <p className="text-[10px] text-slate-400 font-semibold tracking-wider font-body uppercase mt-12 pt-8 border-t border-slate-100">
             © 2026 Sentinel Infrastructure
           </p>
         </div>
