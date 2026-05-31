@@ -201,15 +201,15 @@ export default function Home() {
           <InteractiveBackground />
         </div>
 
-        <section className="relative max-w-6xl mx-auto px-6 pt-8 pb-16">
-          <div className="grid md:grid-cols-2 gap-12 items-start relative z-10">
+        <section className="relative max-w-4xl mx-auto px-6 pt-16 pb-20">
+          <div className="flex flex-col items-center text-center relative z-10">
 
-            {/* LEFT: Headline & CTAs */}
+            {/* Center-aligned Hero Content */}
             <motion.div
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="flex flex-col gap-8"
+              className="flex flex-col items-center gap-8"
             >
               <motion.div
                 variants={itemVariants}
@@ -232,7 +232,7 @@ export default function Home() {
 
               <motion.h1
                 variants={itemVariants}
-                className="font-headline text-[3rem] md:text-[3.75rem] font-extrabold leading-[1.08] tracking-tight text-slate-900"
+                className="font-headline text-[3rem] md:text-[4rem] font-extrabold leading-[1.08] tracking-tight text-slate-900 text-center"
               >
                 APIs, AI Studio &
                 <br />
@@ -243,16 +243,16 @@ export default function Home() {
 
               <motion.p
                 variants={itemVariants}
-                className="font-body text-[15px] text-slate-500 max-w-[420px] leading-relaxed"
+                className="font-body text-[16px] text-slate-500 max-w-2xl leading-relaxed text-center"
               >
                 A <strong className="text-slate-700">decentralized API marketplace</strong> for developers and an{" "}
                 <strong className="text-slate-700">AI creative Studio</strong> for creators — both settled per-request on Algorand. No monthly plans, no lock-in.
               </motion.p>
 
-              {/* 3 value pillars — lightweight inline row */}
+              {/* 3 value pillars — centered row */}
               <motion.div
                 variants={itemVariants}
-                className="flex items-center gap-6"
+                className="flex flex-wrap items-center justify-center gap-6"
               >
                 {[
                   { icon: "toll",      label: "Pay Per Call",    iconColor: "text-indigo-500" },
@@ -268,12 +268,12 @@ export default function Home() {
 
               <motion.div
                 variants={itemVariants}
-                className="flex flex-wrap gap-3"
+                className="flex flex-wrap justify-center gap-3.5"
               >
                 <button
                   type="button"
                   onClick={() => (isAuthenticated ? navigate("/dashboard/browse") : enterWithPera("user", { redirect: "/dashboard/browse" }))}
-                  className="group px-6 py-3 bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-full text-[13px] font-semibold hover:from-indigo-600 hover:to-violet-600 hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 hover:-translate-y-px flex items-center gap-2 shadow-md shadow-slate-900/20"
+                  className="group px-7 py-3.5 bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-full text-[13.5px] font-semibold hover:from-indigo-600 hover:to-violet-600 hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-300 hover:-translate-y-px flex items-center gap-2 shadow-md shadow-slate-900/20"
                 >
                   Browse Marketplace
                   <span className="material-symbols-outlined text-[15px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -281,22 +281,12 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => isAuthenticated ? navigate("/studio") : enterWithPera("user", { redirect: "/studio" })}
-                  className="group px-6 py-3 bg-white border border-slate-200 rounded-full text-[13px] font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700 hover:shadow-md transition-all duration-300 hover:-translate-y-px flex items-center gap-2"
+                  className="group px-7 py-3.5 bg-white border border-slate-200 rounded-full text-[13.5px] font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-700 hover:shadow-md transition-all duration-300 hover:-translate-y-px flex items-center gap-2"
                 >
                   <span className="material-symbols-outlined text-[15px] text-emerald-500">auto_awesome</span>
                   Open AI Studio
                 </button>
               </motion.div>
-            </motion.div>
-
-            {/* RIGHT: Live On-Chain Transaction Feed */}
-            <motion.div
-              initial={{ opacity: 0, x: 12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="hidden md:block"
-            >
-              <LiveTxFeed />
             </motion.div>
 
           </div>
