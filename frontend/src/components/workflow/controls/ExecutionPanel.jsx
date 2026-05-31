@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { StructuredOutputView, NodeOutputPreview } from "../StructuredOutputView.jsx";
+import AudioPlayerBlock from "../../shared/AudioPlayerBlock.jsx";
 import { extractBlogResult } from "../../../utils/workflowBlog.js";
 import { mediaSrc } from "../../../utils/mediaUrl.js";
 
@@ -68,6 +69,27 @@ export default function ExecutionPanel({
   }
 
   const finalPayload = run?.structuredResult;
+
+  const audioStep = nodeResults.find((nr) => nodeMeta[nr.nodeId]?.type === "agenticAudio");
+  let workflowAudio = null;
+  if (audioStep?.output) {
+    try {
+      const parsed = JSON.parse(audioStep.output);
+      workflowAudio = parsed?.audio || null;
+      if (!mediaSrc(workflowAudio) && typeof parsed?.content === "string") {
+        workflowAudio = { mimeType: "audio/wav", url: parsed.content };
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  if (!mediaSrc(workflowAudio) && finalPayload?.final?.audio) {
+    workflowAudio = finalPayload.final.audio;
+  }
+  if (!mediaSrc(workflowAudio) && finalPayload?.steps) {
+    const stepAudio = [...finalPayload.steps].reverse().find((s) => mediaSrc(s.structured?.audio));
+    if (stepAudio?.structured?.audio) workflowAudio = stepAudio.structured.audio;
+  }
   const finalFallback = outputNodeResult?.output || nodeResults[nodeResults.length - 1]?.output;
   const blogResult = extractBlogResult(run);
   const hasFinal = Boolean(finalPayload || finalFallback);
@@ -233,6 +255,16 @@ export default function ExecutionPanel({
                 >
                   Open in Blogging Agent →
                 </button>
+              </div>
+            )}
+
+            {mediaSrc(workflowAudio) && (
+              <div className="rounded-xl border-2 border-violet-200 bg-violet-50/50 p-3">
+                <h4 className="text-xs font-bold text-primary flex items-center gap-1 mb-2">
+                  <span className="material-symbols-outlined text-base">mic</span>
+                  Voiceover audio
+                </h4>
+                <AudioPlayerBlock audio={workflowAudio} className="border-0 p-0" />
               </div>
             )}
 

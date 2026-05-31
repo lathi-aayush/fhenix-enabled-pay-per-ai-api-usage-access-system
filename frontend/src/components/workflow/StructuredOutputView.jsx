@@ -263,8 +263,23 @@ export function NodeOutputPreview({ output, label, type, status, expanded, onTog
                   })}
                 </div>
               )}
-              {parsed.kind === "agenticAudio" && mediaSrc(parsed.audio) && (
-                <AudioPlayerBlock audio={parsed.audio} className="border-0 p-0" />
+              {parsed.kind === "agenticAudio" && (
+                <>
+                  {mediaSrc(parsed.audio) ? (
+                    <AudioPlayerBlock audio={parsed.audio} className="border-0 p-0" />
+                  ) : typeof parsed.content === "string" &&
+                    (parsed.content.startsWith("/outputs/") ||
+                      parsed.content.startsWith("http")) ? (
+                    <AudioPlayerBlock
+                      audio={{ mimeType: "audio/wav", url: parsed.content }}
+                      className="border-0 p-0"
+                    />
+                  ) : (
+                    <p className="text-[10px] text-slate-600">
+                      {parsed.displayPreview || "No playable audio URL — re-run after backend deploy."}
+                    </p>
+                  )}
+                </>
               )}
               {parsed.kind === "agenticVideo" && (
                 <div className="text-[10px] text-slate-600 space-y-2">

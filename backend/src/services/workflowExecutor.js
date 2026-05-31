@@ -37,13 +37,17 @@ function compactOutputForStorage(output, nodeType) {
       return JSON.stringify(p);
     }
     if (typeof p?.kind === "string" && p.kind.startsWith("agentic")) {
-      const hasGcsImages =
-        Array.isArray(p.images) && p.images.every((img) => img?.url?.startsWith("http"));
-      const hasGcsAudio = p.audio?.url?.startsWith("http");
-      if (!hasGcsImages && Array.isArray(p.images)) {
+      const hasStoredImages =
+        Array.isArray(p.images) &&
+        p.images.every(
+          (img) => img?.url?.startsWith("http") || img?.url?.startsWith("/outputs/")
+        );
+      if (!hasStoredImages && Array.isArray(p.images)) {
         p.images = p.images.map((_, i) => ({ dataUrl: `[image_${i}]` }));
       }
-      if (!hasGcsAudio && p.audio?.dataUrl) {
+      const hasStoredAudio =
+        p.audio?.url?.startsWith("http") || p.audio?.url?.startsWith("/outputs/");
+      if (!hasStoredAudio && p.audio?.dataUrl) {
         p.audio = { mimeType: p.audio.mimeType || "audio/wav", dataUrl: "[inline-audio]" };
       }
       if (typeof p.content === "string" && p.content.length > 8000) {

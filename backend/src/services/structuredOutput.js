@@ -27,10 +27,34 @@ export function getStructuredSystemSuffix(format) {
   return `\n\n---\nOutput format requirement:\n${FORMAT_PROMPTS[key]}`;
 }
 
+/** URLs the frontend can play via API base + /outputs/* or signed GCS links. */
+export function isPlayableAssetUrl(url) {
+  const u = String(url || "").trim();
+  return (
+    u.startsWith("http://") ||
+    u.startsWith("https://") ||
+    u.startsWith("/outputs/")
+  );
+}
+
+export function pickAudioRef(audio) {
+  if (!audio || typeof audio !== "object") return null;
+  if (isPlayableAssetUrl(audio.url)) {
+    return { mimeType: audio.mimeType || "audio/wav", url: audio.url };
+  }
+  if (typeof audio.dataUrl === "string" && audio.dataUrl.startsWith("data:")) {
+    return { mimeType: audio.mimeType || "audio/wav", dataUrl: audio.dataUrl };
+  }
+  return null;
+}
+
 function stripHeavyMedia(obj) {
   if (!obj || typeof obj !== "object") return obj;
   const next = { ...obj };
-  if (next.audio?.dataUrl) {
+  const audioRef = pickAudioRef(next.audio);
+  if (audioRef) {
+    next.audio = audioRef;
+  } else if (next.audio?.dataUrl) {
     next.audio = {
       mimeType: next.audio.mimeType || "audio/wav",
       url: next.audio.url || null,
@@ -38,9 +62,9 @@ function stripHeavyMedia(obj) {
     };
   }
   if (Array.isArray(next.images)) {
-    next.images = next.images.map((img) =>
-      img?.url ? { url: img.url } : { placeholder: true }
-    );
+    next.images = next.images
+      .filter((img) => isPlayableAssetUrl(img?.url) || img?.dataUrl?.startsWith("data:"))
+      .map((img) => (img?.url ? { url: img.url } : img?.dataUrl ? { dataUrl: img.dataUrl } : { placeholder: true }));
   }
   if (typeof next.content === "string" && next.content.length > 12_000) {
     next.content = `${next.content.slice(0, 12_000)}…`;
@@ -147,9 +171,13 @@ export function buildStructuredRunResult({
                   title: agenticParsed.kind.replace("agentic", "Agentic "),
                   summary: agenticParsed.displayPreview || agenticParsed.agent,
                   agentic: stripHeavyMedia(agenticParsed),
-                  images: (agenticParsed.images || []).filter((img) => img?.url?.startsWith("http")),
-                  audio: agenticParsed.audio?.url?.startsWith("http") ? agenticParsed.audio : null,
-                  videoUri: agenticParsed.videoUri,
+                  images: (agenticParsed.images || []).filter(
+                    (img) => isPlayableAssetUrl(img?.url) || img?.dataUrl?.startsWith("data:")
+                  ),
+                  audio: pickAudioRef(agenticParsed.audio),
+                  videoUri: isPlayableAssetUrl(agenticParsed.videoUri)
+                    ? agenticParsed.videoUri
+                    : agenticParsed.videoUri,
                   text:
                     agenticParsed.agent === "text" && typeof agenticParsed.content === "string"
                       ? agenticParsed.content
@@ -208,7 +236,7 @@ export function buildStructuredRunResult({
 
   let finalContent = null;
   if (finalStep?.structured) {
-    finalContent = finalStep.structured;
+    finalContent = { ...finalStep.structured };
   } else if (finalStep?.text) {
     const parsed = tryParseJson(finalStep.text);
     if (parsed?.blogPostId) {
@@ -228,6 +256,17 @@ export function buildStructuredRunResult({
       };
     } else {
       finalContent = parsed || { summary: finalStep.text };
+    }
+  }
+
+  if (finalContent) {
+    const audioStep = [...steps].reverse().find((s) => pickAudioRef(s.structured?.audio));
+    const audioRef = pickAudioRef(audioStep?.structured?.audio);
+    if (audioRef && !pickAudioRef(finalContent.audio)) {
+      finalContent.audio = audioRef;
+    }
+    if (!finalContent.summary && audioRef) {
+      finalContent.summary = "Voiceover audio ready — play or download below.";
     }
   }
 
