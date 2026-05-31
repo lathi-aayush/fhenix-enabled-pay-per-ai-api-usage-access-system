@@ -462,7 +462,7 @@ router.post(
         });
       }
       if (status === 502) {
-        return res.status(502).json({
+        return res.status(400).json({
           error: err.message,
           withdrawalId: err.withdrawalId ?? null,
         });
