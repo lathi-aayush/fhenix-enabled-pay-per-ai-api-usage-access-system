@@ -260,4 +260,3 @@ router.post("/become-creator", requireAuth, async (req, res) => {
 });
 
 export default router;
-REMOVE_CONFLICT_TAIL
