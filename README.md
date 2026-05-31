@@ -28,10 +28,11 @@
 9. [API surface (summary)](#9-api-surface-summary)
 10. [Frontend routes](#10-frontend-routes)
 11. [x402 Payment Protocol](#11-x402-payment-protocol)
-12. [Agent Context JSON](#12-agent-context-json)
-13. [Production notes](#13-production-notes)
-14. [Git workflow and commits](#14-git-workflow-and-commits)
-15. [Further reading](#15-further-reading)
+12. [Developer SDK](#12-developer-sdk)
+13. [Agent Context JSON](#13-agent-context-json)
+14. [Production notes](#14-production-notes)
+15. [Git workflow and commits](#15-git-workflow-and-commits)
+16. [Further reading](#16-further-reading)
 
 ---
 
@@ -42,6 +43,7 @@
 | **`frontend/`** | Vite + React 18 + Tailwind. **Marketplace** (`/dashboard/*`) for API discovery, keys, usage, billing. **Studio** (`/studio/*`) for blogging, projects, platforms, analytics (Groq-backed). |
 | **`backend/`** | Express API, MongoDB (Mongoose), JWT auth, Algorand helpers, AI proxy for marketplace services, **Studio** routes (`/api/studio`), BullMQ publishing worker. |
 | **`contract/`** | Puya / **algopy** smart contract (`SentinelContract`) + deploy script + compiled `artifacts/`. |
+| **`sdk/`** | Official JavaScript/TypeScript SDK package published on npm as `@sentinalapi/sdk`. Simplifies payments integration. |
 
 **Ecosystem split (product):**
 
@@ -121,6 +123,20 @@ pay-per-usage-ai-api-access-system-using-algorand/
 │   ├── requirements.txt
 │   ├── artifacts/            ← TEAL + ARC56 JSON (generated)
 │   └── contract_info.json    ← written by deploy (app id + address)
+├── sdk/                        ← Official JavaScript/TypeScript SDK package
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── tsup.config.ts
+│   ├── README.md
+│   ├── src/
+│   │   ├── index.ts            ← Main public exports
+│   │   ├── SentinelClient.ts   ← Main client implementation
+│   │   ├── types.ts
+│   │   ├── errors.ts           ← Custom SentinelError classes
+│   │   ├── signer.ts           ← MnemonicSigner, BYOSigner, PreSignedSigner
+│   │   ├── algorand.ts         ← Payment transaction builder
+│   │   └── http.ts             ← Fetch wrapper
+│   └── docs/                   ← Comprehensive SDK markdown guides
 ```
 
 ---
@@ -366,7 +382,43 @@ New:       GET  /api/x402/use/:id  →  402  →  retry  →  200      (fixed mi
 
 ---
 
-## 12. Agent Context JSON
+## 12. Developer SDK
+
+Sentinel provides an official JavaScript/TypeScript SDK package (**`@sentinalapi/sdk`**) published on npm to make building client-side and server-side pay-per-use AI integrations extremely simple.
+
+### Quick Start
+
+```bash
+npm install @sentinalapi/sdk algosdk
+```
+
+```ts
+import { MnemonicSigner, SentinelClient } from "@sentinalapi/sdk";
+
+// Initialize Sentinel Client
+const client = new SentinelClient({
+  apiKey: "sk-sentinel-your-key-here",
+  network: "testnet"
+});
+
+// Configure signer (e.g. server-side mnemonic)
+const signer = new MnemonicSigner("your 25-word mnemonic phrase...");
+
+// Make a metered, pay-per-use AI call
+const response = await client.chat(
+  [{ role: "user", content: "Tell me something cool!" }],
+  signer
+);
+
+console.log(SentinelClient.getAssistantText(response));
+console.log("On-chain Tx ID:", response.sentinelReceipt.paymentTxId);
+```
+
+For more info, check the full **[SDK README](./sdk/README.md)** or read the comprehensive guides inside **[sdk/docs/](./sdk/docs/)**.
+
+---
+
+## 13. Agent Context JSON
 
 **`GET /api/services/agent-context`** — public, no auth required.
 
@@ -389,7 +441,7 @@ The panel also shows live status pills (active service count, network, generatio
 
 ---
 
-## 13. Production notes
+## 14. Production notes
 
 - Set `NODE_ENV=production` and run `npm run build` in `frontend/`. Express serves `frontend/dist`.
 - Align `FRONTEND_ORIGIN` with your deployed SPA URL.
@@ -399,7 +451,7 @@ The panel also shows live status pills (active service count, network, generatio
 
 ---
 
-## 14. Git workflow and commits
+## 15. Git workflow and commits
 
 **Branches**
 
@@ -420,7 +472,7 @@ The panel also shows live status pills (active service count, network, generatio
 
 ---
 
-## 15. Further reading
+## 16. Further reading
 
 - **`DOCUMENTATION.md`** — End-to-end technical reference: login flows, pay-per-use sequence, burner wallet sync, full API listing, security notes.
 - **`contract/deploy.py`** — Env vars and compile/deploy steps inline in the script header.
