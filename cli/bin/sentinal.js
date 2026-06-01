@@ -12,37 +12,12 @@ function printBanner() {
   if (process.argv.includes("-h") || process.argv.includes("--help") || process.argv.includes("help")) {
     return;
   }
-  const purple = "\x1b[38;5;99m";
   const pink = "\x1b[38;5;201m";
-  const yellow = "\x1b[38;5;223m";
-  const white = "\x1b[97m";
   const reset = "\x1b[0m";
   const green = "\x1b[32m";
   const gray = "\x1b[90m";
 
   console.log(`
-                 ${pink}(●)${reset}
-                 ${purple}│${reset}
-               ${purple}┌─┴─┐${reset}
-              ${purple}│   │${reset}
-            ${purple}┌─┴───┴─┐${reset}
-         ${purple}┌──┤       ├──┐${reset}
-         ${purple}│  │       │  │${reset}
-      ${purple}┌──┴──┤       ├──┴──┐${reset}
-      ${purple}│     │       │     │${reset}
-      ${purple}│  ${purple}┌──┴───────┴──┐  │${reset}
-      ${purple}│  │   ${yellow}/\\     /\\${purple}   │  │${reset}
-      ${purple}└──┤  ${yellow}/  \\   /  \\${purple}  ├──┘${reset}
-         ${purple}│ ${yellow}/ ${white}<${yellow}  \\ / ${white}>${yellow}  \\${purple} │${reset}
-         ${purple}│ ${yellow}\\    / \\    /${purple} │${reset}
-      ${purple}┌──┴──┐${yellow}\\  /   \\  /${purple}┌──┴──┐${reset}
-      ${purple}│     │${yellow} \\/     \\/${purple} │     │${reset}
-      ${purple}└┬───┬┘${purple}   ╭───╮${purple}   └┬───┬┘${reset}
-       ${purple}│   │${purple}    ╰───╯${purple}    │   │${reset}
-       ${purple}│   │  ${purple}│   │ │   │${purple}  │   │${reset}
-       ${purple}│   │  ${purple}│   │ │   │${purple}  │   │${reset}
-       ${purple}└───┘  ${purple}└───┘ └───┘${purple}  └───┘${reset}
-
   ${pink}.--.--.                            ___                                      ,--,    ${reset}
  ${pink}/  /    '.                        ,--.'|_    ,--,                          ,--.'|    ${reset}
 ${pink}|  :  /\x1b[38;5;201m\`. /                ,---,   |  | :,' ,--.'|         ,---,            |  | :    ${reset}
