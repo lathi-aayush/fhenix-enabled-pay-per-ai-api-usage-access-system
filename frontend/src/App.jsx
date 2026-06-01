@@ -65,8 +65,37 @@ function StudioSuspense({ children }) {
 }
 
 function Guard({ role, children }) {
-  const { user, loading } = useAuth();
-  if (loading) {
+  const { user, loading, becomeCreator } = useAuth();
+  const [promoting, setPromoting] = React.useState(false);
+  const [promoted, setPromoted] = React.useState(false);
+
+  React.useEffect(() => {
+    if (loading || !user || role !== "creator" || user.role === "creator") {
+      setPromoted(true);
+      return;
+    }
+    if (!user.walletAddress) {
+      setPromoted(true);
+      return;
+    }
+    let cancelled = false;
+    setPromoting(true);
+    becomeCreator()
+      .then(() => {
+        if (!cancelled) setPromoted(true);
+      })
+      .catch(() => {
+        if (!cancelled) setPromoted(true);
+      })
+      .finally(() => {
+        if (!cancelled) setPromoting(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, user?.id, user?.role, user?.walletAddress, role, becomeCreator]);
+
+  if (loading || promoting || !promoted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface font-body text-on-surface-variant">
         Loading…

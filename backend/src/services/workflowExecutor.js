@@ -203,11 +203,16 @@ async function executeNode(node, context, run, meta = {}) {
   if (AGENTIC_NODE_TYPES[node.type]) {
     const result = await AGENTIC_NODE_TYPES[node.type](node, upstream);
     if (result.agenticPayload && meta.run?._id) {
-      await publishAgenticAssets(result.agenticPayload, {
-        scope: "workflow",
-        runId: meta.run._id.toString(),
-        nodeId: node.id,
-      });
+      try {
+        await publishAgenticAssets(result.agenticPayload, {
+          scope: "workflow",
+          runId: meta.run._id.toString(),
+          nodeId: node.id,
+        });
+      } catch (pubErr) {
+        console.error(`[workflow] asset publish (${node.id}):`, pubErr.message);
+        if (run) logLine(run, `Asset upload warning: ${pubErr.message}`);
+      }
       result.output = formatAgenticNodeOutput(result.agenticPayload);
       result.displayOutput =
         result.agenticPayload.displayPreview || result.displayOutput;

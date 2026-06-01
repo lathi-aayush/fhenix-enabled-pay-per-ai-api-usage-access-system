@@ -6,7 +6,7 @@ import { ApiUsageLog } from "../models/ApiUsageLog.js";
 import { User } from "../models/User.js";
 import { CreatorWebhook, CREATOR_WEBHOOK_EVENTS } from "../models/CreatorWebhook.js";
 import { WebhookDelivery } from "../models/WebhookDelivery.js";
-import { requireAuth, requireRole } from "../middleware/auth.js";
+import { requireAuth, requireCreator } from "../middleware/auth.js";
 import { canonicalWalletAddress, creatorServicesOwnedBy } from "../utils/userWallet.js";
 import { maskWebhookSecret, sendTestWebhook } from "../services/creatorWebhookDispatcher.js";
 import {
@@ -82,7 +82,7 @@ const SUCCESS_LOG_MATCH = {
 router.get(
   "/services",
   requireAuth,
-  requireRole("creator"),
+  requireCreator,
   async (req, res) => {
     const list = await Service.find(creatorServicesOwnedBy(req.user.walletAddress))
       .sort({ createdAt: -1 })
@@ -96,7 +96,7 @@ router.get(
   }
 );
 
-router.get("/stats", requireAuth, requireRole("creator"), async (req, res) => {
+router.get("/stats", requireAuth, requireCreator, async (req, res) => {
   const services = await Service.find(creatorServicesOwnedBy(req.user.walletAddress)).lean();
   const ids = services.map((s) => s._id);
   if (ids.length === 0) {
@@ -178,7 +178,7 @@ router.get("/stats", requireAuth, requireRole("creator"), async (req, res) => {
 router.get(
   "/usage",
   requireAuth,
-  requireRole("creator"),
+  requireCreator,
   query("limit").optional().isInt({ min: 1, max: 500 }),
   async (req, res) => {
     const errors = validationResult(req);
@@ -239,7 +239,7 @@ function serializeWebhook(doc, { includeSecret = false } = {}) {
   };
 }
 
-router.get("/webhooks", requireAuth, requireRole("creator"), async (req, res) => {
+router.get("/webhooks", requireAuth, requireCreator, async (req, res) => {
   const list = await CreatorWebhook.find({ creatorWallet: req.user.walletAddress })
     .sort({ createdAt: -1 })
     .lean();
@@ -249,7 +249,7 @@ router.get("/webhooks", requireAuth, requireRole("creator"), async (req, res) =>
 router.post(
   "/webhooks",
   requireAuth,
-  requireRole("creator"),
+  requireCreator,
   body("url").isString().trim().isURL({ protocols: ["http", "https"], require_protocol: true }),
   body("description").optional({ values: "null" }).isString().trim().isLength({ max: 200 }),
   body("events")
@@ -283,7 +283,7 @@ router.post(
 router.get(
   "/webhooks/deliveries",
   requireAuth,
-  requireRole("creator"),
+  requireCreator,
   query("limit").optional().isInt({ min: 1, max: 100 }),
   async (req, res) => {
     const errors = validationResult(req);
@@ -316,7 +316,7 @@ router.get(
 router.patch(
   "/webhooks/:id",
   requireAuth,
-  requireRole("creator"),
+  requireCreator,
   param("id").isMongoId(),
   body("url").optional().isString().trim().isURL({ protocols: ["http", "https"], require_protocol: true }),
   body("description").optional({ values: "null" }).isString().trim().isLength({ max: 200 }),
@@ -352,7 +352,7 @@ router.patch(
 router.delete(
   "/webhooks/:id",
   requireAuth,
-  requireRole("creator"),
+  requireCreator,
   param("id").isMongoId(),
   async (req, res) => {
     const errors = validationResult(req);
@@ -374,7 +374,7 @@ router.delete(
 router.post(
   "/webhooks/:id/test",
   requireAuth,
-  requireRole("creator"),
+  requireCreator,
   param("id").isMongoId(),
   async (req, res) => {
     const errors = validationResult(req);
@@ -403,7 +403,7 @@ router.post(
 router.get(
   "/withdrawals",
   requireAuth,
-  requireRole("creator"),
+  requireCreator,
   query("limit").optional().isInt({ min: 1, max: 200 }),
   async (req, res) => {
     const errors = validationResult(req);
@@ -432,7 +432,7 @@ router.get(
 router.post(
   "/withdraw",
   requireAuth,
-  requireRole("creator"),
+  requireCreator,
   body("amount").isFloat({ gt: 0 }),
   async (req, res) => {
     const errors = validationResult(req);

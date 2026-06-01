@@ -279,7 +279,7 @@ router.post(
       });
     } catch (e) {
       console.error("[register] error:", e.message);
-      res.status(500).json({ error: e.message || "Registration failed." });
+      res.status(500).json({ error: e.message || "Registration failed. Display name may already be taken." });
     }
   }
 );
@@ -335,5 +335,39 @@ router.post(
     res.json({ token, user: userPayload(user) });
   }
 );
+
+/**
+ * POST /api/auth/become-creator
+ * Switch the logged-in account to creator role (requires linked Pera wallet).
+ */
+router.post("/become-creator", requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ error: "User profile not found." });
+    }
+    if (!user.walletAddress?.trim()) {
+      return res.status(400).json({
+        error: "Link your Pera wallet first (Profile or home → Connect as Creator).",
+        code: "WALLET_REQUIRED",
+      });
+    }
+
+    if (user.role === "creator") {
+      return res.json({ token: signUserToken(user), user: userPayload(user) });
+    }
+
+    const updated = await User.findByIdAndUpdate(
+      user._id,
+      { $set: { role: "creator" } },
+      { new: true }
+    );
+    const token = signUserToken(updated);
+    res.json({ token, user: userPayload(updated) });
+  } catch (e) {
+    console.error("[become-creator]", e);
+    res.status(500).json({ error: "Could not switch to creator mode" });
+  }
+});
 
 export default router;

@@ -9,7 +9,7 @@ import MegaNav from "../components/MegaNav.jsx";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function CreatorDashboard() {
-  const { user } = useAuth();
+  const { user, becomeCreator } = useAuth();
   const [activeTab, setActiveTab] = useState("endpoints");
   const [stats, setStats] = useState(null);
   const [usage, setUsage] = useState([]);
@@ -57,8 +57,29 @@ export default function CreatorDashboard() {
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    let cancelled = false;
+    async function init() {
+      try {
+        if (user?.role !== "creator") {
+          await becomeCreator();
+        }
+        if (!cancelled) await load();
+      } catch (e) {
+        if (!cancelled) {
+          const msg =
+            e?.response?.data?.message ||
+            e?.response?.data?.error ||
+            "Sign in as Creator from the home page (Connect as Creator).";
+          toast.error(msg);
+          setLoading(false);
+        }
+      }
+    }
+    if (user) init();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, user?.role]);
 
   const services = stats?.services ?? [];
 

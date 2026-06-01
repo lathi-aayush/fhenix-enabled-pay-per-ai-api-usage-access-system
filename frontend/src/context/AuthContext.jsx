@@ -175,6 +175,12 @@ export function AuthProvider({ children }) {
     return persistSession(data.token);
   }, [persistSession]);
 
+  const becomeCreator = useCallback(async () => {
+    const { data } = await api.post("/api/auth/become-creator");
+    if (!data?.token) throw new Error("No token returned");
+    return persistSession(data.token);
+  }, [persistSession]);
+
   const logout = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
     setToken(null);
@@ -193,11 +199,12 @@ export function AuthProvider({ children }) {
       register,
       linkWallet,
       updateProfile,
+      becomeCreator,
       logout,
       burnerReady,
       isAuthenticated: Boolean(token && user),
     }),
-    [token, user, loading, burnerReady, login, register, linkWallet, updateProfile, logout]
+    [token, user, loading, burnerReady, login, register, linkWallet, updateProfile, becomeCreator, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

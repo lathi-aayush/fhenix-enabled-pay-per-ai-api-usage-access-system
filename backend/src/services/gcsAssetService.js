@@ -1,5 +1,7 @@
 import fs from "fs";
 import path from "path";
+import { Readable } from "stream";
+import { pipeline } from "stream/promises";
 import { fileURLToPath } from "url";
 import { Storage } from "@google-cloud/storage";
 
@@ -51,11 +53,16 @@ export async function getSignedUrl(objectPath, ttlSec = SIGNED_TTL_SEC) {
 
 export async function uploadBuffer(buffer, destPath, contentType) {
   const file = getBucket().file(destPath);
-  await file.save(buffer, {
-    contentType,
+  const buf = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+  const writeStream = file.createWriteStream({
     resumable: false,
-    metadata: { cacheControl: "public, max-age=3600" },
+    validation: false,
+    metadata: {
+      contentType,
+      cacheControl: "public, max-age=3600",
+    },
   });
+  await pipeline(Readable.from(buf), writeStream);
   return getSignedUrl(destPath);
 }
 
@@ -179,7 +186,12 @@ export async function publishAgenticPayloadToGcs(payload, { scope = "pipeline", 
 /** GCS when configured; otherwise copy assets under /outputs/workflow for playback. */
 export async function publishAgenticAssets(payload, opts) {
   if (isGcsConfigured()) {
-    return publishAgenticPayloadToGcs(payload, opts);
+    try {
+      return await publishAgenticPayloadToGcs(payload, opts);
+    } catch (err) {
+      console.error("[gcs] publish failed, falling back to local files:", err.message);
+      return publishAgenticPayloadLocal(payload, opts);
+    }
   }
   return publishAgenticPayloadLocal(payload, opts);
 }
