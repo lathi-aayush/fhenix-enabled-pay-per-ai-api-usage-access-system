@@ -52,8 +52,17 @@ export default function CliDocs() {
         <div className="space-y-12 text-slate-800">
           <section>
             <h2 id="installation" className="text-2xl font-bold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">Installation</h2>
+            
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs leading-relaxed">
+              <div className="font-semibold mb-1 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[16px]">info</span>
+                Private Preview Status
+              </div>
+              The global CLI package <code>@sentinalapi/cli</code> is currently in private preview and is not yet published to the public npm registry. To deploy or interact with the smart contract, please use the local Python deployment scripts in <code>/contract</code> or integrate the JS/TS SDK in the <code>/sdk</code> folder.
+            </div>
+
             <p className="text-[14px] text-slate-600 mb-4 leading-relaxed">
-              Install the CLI globally using npm or yarn:
+              Install the CLI globally using npm or yarn once released:
             </p>
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 font-mono text-[13px] text-slate-800">
               npm install -g @sentinalapi/cli

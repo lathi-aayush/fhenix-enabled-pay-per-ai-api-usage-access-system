@@ -156,6 +156,10 @@ export default function UserDashboard() {
               <Link to="/dashboard/usage" className="border border-outline-variant rounded-md px-3 py-2 hover:bg-slate-50 transition-colors">
                 Open Usage Analytics
               </Link>
+              <Link to="/dashboard/contract" className="border border-[#e2e8f0] rounded-md px-3 py-2 hover:bg-slate-50 transition-colors flex items-center justify-between text-indigo-600 font-semibold">
+                <span>On-Chain Smart Contract</span>
+                <span className="material-symbols-outlined text-[16px]">gavel</span>
+              </Link>
               <Link to="/creator/new" className="border border-outline-variant rounded-md px-3 py-2 hover:bg-slate-50 transition-colors">
                 Create Endpoint
               </Link>

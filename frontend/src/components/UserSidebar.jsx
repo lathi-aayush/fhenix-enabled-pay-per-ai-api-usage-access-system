@@ -10,6 +10,7 @@ export default function UserSidebar({ activeTab }) {
     { id: "studio", path: "/studio", icon: "widgets", label: "Studio" },
     { id: "analytics", path: "/dashboard/usage", icon: "insights", label: "Analytics" },
     { id: "billing", path: "/billing/transactions", icon: "receipt_long", label: "Billing" },
+    { id: "contract", path: "/dashboard/contract", icon: "gavel", label: "Smart Contract" },
   ];
   const sectionLinks = [
     {
@@ -21,6 +22,7 @@ export default function UserSidebar({ activeTab }) {
         { label: "Usage", path: "/dashboard/usage" },
         { label: "Gateway Wallet", path: "/dashboard/gateway" },
         { label: "API Marketplace", path: "/dashboard/gateway-marketplace" },
+        { label: "Smart Contract Stats", path: "/dashboard/contract" },
         { label: "Transactions", path: "/billing/transactions" },
         { label: "x402 Docs", path: "/docs/x402" },
       ],

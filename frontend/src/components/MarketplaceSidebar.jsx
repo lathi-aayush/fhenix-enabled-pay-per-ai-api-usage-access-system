@@ -10,6 +10,7 @@ const tabs = [
   { id: "keys", path: "/dashboard/keys", icon: "key", label: "My Keys" },
   { id: "usage", path: "/dashboard/usage", icon: "insights", label: "Usage" },
   { id: "transactions", path: "/billing/transactions", icon: "receipt_long", label: "Transactions" },
+  { id: "contract", path: "/dashboard/contract", icon: "gavel", label: "Smart Contract" },
   { id: "creators", path: "/dashboard/creators", icon: "group", label: "Creator Profiles" },
   { id: "x402", path: "/docs/x402", icon: "integration_instructions", label: "x402 Agentic Docs" },
   { id: "x402-api", path: "/docs/x402-api", icon: "menu_book", label: "x402 API Reference" },

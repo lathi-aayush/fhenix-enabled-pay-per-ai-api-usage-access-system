@@ -235,6 +235,7 @@ export default function CreatorDashboard() {
     { id: "endpoints", label: "Endpoints & Analytics" },
     { id: "webhooks", label: "Webhooks & Events" },
     { id: "withdrawals", label: "Earnings & Payouts" },
+    { id: "contract", label: "Smart Contract Stats", href: "/dashboard/contract" },
     { id: "gateway", label: "Gateway v2", href: "/creator/gateway" },
     { id: "gateway-admin", label: "Gateway Admin", href: "/creator/gateway-admin" },
   ];

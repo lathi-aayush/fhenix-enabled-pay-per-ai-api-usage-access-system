@@ -23,6 +23,7 @@ const menus = {
         items: [
           { icon: "integration_instructions", label: "x402 Payments",    sub: "Keyless agent transactions",   path: "/docs/x402",    badge: "NEW" },
           { icon: "monitoring",               label: "Analytics",         sub: "Usage & revenue dashboards",  path: "/studio/analytics",  auth: true  },
+          { icon: "gavel",                    label: "Smart Contract",    sub: "On-chain ledger stats & logs", path: "/dashboard/contract", auth: true, badge: "LIVE" },
           { icon: "smart_toy",                label: "Agentic Workflows", sub: "n8n & LangChain integration", path: "/docs/x402-api" },
         ],
       },

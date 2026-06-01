@@ -1,0 +1,18 @@
+{
+  "name": "@sentinalapi/cli",
+  "version": "1.0.0",
+  "description": "Sentinel pay-per-use AI marketplace CLI tool for Algorand",
+  "type": "module",
+  "main": "./bin/sentinal.js",
+  "bin": {
+    "sentinal": "./bin/sentinal.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "algosdk": "^3.5.2",
+    "commander": "^11.1.0",
+    "dotenv": "^16.4.5"
+  }
+}

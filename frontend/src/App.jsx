@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
 import Home from "./pages/Home.jsx";
 import UserMarketplace from "./pages/UserMarketplace.jsx";
+import OnChainContract from "./pages/OnChainContract.jsx";
 import CreatorDashboard from "./pages/CreatorDashboard.jsx";
 import CreateService from "./pages/CreateService.jsx";
 import PredictionDashboard from "./pages/PredictionDashboard.jsx";
@@ -201,6 +202,7 @@ export default function App() {
         <Route path="usage" element={<PredictionDashboard />} />
         <Route path="gateway" element={<GatewayWallet />} />
         <Route path="gateway-marketplace" element={<GatewayMarketplace />} />
+        <Route path="contract" element={<OnChainContract />} />
         <Route path="creators" element={<MarketplaceCreators />} />
         <Route path="creators/:walletAddress" element={<CreatorProfile />} />
         <Route
