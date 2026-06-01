@@ -321,7 +321,7 @@ export async function forwardChatCompletionStream({ provider, apiKey, model, bod
              completionTokens += (parsed.usage.output_tokens || 0);
           }
           if (parsed.type === "message_start" && parsed.message?.usage) {
-             usage = { prompt_tokens: parsed.message.usage.input_tokens || 0 };
+             usage = { input_tokens: parsed.message.usage.input_tokens || 0 };
           }
         } catch (e) {
           console.error("Error parsing anthropic SSE data", e);
@@ -336,8 +336,8 @@ export async function forwardChatCompletionStream({ provider, apiKey, model, bod
     return new Promise((resolve, reject) => {
       resp.data.on("end", () => {
         if (usage) {
-          usage.completion_tokens = completionTokens;
-          usage.total_tokens = usage.prompt_tokens + completionTokens;
+          usage.output_tokens = completionTokens;
+          usage.total_tokens = usage.input_tokens + completionTokens;
         }
         res.write("data: [DONE]\n\n");
         res.end();

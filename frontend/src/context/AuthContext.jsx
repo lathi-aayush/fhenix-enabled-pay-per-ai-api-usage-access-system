@@ -2,7 +2,9 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { api, setAuthToken } from "../api/client.js";
 import { parseJwtPayload } from "../utils/jwt.js";
 import { ensureBurnerWallet, clearActiveBurnerUser } from "../wallet/burner.js";
-import { reconnectPera } from "../wallet/pera.js";
+import { reconnectPera, signData } from "../wallet/pera.js";
+import { Buffer } from "buffer";
+
 
 const AuthContext = createContext(null);
 
@@ -100,7 +102,23 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (walletAddress, role) => {
-    const { data } = await api.post("/api/auth/login", { walletAddress, role });
+    // 1. Fetch challenge
+    const challengeRes = await api.post("/api/auth/challenge", { walletAddress });
+    const { nonce, message } = challengeRes.data;
+
+    // 2. Sign challenge message using Pera Wallet
+    const encodedMessage = new TextEncoder().encode(message);
+    const signed = await signData(encodedMessage, walletAddress);
+    const signatureBase64 = Buffer.from(signed[0]).toString("base64");
+
+    // 3. Complete login with signature verification
+    const { data } = await api.post("/api/auth/login", {
+      walletAddress,
+      nonce,
+      signature: signatureBase64,
+      role,
+    });
+    
     const user = persistSession(data.token);
     return {
       user,
@@ -110,14 +128,47 @@ export function AuthProvider({ children }) {
   }, [persistSession]);
 
   const register = useCallback(async (walletAddress, role, displayName) => {
-    const { data } = await api.post("/api/auth/register", { walletAddress, role, displayName });
+    // 1. Fetch challenge
+    const challengeRes = await api.post("/api/auth/challenge", { walletAddress });
+    const { nonce, message } = challengeRes.data;
+
+    // 2. Sign challenge
+    const encodedMessage = new TextEncoder().encode(message);
+    const signed = await signData(encodedMessage, walletAddress);
+    const signatureBase64 = Buffer.from(signed[0]).toString("base64");
+
+    // 3. Complete registration with verified signature
+    const { data } = await api.post("/api/auth/register", {
+      walletAddress,
+      nonce,
+      signature: signatureBase64,
+      role,
+      displayName,
+    });
+    
     return persistSession(data.token);
   }, [persistSession]);
 
   const linkWallet = useCallback(async (walletAddress) => {
-    const { data } = await api.post("/api/auth/link-wallet", { walletAddress });
+    // 1. Fetch challenge
+    const challengeRes = await api.post("/api/auth/challenge", { walletAddress });
+    const { nonce, message } = challengeRes.data;
+
+    // 2. Sign challenge
+    const encodedMessage = new TextEncoder().encode(message);
+    const signed = await signData(encodedMessage, walletAddress);
+    const signatureBase64 = Buffer.from(signed[0]).toString("base64");
+
+    // 3. Complete link-wallet with verified signature
+    const { data } = await api.post("/api/auth/link-wallet", {
+      walletAddress,
+      nonce,
+      signature: signatureBase64,
+    });
+    
     return persistSession(data.token);
   }, [persistSession]);
+
 
   const updateProfile = useCallback(async (displayName) => {
     const { data } = await api.put("/api/profile", { displayName });

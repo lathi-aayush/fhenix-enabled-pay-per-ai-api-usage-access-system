@@ -20,7 +20,7 @@ async function runTest() {
       throw new Error("Insufficient balance in TestNet account to run this test!");
     }
 
-    const apiBase = "http://localhost:5001";
+    const apiBase = `http://localhost:${process.env.PORT || 5001}`;
 
     const servicesRes = await axios.get(`${apiBase}/api/x402/services`);
     const services = servicesRes.data.services;

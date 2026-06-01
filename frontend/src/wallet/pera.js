@@ -169,3 +169,29 @@ export async function signAndSendPayment({
   await algosdk.waitForConfirmation(algod, txid, rounds);
   return { txId: txid };
 }
+
+/**
+ * Prompts the Pera Wallet user to sign cryptographic challenge data
+ */
+export async function signData(dataBytes, address) {
+  if (!peraWallet.isConnected) {
+    console.log("[Pera signData] Not connected. Attempting reconnection...");
+    try {
+      await reconnectPera();
+    } catch (err) {
+      console.warn("Auto-reconnect failed:", err);
+    }
+  }
+
+  if (!peraWallet.isConnected) {
+    throw new Error("Pera Wallet is not connected. Please connect your wallet first.");
+  }
+
+  const signer = normalizeAccountAddress(address) ?? normalizeAccountAddress(_connectedAddress);
+  if (!signer) {
+    throw new Error("No signer address found. Connect Pera Wallet first.");
+  }
+
+  return await peraWallet.signData([{ data: dataBytes, message: "Sign in to SentinelAI" }], signer);
+}
+

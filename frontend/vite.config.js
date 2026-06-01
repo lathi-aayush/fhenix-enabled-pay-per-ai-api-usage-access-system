@@ -79,10 +79,6 @@ export default defineConfig(({ mode }) => {
           global: "globalThis",
         },
       },
-      "/x402-test": {
-        target: "http://localhost:5001",
-        changeOrigin: true,
-      },
     },
     server: {
       port: 5173,
@@ -92,6 +88,10 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
         },
         "/outputs": {
+          target: proxyTarget,
+          changeOrigin: true,
+        },
+        "/x402-test": {
           target: proxyTarget,
           changeOrigin: true,
         },

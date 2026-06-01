@@ -135,101 +135,55 @@ async function invokeFlow(req, res) {
     return res.status(500).json({ error: "Service has an invalid creator wallet" });
   }
 
-  let providerKey;
-  try {
-    providerKey = decryptSecret(service.encryptedApiKey);
-  } catch (e) {
-    console.error("decryptSecret", e);
-    return res.status(500).json({ error: "Server configuration error" });
+  // Calculate estimated tokens to quote the cost BEFORE calling upstream AI
+  const promptTokens = estimateTokensFromOpenAiMessages(aiBody.messages);
+  const estimatedCompletionTokens = Number(aiBody.max_tokens ?? 1024);
+  const estimatedTotalTokens = promptTokens + estimatedCompletionTokens;
+
+  const ppt = Number(service.pricePerThousandTokens);
+  const minC = Number(service.minimumChargeAlgo);
+  const chargeAlgo = computeChargeAlgo(estimatedTotalTokens, ppt, minC);
+  const expectedMicroAlgos = algoToMicroAlgos(chargeAlgo);
+
+  if (expectedMicroAlgos <= 0) {
+    return res.status(500).json({ error: "Invalid computed charge for this call" });
   }
 
-  try {
-    const aiResponse = await forwardChatCompletion({
-      provider: service.aiProvider,
-      apiKey: providerKey,
-      model: service.modelName,
-      body: aiBody,
-      customEndpointUrl: service.customEndpointUrl || "",
-    });
-    providerKey = null;
+  const paymentRef = crypto.randomUUID();
+  const promptText = extractPromptTextFromAiBody(aiBody);
 
-    let usage = extractTokenUsage(service.aiProvider, aiResponse);
-    if (!usage) {
-      const est = estimateTokensFromOpenAiMessages(aiBody.messages);
-      usage = {
-        promptTokens: est,
-        completionTokens: 0,
-        totalTokens: est,
-      };
-    }
+  // Cache the full request details including prompt body in memory
+  registerPending(paymentRef, {
+    paymentRef,
+    aiBody, // Cached prompt/messages payload to be executed once paid
+    expectedMicroAlgos,
+    chargeAlgo,
+    promptTokens,
+    completionTokens: estimatedCompletionTokens,
+    totalTokens: estimatedTotalTokens,
+    pricePerThousandTokens: ppt,
+    minimumChargeAlgo: minC,
+    serviceId: service._id,
+    userWallet,
+    accessTokenId: token._id,
+    developerWallet: creatorWallet,
+    aiProvider: service.aiProvider,
+    modelName: service.modelName,
+    promptText,
+  });
 
-    const ppt = Number(service.pricePerThousandTokens);
-    const minC = Number(service.minimumChargeAlgo);
-    const chargeAlgo = computeChargeAlgo(usage.totalTokens, ppt, minC);
-    const expectedMicroAlgos = algoToMicroAlgos(chargeAlgo);
-
-    if (expectedMicroAlgos <= 0) {
-      return res.status(500).json({ error: "Invalid computed charge for this call" });
-    }
-
-    const paymentRef = crypto.randomUUID();
-    const promptText = extractPromptTextFromAiBody(aiBody);
-    const responseText = extractResponseTextFromAi(aiResponse);
-    registerPending(paymentRef, {
-      paymentRef,
-      aiResponse,
-      expectedMicroAlgos,
-      chargeAlgo,
-      promptTokens: usage.promptTokens,
-      completionTokens: usage.completionTokens,
-      totalTokens: usage.totalTokens,
-      pricePerThousandTokens: ppt,
-      minimumChargeAlgo: minC,
-      serviceId: service._id,
-      userWallet,
-      accessTokenId: token._id,
-      developerWallet: creatorWallet,
-      aiProvider: service.aiProvider,
-      modelName: service.modelName,
-      promptText,
-      responseText,
-    });
-
-    return res.json({
-      awaitingPayment: true,
-      paymentRef,
-      chargeAlgo,
-      expectedMicroAlgos,
-      promptTokens: usage.promptTokens,
-      completionTokens: usage.completionTokens,
-      totalTokens: usage.totalTokens,
-      pricePerThousandTokens: ppt,
-      minimumChargeAlgo: minC,
-      developerWallet: creatorWallet,
-    });
-  } catch (err) {
-    try {
-      await ApiUsageLog.create({
-        userWallet,
-        serviceId: service._id,
-        accessTokenId: token._id,
-        developerWallet: creatorWallet,
-        amountAlgo: 0,
-        aiProvider: service.aiProvider,
-        modelName: service.modelName,
-        success: false,
-        errorDetail: String(err.message || err).slice(0, 500),
-      });
-    } catch (logErr) {
-      console.error("[use] invoke log", logErr);
-    }
-    const status = err.status && Number.isFinite(err.status) ? err.status : 502;
-    console.error("[use] invoke", err?.message || err);
-    return res.status(status).json({
-      error: "Upstream AI error",
-      detail: process.env.NODE_ENV === "development" ? err.message : undefined,
-    });
-  }
+  return res.json({
+    awaitingPayment: true,
+    paymentRef,
+    chargeAlgo,
+    expectedMicroAlgos,
+    promptTokens,
+    completionTokens: estimatedCompletionTokens,
+    totalTokens: estimatedTotalTokens,
+    pricePerThousandTokens: ppt,
+    minimumChargeAlgo: minC,
+    developerWallet: creatorWallet,
+  });
 }
 
 async function completeFlow(req, res) {
@@ -318,6 +272,62 @@ async function completeFlow(req, res) {
     return res.status(400).json({ error: "Transaction note does not match payment reference" });
   }
 
+  // ── ON-CHAIN PAYMENT SECURED! DECRYPT KEY AND INITIATE AI RESOLUTION ──
+
+  let providerKey;
+  try {
+    providerKey = decryptSecret(service.encryptedApiKey);
+  } catch (e) {
+    console.error("decryptSecret", e);
+    return res.status(500).json({ error: "Server configuration error" });
+  }
+
+  let aiResponse;
+  try {
+    aiResponse = await forwardChatCompletion({
+      provider: service.aiProvider,
+      apiKey: providerKey,
+      model: service.modelName,
+      body: pending.aiBody, // Calling the AI with the cached prompt body
+      customEndpointUrl: service.customEndpointUrl || "",
+    });
+    providerKey = null; // Clear from memory ASAP
+  } catch (err) {
+    providerKey = null;
+    console.error("[use] complete AI invocation error:", err?.message || err);
+    try {
+      await ApiUsageLog.create({
+        userWallet,
+        serviceId: service._id,
+        accessTokenId: token._id,
+        developerWallet: creatorWallet,
+        amountAlgo: 0,
+        aiProvider: service.aiProvider,
+        modelName: service.modelName,
+        success: false,
+        errorDetail: String(err.message || err).slice(0, 500),
+      });
+    } catch (logErr) {
+      console.error("[use] invoke log", logErr);
+    }
+    const status = err.status && Number.isFinite(err.status) ? err.status : 502;
+    return res.status(status).json({
+      error: "Upstream AI error",
+      detail: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
+  }
+
+  // Extract actual token usage
+  let usage = extractTokenUsage(service.aiProvider, aiResponse);
+  if (!usage) {
+    const est = estimateTokensFromOpenAiMessages(pending.aiBody.messages);
+    usage = {
+      promptTokens: est,
+      completionTokens: 0,
+      totalTokens: est,
+    };
+  }
+
   const chargeAlgo = Number(pending.chargeAlgo);
 
   try {
@@ -336,16 +346,17 @@ async function completeFlow(req, res) {
       paymentTxId: txId,
       paymentRef,
       success: true,
-      promptTokens: pending.promptTokens,
-      completionTokens: pending.completionTokens,
-      totalTokens: pending.totalTokens,
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.completionTokens,
+      totalTokens: usage.totalTokens,
       chargeAlgo,
       pricePerThousandTokens: pending.pricePerThousandTokens,
     });
 
     const ts = logDoc.createdAt ? new Date(logDoc.createdAt) : new Date();
     const promptSnap = String(pending.promptText ?? "");
-    const responseSnap = String(pending.responseText ?? "");
+    const responseSnap = extractResponseTextFromAi(aiResponse);
+    
     notifyCreatorPurchaseWebhooks({
       creatorWallet,
       usageLog: logDoc,
@@ -375,19 +386,18 @@ async function completeFlow(req, res) {
         error: "This transaction has already been used",
       });
     }
-    console.error("[use] complete", logErr);
+    console.error("[use] complete log finalize error", logErr);
     return res.status(500).json({ error: "Could not finalize usage log" });
   }
 
-  const ai = pending.aiResponse && typeof pending.aiResponse === "object" ? pending.aiResponse : {};
   return res.json({
-    ...ai,
+    ...aiResponse,
     sentinelReceipt: {
       paymentTxId: txId,
       chargeAlgo,
-      promptTokens: pending.promptTokens,
-      completionTokens: pending.completionTokens,
-      totalTokens: pending.totalTokens,
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.completionTokens,
+      totalTokens: usage.totalTokens,
       pricePerThousandTokens: pending.pricePerThousandTokens,
     },
   });

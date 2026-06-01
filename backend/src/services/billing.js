@@ -25,15 +25,15 @@ export function extractTokenUsage(provider, data) {
   if (!u || typeof u !== "object") return null;
 
   if (provider === "anthropic") {
-    const promptTokens = Number(u.input_tokens ?? u.inputTokens ?? 0);
-    const completionTokens = Number(u.output_tokens ?? u.outputTokens ?? 0);
+    const promptTokens = Number(u.input_tokens ?? u.inputTokens ?? u.prompt_tokens ?? u.promptTokens ?? 0);
+    const completionTokens = Number(u.output_tokens ?? u.outputTokens ?? u.completion_tokens ?? u.completionTokens ?? 0);
     const total = promptTokens + completionTokens;
     if (!Number.isFinite(total) || total <= 0) return null;
     return { promptTokens, completionTokens, totalTokens: total };
   }
 
-  const promptTokens = Number(u.prompt_tokens ?? u.promptTokens ?? 0);
-  const completionTokens = Number(u.completion_tokens ?? u.completionTokens ?? 0);
+  const promptTokens = Number(u.prompt_tokens ?? u.promptTokens ?? u.input_tokens ?? u.inputTokens ?? 0);
+  const completionTokens = Number(u.completion_tokens ?? u.completionTokens ?? u.output_tokens ?? u.outputTokens ?? 0);
   const total = promptTokens + completionTokens;
   if (!Number.isFinite(total) || total <= 0) return null;
   return { promptTokens, completionTokens, totalTokens: total };

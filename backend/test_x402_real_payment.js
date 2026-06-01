@@ -27,7 +27,7 @@ async function runTest() {
       throw new Error("Insufficient balance in TestNet account to run this test!");
     }
 
-    const apiBase = "http://localhost:5000";
+    const apiBase = `http://localhost:${process.env.PORT || 5001}`;
 
     // 2. Fetch the list of x402-enabled services
     console.log("\n--- Step 1: Getting x402 services list ---");
