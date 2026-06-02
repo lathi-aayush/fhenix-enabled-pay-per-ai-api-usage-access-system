@@ -5,7 +5,7 @@ const overageEntrySchema = new mongoose.Schema(
   {
     runType: { type: String, required: true },
     algoAmount: { type: Number, required: true },
-    txId: { type: String, required: true, index: true },
+    txId: { type: String, required: true },
     timestamp: { type: Date, default: Date.now },
     settled: { type: Boolean, default: true },
   },

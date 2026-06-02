@@ -6,10 +6,9 @@ import { requireAuth, requireRole } from "../middleware/auth.js";
 import { encryptSecret } from "../utils/encrypt.js";
 import { canonicalWalletAddress, sameWallet } from "../utils/userWallet.js";
 import { syncServiceToProxyApi } from "../services/marketplaceMigration.js";
+import { AI_PROVIDERS, requiresCustomBaseUrl } from "../constants/aiProviders.js";
 
 const router = Router();
-
-const AI_PROVIDERS = ["groq", "openai", "anthropic", "together", "custom"];
 
 export function toPublicService(doc) {
   const o =
@@ -195,14 +194,13 @@ router.post(
       customEndpointUrl = "",
     } = req.body;
 
-    // Custom provider requires a valid endpoint URL
-    if (aiProvider === "custom") {
+    if (requiresCustomBaseUrl(aiProvider)) {
       try {
         const u = new URL(String(customEndpointUrl).trim());
         if (!u.protocol.startsWith("http")) throw new Error();
       } catch {
         return res.status(400).json({
-          errors: [{ msg: "Custom provider requires a valid http/https endpoint URL" }],
+          errors: [{ msg: "Custom / self-hosted requires a valid https base URL (e.g. https://your-server.com/v1)" }],
         });
       }
     }

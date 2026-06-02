@@ -6,13 +6,7 @@ import { UsageRecord } from "../models/UsageRecord.js";
 import { User } from "../models/User.js";
 import { AccessToken } from "../models/AccessToken.js";
 import { GatewaySubscription } from "../models/GatewaySubscription.js";
-
-const PROVIDER_ROOT = {
-  groq: "https://api.groq.com/openai/v1",
-  openai: "https://api.openai.com/v1",
-  together: "https://api.together.xyz/v1",
-  anthropic: "https://api.anthropic.com/v1",
-};
+import { PROVIDER_ROOT, providerCategory } from "../constants/aiProviders.js";
 
 function slugify(title, id) {
   const base = String(title || "api")
@@ -60,17 +54,6 @@ export function serviceToProxyApiPayload(service, developerId) {
     category: providerCategory(service.aiProvider),
     tags: [service.aiProvider, service.modelName].filter(Boolean),
   };
-}
-
-function providerCategory(aiProvider) {
-  const map = {
-    openai: "ai",
-    groq: "ai",
-    anthropic: "ai",
-    together: "ai",
-    custom: "custom",
-  };
-  return map[aiProvider] || "ai";
 }
 
 export async function findDeveloperUserForWallet(wallet) {

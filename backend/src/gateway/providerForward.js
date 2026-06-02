@@ -1,6 +1,8 @@
 import axios from "axios";
 import { createParser } from "eventsource-parser";
 import { decryptSecret } from "../utils/encrypt.js";
+import { PROVIDER_ROOT, isOpenAiCompatibleProvider } from "../constants/aiProviders.js";
+import { forwardChatCompletion } from "../services/aiProxy.js";
 import {
   buildForwardPathAndQuery,
   mergeClientHeaders,
@@ -9,12 +11,21 @@ import {
   METHODS_WITH_BODY,
 } from "./requestBuild.js";
 
-const PROVIDER_ROOT = {
-  groq: "https://api.groq.com/openai/v1",
-  openai: "https://api.openai.com/v1",
-  together: "https://api.together.xyz/v1",
-  anthropic: "https://api.anthropic.com/v1",
-};
+function isChatCompletionsPath(forwardPath) {
+  const p = String(forwardPath || "")
+    .replace(/\/+$/, "")
+    .toLowerCase();
+  return p === "/chat/completions" || p === "/v1/chat/completions" || p.endsWith("/chat/completions");
+}
+
+/** Providers that must use aiProxy (not raw HTTP to base + path). */
+function useMarketplaceAiProxy(provider) {
+  return (
+    provider === "gemini" ||
+    provider === "anthropic" ||
+    isOpenAiCompatibleProvider(provider)
+  );
+}
 
 const MAX_BODY = Number(process.env.GATEWAY_MAX_BODY_BYTES || 15 * 1024 * 1024);
 const PROVIDER_RETRIES = Number(process.env.GATEWAY_PROVIDER_RETRIES || 1);
@@ -217,11 +228,47 @@ export async function forwardToProvider({ api, method, forwardPath, search, req,
   let providerKey = null;
   if (api.authHeaderEncrypted) providerKey = decryptSecret(api.authHeaderEncrypted);
 
+  const started = Date.now();
+
+  if (
+    method === "POST" &&
+    isChatCompletionsPath(forwardPath) &&
+    useMarketplaceAiProxy(api.aiProvider) &&
+    providerKey
+  ) {
+    try {
+      const body = resolveRequestBody(req, method) || {};
+      const aiRes = await forwardChatCompletion({
+        provider: api.aiProvider,
+        apiKey: providerKey,
+        model: api.modelName || body.model,
+        body,
+        customEndpointUrl: api.customEndpointUrl || api.baseUrl || "",
+      });
+      providerKey = null;
+      return {
+        ok: true,
+        status: 200,
+        headers: { "content-type": "application/json" },
+        data: aiRes,
+        responseTimeMs: Date.now() - started,
+      };
+    } catch (err) {
+      providerKey = null;
+      return {
+        ok: false,
+        status: err.status && Number.isFinite(err.status) ? err.status : 502,
+        error: err.message,
+        providerError: err.message,
+        responseTimeMs: Date.now() - started,
+      };
+    }
+  }
+
   const url = buildProviderUrl(api, forwardPath, search);
   const headers = providerHeaders(api, providerKey, mergeClientHeaders(req, {}));
   const data = resolveRequestBody(req, method);
 
-  const started = Date.now();
   try {
     const resp = await axiosWithRetry({
       method,

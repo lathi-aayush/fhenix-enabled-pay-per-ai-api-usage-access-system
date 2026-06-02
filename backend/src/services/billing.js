@@ -32,6 +32,14 @@ export function extractTokenUsage(provider, data) {
     return { promptTokens, completionTokens, totalTokens: total };
   }
 
+  if (provider === "gemini") {
+    const promptTokens = Number(u.prompt_tokens ?? u.promptTokenCount ?? 0);
+    const completionTokens = Number(u.completion_tokens ?? u.candidatesTokenCount ?? 0);
+    const total = Number(u.total_tokens ?? u.totalTokenCount ?? promptTokens + completionTokens);
+    if (!Number.isFinite(total) || total <= 0) return null;
+    return { promptTokens, completionTokens, totalTokens: total };
+  }
+
   const promptTokens = Number(u.prompt_tokens ?? u.promptTokens ?? u.input_tokens ?? u.inputTokens ?? 0);
   const completionTokens = Number(u.completion_tokens ?? u.completionTokens ?? u.output_tokens ?? u.outputTokens ?? 0);
   const total = promptTokens + completionTokens;

@@ -316,7 +316,11 @@ async function completeFlow(req, res) {
     const status = err.status && Number.isFinite(err.status) ? err.status : 502;
     return res.status(status).json({
       error: "Upstream AI error",
-      detail: process.env.NODE_ENV === "development" ? err.message : undefined,
+      detail: String(err.message || err).slice(0, 500),
+      provider: service.aiProvider,
+      model: service.modelName,
+      hint:
+        "Check your Marketplace listing: API key valid for this provider, model name correct, and service not paused. Run: node verify-key.js <sk-sentinel-key>",
     });
   }
 

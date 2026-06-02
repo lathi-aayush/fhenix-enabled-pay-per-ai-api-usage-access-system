@@ -8,37 +8,11 @@ import { chargeForTokens } from "../utils/tokenPricing.js";
 import { useTokenEstimate } from "../hooks/useTokenEstimate.js";
 import ProfileDropdown from "../components/ProfileDropdown.jsx";
 import { motion, AnimatePresence } from "framer-motion";
-
-const PROVIDERS = [
-  { id: "groq", label: "Groq", desc: "Ultra-fast inference", icon: "electric_bolt" },
-  { id: "openai", label: "OpenAI", desc: "GPT-4o & GPT-4o-mini", icon: "token" },
-  { id: "anthropic", label: "Anthropic", desc: "Claude 3.5 Sonnet", icon: "spa" },
-  { id: "together", label: "Together AI", desc: "Open-source models", icon: "hub" },
-  { id: "custom", label: "Custom / Self-Hosted", desc: "Your fine-tuned or hosted model", icon: "deployed_code" },
-];
-
-const POPULAR_MODELS = {
-  groq: [
-    { name: "llama-3.3-70b-versatile", label: "Llama 3.3 70B" },
-    { name: "llama-3.1-8b-instant", label: "Llama 3.1 8B" },
-    { name: "mixtral-8x7b-32768", label: "Mixtral 8x7B" },
-    { name: "gemma2-9b-it", label: "Gemma 2 9B" },
-  ],
-  openai: [
-    { name: "gpt-4o", label: "GPT-4o" },
-    { name: "gpt-4o-mini", label: "GPT-4o Mini" },
-    { name: "o1-mini", label: "o1 Mini" },
-  ],
-  anthropic: [
-    { name: "claude-3-5-sonnet-latest", label: "Claude 3.5 Sonnet" },
-    { name: "claude-3-5-haiku-latest", label: "Claude 3.5 Haiku" },
-    { name: "claude-3-opus-20240229", label: "Claude 3 Opus" },
-  ],
-  together: [
-    { name: "meta-llama/Llama-3-70b-chat-hf", label: "Llama 3 70B Chat" },
-    { name: "mistralai/Mixtral-8x7B-Instruct-v0.1", label: "Mixtral 8x7B" },
-  ],
-};
+import {
+  MARKETPLACE_PROVIDERS as PROVIDERS,
+  POPULAR_MODELS,
+  API_KEY_HINTS,
+} from "../constants/aiProviders.js";
 
 const EXAMPLE_TOKEN_LEVELS = [100, 500, 2000];
 
@@ -94,6 +68,7 @@ export default function CreateService() {
     setAiProvider(providerId);
     const defaultModel = POPULAR_MODELS[providerId]?.[0]?.name || "";
     setModelName(defaultModel);
+    if (providerId !== "custom") setCustomEndpointUrl("");
   }
 
   async function onSubmit(e) {
@@ -157,7 +132,12 @@ export default function CreateService() {
         ? "border-violet-500 bg-violet-50/60 ring-2 ring-violet-500/10 shadow-sm"
         : "border-slate-200/80 hover:border-violet-300 hover:bg-violet-50/10",
     };
-    return styles[id] || "";
+    return (
+      styles[id] ||
+      (active
+        ? "border-indigo-500 bg-indigo-50/60 ring-2 ring-indigo-500/10 shadow-sm"
+        : "border-slate-200/80 hover:border-indigo-300 hover:bg-indigo-50/10")
+    );
   };
 
   const getProviderIconColor = (id) => {
@@ -255,7 +235,7 @@ export default function CreateService() {
               <span className="material-symbols-outlined text-[15px]">smart_toy</span>
               AI Provider
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {PROVIDERS.map((provider) => {
                 const isActive = aiProvider === provider.id;
                 return (
@@ -283,9 +263,9 @@ export default function CreateService() {
             </div>
           </div>
 
-          {/* Custom Endpoint URL — only shown when "custom" provider is selected */}
+          {/* Base URL — only for self-hosted / non-listed upstream APIs */}
           <AnimatePresence>
-            {aiProvider === "custom" && (
+            {PROVIDERS.find((p) => p.id === aiProvider)?.needsBaseUrl && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
@@ -300,12 +280,10 @@ export default function CreateService() {
                       info
                     </span>
                     <div>
-                      <p className="text-xs font-bold text-violet-900">How custom / self-hosted works</p>
+                      <p className="text-xs font-bold text-violet-900">Only needed for self-hosted APIs</p>
                       <p className="text-[11px] text-violet-700 mt-1 leading-relaxed">
-                        Sentinel proxies requests using the{" "}
-                        <span className="font-mono bg-violet-100 px-1 rounded">OpenAI chat completions</span>{" "}
-                        protocol. Any framework that exposes{" "}
-                        <span className="font-mono bg-violet-100 px-1 rounded">/v1/chat/completions</span> works.
+                        Groq, OpenAI, Gemini, OpenRouter, and other listed providers use a built-in URL — no base URL.
+                        Use this only for vLLM, Ollama, RunPod, or your own OpenAI-compatible server.
                       </p>
                       <div className="flex flex-wrap gap-1.5 mt-2.5">
                         {["vLLM", "Ollama", "HuggingFace TGI", "RunPod", "LM Studio", "Replicate"].map((f) => (
@@ -330,7 +308,7 @@ export default function CreateService() {
                         value={customEndpointUrl}
                         onChange={(e) => setCustomEndpointUrl(e.target.value)}
                         placeholder="https://your-server.com/v1"
-                        required={aiProvider === "custom"}
+                        required={PROVIDERS.find((p) => p.id === aiProvider)?.needsBaseUrl}
                       />
                       <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">
                         deployed_code
@@ -367,7 +345,7 @@ export default function CreateService() {
                 className="w-full bg-slate-50/50 border border-slate-200 rounded-xl pl-10 pr-10 py-3 text-xs font-mono font-medium focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all placeholder:text-slate-400"
                 value={providerApiKey}
                 onChange={(e) => setProviderApiKey(e.target.value)}
-                placeholder="Never shown again after saving"
+                placeholder={API_KEY_HINTS[aiProvider] || "Provider API key"}
                 required
               />
               <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">
@@ -396,7 +374,10 @@ export default function CreateService() {
                 className="w-full bg-slate-50/50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-xs font-mono font-medium focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all placeholder:text-slate-400"
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
-                placeholder="e.g. llama-3.3-70b-versatile, gpt-4o, claude-3-5-sonnet"
+                placeholder={
+                  POPULAR_MODELS[aiProvider]?.[0]?.name ||
+                  "e.g. gemini-2.0-flash, gpt-4o, claude-3-5-sonnet"
+                }
                 required
               />
               <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[16px]">
