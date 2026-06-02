@@ -304,6 +304,9 @@ router.patch(
       }
     }
     await service.save();
+    void syncServiceToProxyApi(service._id).catch((e) =>
+      console.warn("[services] ProxyApi sync on patch", e?.message)
+    );
     const o = service.toObject();
     delete o.encryptedApiKey;
     res.json({ ...o, providerConfigured: Boolean(service.aiProvider && service.encryptedApiKey) });

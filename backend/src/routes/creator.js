@@ -7,7 +7,9 @@ import { User } from "../models/User.js";
 import { CreatorWebhook, CREATOR_WEBHOOK_EVENTS } from "../models/CreatorWebhook.js";
 import { WebhookDelivery } from "../models/WebhookDelivery.js";
 import { requireAuth, requireCreator } from "../middleware/auth.js";
-import { canonicalWalletAddress, creatorServicesOwnedBy } from "../utils/userWallet.js";
+import { canonicalWalletAddress, creatorServicesOwnedBy, sameWallet } from "../utils/userWallet.js";
+import { decryptSecret } from "../utils/encrypt.js";
+import { forwardChatCompletion } from "../services/aiProxy.js";
 import { maskWebhookSecret, sendTestWebhook } from "../services/creatorWebhookDispatcher.js";
 import {
   computeCreatorWithdrawalBalances,
@@ -219,6 +221,70 @@ router.get(
         serviceId: l.serviceId?._id,
       }))
     );
+  }
+);
+
+/** Live Google/OpenAI/etc. test using the encrypted key on this listing (no ALGO payment). */
+router.post(
+  "/services/:id/test-upstream",
+  requireAuth,
+  requireCreator,
+  param("id").isMongoId(),
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const service = await Service.findById(req.params.id);
+    if (!service) return res.status(404).json({ error: "Not found" });
+    if (!sameWallet(service.creatorWallet, req.user.walletAddress)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (!service.encryptedApiKey || !service.aiProvider) {
+      return res.status(400).json({ error: "No provider API key on this listing" });
+    }
+
+    let apiKey;
+    try {
+      apiKey = decryptSecret(service.encryptedApiKey);
+    } catch {
+      return res.status(500).json({
+        error: "Could not decrypt API key",
+        hint: "Re-save your Google API key on this endpoint. ENCRYPTION_KEY on the server must match when the key was stored.",
+      });
+    }
+
+    try {
+      const data = await forwardChatCompletion({
+        provider: service.aiProvider,
+        apiKey,
+        model: service.modelName,
+        body: {
+          messages: [{ role: "user", content: "Reply with exactly: OK" }],
+          max_tokens: 16,
+        },
+        customEndpointUrl: service.customEndpointUrl || "",
+      });
+      const preview = data?.choices?.[0]?.message?.content || "";
+      return res.json({
+        ok: true,
+        provider: service.aiProvider,
+        model: service.modelName,
+        preview: String(preview).slice(0, 200),
+      });
+    } catch (err) {
+      return res.status(502).json({
+        ok: false,
+        error: String(err.message || err).slice(0, 500),
+        provider: service.aiProvider,
+        model: service.modelName,
+        hint:
+          service.aiProvider === "gemini"
+            ? "Use a Google AI Studio key (AIza…), disable HTTP referrer restrictions, and model gemini-2.0-flash."
+            : "Check provider API key and model name.",
+      });
+    }
   }
 );
 
