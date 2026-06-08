@@ -22,6 +22,21 @@ if (!process.env.RECEIVER_WALLET?.trim() && process.env.SENTINEL_WALLET_ADDRESS?
 }
 
 console.log("[env] .env path:", envPath);
+if (process.env.REDIS_DISABLED === "1") {
+  console.log("[env] REDIS_URL: disabled (REDIS_DISABLED=1)");
+} else {
+  const rawRedis = process.env.REDIS_URL?.trim().replace(/^["']|["']$/g, "");
+  if (rawRedis) {
+    try {
+      const { hostname, port, protocol } = new URL(rawRedis);
+      console.log("[env] REDIS_URL:", `loaded (${protocol}//${hostname}:${port || 6379})`);
+    } catch {
+      console.warn("[env] REDIS_URL: present but invalid URL");
+    }
+  } else {
+    console.log("[env] REDIS_URL: not set (will try localhost:6379 at startup)");
+  }
+}
 console.log("[env] RECEIVER_WALLET:", process.env.RECEIVER_WALLET ? "loaded" : "MISSING");
 console.log("[env] ALGO_INDEXER_URL:", process.env.ALGO_INDEXER_URL ? "loaded" : "MISSING");
 console.log(
