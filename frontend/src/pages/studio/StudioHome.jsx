@@ -1,14 +1,13 @@
 import React, { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { api } from "../../api/client.js";
 import { WORKFLOW_API } from "../../api/workflowApi.js";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useWalletAction } from "../../hooks/useWalletAction.js";
 import GuestConnectBanner from "../../components/GuestConnectBanner.jsx";
-import UserLiveWalletBar from "../../components/UserLiveWalletBar.jsx";
-
 const PROJECT_COLORS = ["#006b5b", "#0e7490", "#4f46e5", "#7c3aed", "#b45309", "#be185d", "#031634"];
 
 const QUICK_ACTIONS = [
@@ -221,7 +220,9 @@ function DraftRow({ post, onDelete }) {
 }
 
 export default function StudioHome() {
+  const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { runWithWallet } = useWalletAction();
   const queryClient = useQueryClient();
   const authEnabled = Boolean(user);
 
@@ -254,6 +255,10 @@ export default function StudioHome() {
     queryFn: async () => (await api.get(WORKFLOW_API.list, { params: { limit: 10 } })).data,
     enabled: authEnabled,
   });
+  const { data: templatesRes, isLoading: templatesLoading } = useQuery({
+    queryKey: ["workflow-templates", "home"],
+    queryFn: async () => (await api.get(WORKFLOW_API.templates)).data,
+  });
 
   const deleteDraftM = useMutation({
     mutationFn: async (id) => {
@@ -271,6 +276,7 @@ export default function StudioHome() {
   const published = publishedRes?.posts ?? [];
   const scheduled = calRes?.posts ?? [];
   const workflows = workflowsRes?.data?.items ?? [];
+  const featuredTemplates = (templatesRes?.data ?? []).slice(0, 6);
 
   const firstName = user?.displayName?.trim().split(/\s+/)[0] || "Creator";
   const lastProject = projects[0];
@@ -336,12 +342,6 @@ export default function StudioHome() {
         </div>
 
         <div className="space-y-4">
-          {user?.walletAddress && (
-            <div className="flex justify-end">
-              <UserLiveWalletBar walletAddress={user.walletAddress} variant="pills" />
-            </div>
-          )}
-
           <div className="bg-slate-50/80 border border-slate-200 rounded-xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
               <h2 className="text-sm font-semibold text-primary">📅 Scheduled This Week</h2>
@@ -383,6 +383,52 @@ export default function StudioHome() {
           </div>
         </div>
       </div>
+
+      {/* Workflow templates — visible to guests */}
+      <section className="py-8 border-b border-slate-200">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="font-semibold text-primary">Workflow templates</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Pre-built AI pipelines — connect wallet to use one</p>
+          </div>
+          <Link to="/studio/workflows/templates" className="text-xs text-secondary hover:underline">
+            View all
+          </Link>
+        </div>
+        {templatesLoading ? (
+          <p className="text-sm text-slate-500">Loading templates…</p>
+        ) : featuredTemplates.length === 0 ? (
+          <p className="text-sm text-slate-500">No templates available yet.</p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {featuredTemplates.map((t) => (
+              <div
+                key={t._id}
+                className="bg-white border border-surface-variant rounded-xl p-4 flex flex-col hover:border-secondary/40 transition-colors"
+              >
+                <span className="text-[10px] uppercase font-bold text-secondary">{t.category}</span>
+                <h3 className="text-sm font-semibold text-primary mt-1">{t.name}</h3>
+                <p className="text-xs text-slate-500 mt-1 flex-1 line-clamp-2">{t.description}</p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    runWithWallet(async () => {
+                      const { data: res } = await api.post(WORKFLOW_API.templateDuplicate(t._id));
+                      if (res?.success) {
+                        toast.success("Workflow created from template");
+                        navigate(`/studio/workflows/${res.data._id}`);
+                      }
+                    })
+                  }
+                  className="mt-3 w-full py-1.5 text-xs font-bold rounded-md bg-[#031634] text-white hover:opacity-90"
+                >
+                  Use template
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* Center: active projects */}
       <section className="py-8 border-b border-slate-200">

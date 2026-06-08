@@ -26,6 +26,7 @@ import x402Routes from "./routes/x402.js";
 import reviewsRoutes from "./routes/reviews.js";
 import proxyRoutes from "./routes/proxy.js";
 import gatewayRoutes from "./routes/gateway.js";
+import { initRedisAvailability } from "./queues/publishingQueue.js";
 import { startPublishingWorker } from "./workers/publishingWorker.js";
 import { startGatewayWorker } from "./workers/gatewayWorker.js";
 import { startGatewayScheduler } from "./services/gatewayScheduler.js";
@@ -184,7 +185,8 @@ app.use((err, _req, res, _next) => {
 const port = Number(process.env.PORT) || 5000;
 
 connectDb()
-  .then(() => {
+  .then(async () => {
+    await initRedisAvailability();
     try {
       startPublishingWorker();
     } catch (e) {

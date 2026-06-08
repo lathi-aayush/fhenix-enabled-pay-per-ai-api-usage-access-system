@@ -82,14 +82,22 @@ async function balanceForMnemonic(mnemonic, algodServer) {
 /**
  * Pick the mnemonic to use when local and server disagree (keep funded wallet).
  */
+function hasAuthToken() {
+  return Boolean(api.defaults.headers.common.Authorization);
+}
+
 async function resolveBurnerMnemonic(userId, algodServer = getDefaultAlgodServer()) {
   const local = readLocalMnemonic(userId);
   let remote = null;
-  try {
-    const res = await api.get("/api/profile/burner");
-    remote = res.data?.mnemonic?.trim() || null;
-  } catch (err) {
-    console.warn("Failed to fetch burner wallet from profile:", err);
+  if (hasAuthToken()) {
+    try {
+      const res = await api.get("/api/profile/burner");
+      remote = res.data?.mnemonic?.trim() || null;
+    } catch (err) {
+      if (err?.response?.status !== 401) {
+        console.warn("Failed to fetch burner wallet from profile:", err);
+      }
+    }
   }
 
   if (local && remote && local !== remote) {
@@ -181,10 +189,12 @@ export async function fetchBurnerWallet(userId = activeUserId) {
 export async function syncBurnerWallet(mnemonic, userId = activeUserId) {
   try {
     const m = (mnemonic || readLocalMnemonic(userId))?.trim();
-    if (!m || !userId) return;
+    if (!m || !userId || !hasAuthToken()) return;
     await api.post("/api/profile/burner", { mnemonic: m });
   } catch (err) {
-    console.error("Failed to sync burner wallet to profile:", err);
+    if (err?.response?.status !== 401) {
+      console.error("Failed to sync burner wallet to profile:", err);
+    }
   }
 }
 

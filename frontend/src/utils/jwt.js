@@ -12,3 +12,10 @@ export function parseJwtPayload(token) {
     return null;
   }
 }
+
+/** True when JWT `exp` is in the past (or payload is unreadable). */
+export function isTokenExpired(token) {
+  const payload = parseJwtPayload(token);
+  if (!payload?.exp) return false;
+  return Date.now() >= payload.exp * 1000;
+}

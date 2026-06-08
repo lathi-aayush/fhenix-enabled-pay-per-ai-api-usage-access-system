@@ -34,7 +34,7 @@ const HEALTH_DOT = {
 };
 
 export default function UserLiveWalletBar({ walletAddress, variant = "compact" }) {
-  const { burnerReady } = useAuth();
+  const { burnerReady, isAuthenticated } = useAuth();
   const [algo, setAlgo] = useState(null);
   const [burnerAlgo, setBurnerAlgo] = useState(null);
   const [burnerAddr, setBurnerAddr] = useState(null);
@@ -47,7 +47,7 @@ export default function UserLiveWalletBar({ walletAddress, variant = "compact" }
   const algodServer = getDefaultAlgodServer();
 
   useEffect(() => {
-    if (!walletAddress) {
+    if (!isAuthenticated || !walletAddress) {
       setAlgo(null); setBurnerAlgo(null); setBurnerAddr(null);
       return;
     }
@@ -56,11 +56,19 @@ export default function UserLiveWalletBar({ walletAddress, variant = "compact" }
       return;
     }
     let cancelled = false;
+    let intervalId = null;
     async function load() {
       try {
         const { data } = await api.get("/api/user/algo-balance");
         if (!cancelled) setAlgo(data?.balanceAlgo ?? 0);
-      } catch { if (!cancelled) setAlgo(null); }
+      } catch (err) {
+        if (err?.response?.status === 401) {
+          cancelled = true;
+          if (intervalId) clearInterval(intervalId);
+          return;
+        }
+        if (!cancelled) setAlgo(null);
+      }
       try {
         setBurnerAddr(getBurnerAddress());
         const bBal = await getBurnerBalance(algodServer);
@@ -70,15 +78,15 @@ export default function UserLiveWalletBar({ walletAddress, variant = "compact" }
       }
     }
     load();
-    const id = setInterval(load, 15000);
+    intervalId = setInterval(load, 15000);
     const onWalletUpdate = () => load();
     window.addEventListener("walletBalanceUpdate", onWalletUpdate);
     return () => {
       cancelled = true;
-      clearInterval(id);
+      clearInterval(intervalId);
       window.removeEventListener("walletBalanceUpdate", onWalletUpdate);
     };
-  }, [walletAddress, burnerReady, algodServer]);
+  }, [walletAddress, burnerReady, isAuthenticated, algodServer]);
 
   // Close panel on outside click
   useEffect(() => {

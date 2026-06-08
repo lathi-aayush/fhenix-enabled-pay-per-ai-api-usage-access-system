@@ -145,7 +145,20 @@ function ProfileRedirect() {
 
 function RedirectUserService() {
   const { id } = useParams();
-  return <Navigate to={`/dashboard/services/${id}`} replace />;
+  return <Navigate to={`/marketplace/services/${id}`} replace />;
+}
+
+function RedirectMarketplaceCreator() {
+  const { walletAddress } = useParams();
+  return <Navigate to={`/marketplace/creators/${walletAddress}`} replace />;
+}
+
+function ServiceDetailRoute() {
+  return (
+    <Suspense fallback={<div className="p-8 text-sm text-slate-500">Loading service…</div>}>
+      <ServiceDetail />
+    </Suspense>
+  );
 }
 
 export default function App() {
@@ -163,27 +176,27 @@ export default function App() {
         }
       />
 
-      <Route path="/user/marketplace" element={<Navigate to="/dashboard/browse" replace />} />
+      <Route path="/user/marketplace" element={<Navigate to="/marketplace/browse" replace />} />
       <Route path="/user/dashboard" element={<Navigate to="/dashboard/home" replace />} />
       <Route path="/user/analytics" element={<Navigate to="/dashboard/usage" replace />} />
       <Route path="/user/transactions" element={<Navigate to="/billing/transactions" replace />} />
       <Route path="/user/apps" element={<Navigate to="/studio/apps" replace />} />
 
-      <Route path="/marketplace" element={<Navigate to="/dashboard/browse" replace />} />
+      {/* Public marketplace — browse without signing in */}
+      <Route path="/marketplace" element={<MarketplaceLayout />}>
+        <Route index element={<Navigate to="browse" replace />} />
+        <Route path="browse" element={<UserMarketplace />} />
+        <Route path="creators" element={<MarketplaceCreators />} />
+        <Route path="creators/:walletAddress" element={<CreatorProfile />} />
+        <Route path="gateway" element={<GatewayMarketplace />} />
+        <Route path="services/:id" element={<ServiceDetailRoute />} />
+      </Route>
+
       <Route path="/marketplace/home" element={<Navigate to="/dashboard/home" replace />} />
-      <Route path="/marketplace/featured" element={<Navigate to="/dashboard/featured" replace />} />
-      <Route path="/marketplace/categories" element={<Navigate to="/dashboard/categories" replace />} />
+      <Route path="/marketplace/featured" element={<Navigate to="/marketplace/browse" replace />} />
+      <Route path="/marketplace/categories" element={<Navigate to="/marketplace/browse" replace />} />
       <Route path="/marketplace/keys" element={<Navigate to="/dashboard/keys" replace />} />
       <Route path="/marketplace/usage" element={<Navigate to="/dashboard/usage" replace />} />
-      <Route path="/marketplace/creators" element={<Navigate to="/dashboard/creators" replace />} />
-      <Route
-        path="/marketplace/services/:id"
-        element={
-          <Guard role="user">
-            <RedirectUserService />
-          </Guard>
-        }
-      />
 
       <Route
         path="/dashboard"
@@ -195,24 +208,17 @@ export default function App() {
       >
         <Route index element={<Navigate to="home" replace />} />
         <Route path="home" element={<UserDashboard />} />
-        <Route path="browse" element={<UserMarketplace />} />
-        <Route path="featured" element={<Navigate to="/dashboard/browse" replace />} />
-        <Route path="categories" element={<Navigate to="/dashboard/browse" replace />} />
+        <Route path="browse" element={<Navigate to="/marketplace/browse" replace />} />
+        <Route path="featured" element={<Navigate to="/marketplace/browse" replace />} />
+        <Route path="categories" element={<Navigate to="/marketplace/browse" replace />} />
         <Route path="keys" element={<UserDashboard />} />
         <Route path="usage" element={<PredictionDashboard />} />
         <Route path="gateway" element={<GatewayWallet />} />
-        <Route path="gateway-marketplace" element={<GatewayMarketplace />} />
+        <Route path="gateway-marketplace" element={<Navigate to="/marketplace/gateway" replace />} />
         <Route path="contract" element={<OnChainContract />} />
-        <Route path="creators" element={<MarketplaceCreators />} />
-        <Route path="creators/:walletAddress" element={<CreatorProfile />} />
-        <Route
-          path="services/:id"
-          element={
-            <Suspense fallback={<div className="p-8 text-sm text-slate-500">Loading service…</div>}>
-              <ServiceDetail />
-            </Suspense>
-          }
-        />
+        <Route path="creators" element={<Navigate to="/marketplace/creators" replace />} />
+        <Route path="creators/:walletAddress" element={<RedirectMarketplaceCreator />} />
+        <Route path="services/:id" element={<RedirectUserService />} />
       </Route>
 
       <Route path="/docs" element={<DocsLayout />}>
@@ -229,14 +235,7 @@ export default function App() {
         <Route path="pricing" element={<PricingDocs />} />
       </Route>
 
-      <Route
-        path="/user/services/:id"
-        element={
-          <Guard role="user">
-            <RedirectUserService />
-          </Guard>
-        }
-      />
+      <Route path="/user/services/:id" element={<RedirectUserService />} />
 
       <Route
         path="/billing"
@@ -251,14 +250,7 @@ export default function App() {
 
       <Route path="/user/hosted-apps" element={<Navigate to="/studio/apps" replace />} />
 
-      <Route
-        path="/studio"
-        element={
-          <Guard role="user">
-            <StudioLayout />
-          </Guard>
-        }
-      >
+      <Route path="/studio" element={<StudioLayout />}>
         <Route index element={<StudioHome />} />
         <Route
           path="workflows"

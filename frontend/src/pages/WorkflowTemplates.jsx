@@ -13,14 +13,13 @@ const CATEGORIES = ["All", "Agentic", "Creative", "Writing", "Media", "Research"
 export default function WorkflowTemplates() {
   const [category, setCategory] = useState("All");
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { runWithWallet } = useWalletAction();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["workflow-templates", category],
     queryFn: async () =>
       (await api.get(WORKFLOW_API.templates, { params: category !== "All" ? { category } : {} })).data,
-    enabled: Boolean(user),
   });
 
   const templates = data?.data ?? [];
@@ -65,10 +64,10 @@ export default function WorkflowTemplates() {
       </div>
 
       {!isAuthenticated && (
-        <GuestConnectBanner message="Connect Pera Wallet to browse and use workflow templates." className="mb-4" />
+        <GuestConnectBanner message="Browse templates freely. Connect Pera Wallet to add one to your workflow library." className="mb-4" />
       )}
 
-      {error && isAuthenticated && (
+      {error && (
         <p className="text-sm text-rose-600 mb-4">
           Could not load templates. Ensure the backend is running on port 5000.
         </p>

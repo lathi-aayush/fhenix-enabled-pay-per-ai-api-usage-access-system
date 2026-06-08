@@ -17,12 +17,14 @@ const router = Router();
 /** ClipCraft — AI Studio clip pipeline */
 router.use("/clipcraft", clipcraftRoutes);
 
+/** Public: browse workflow templates without signing in (duplicate still requires auth) */
+router.use("/workflow-templates", templatesRouter);
+
 router.use(requireAuth);
 
 /** Workflow Studio (also mounted at /api/workflows for direct access) */
 router.use("/workflows", workflowsRouter);
 router.use("/workflow-runs", runsRouter);
-router.use("/workflow-templates", templatesRouter);
 router.get("/usage", studio.getUsage);
 router.post("/subscription/upgrade", studioSubscription.postSubscriptionUpgrade);
 router.use("/admin", cogsReportRouter);

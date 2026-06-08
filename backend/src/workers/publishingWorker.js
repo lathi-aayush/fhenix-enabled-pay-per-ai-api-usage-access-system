@@ -1,7 +1,7 @@
 import { Worker } from "bullmq";
 import mongoose from "mongoose";
 import { BlogPost } from "../models/BlogPost.js";
-import { getRedisConnection } from "../queues/publishingQueue.js";
+import { getRedisConnection, isRedisAvailable } from "../queues/publishingQueue.js";
 import { publishExternalForPlatform } from "../services/blogPublishService.js";
 import { processScheduledPostById } from "../services/scheduledPublishScheduler.js";
 
@@ -10,14 +10,11 @@ export function startPublishingWorker() {
     console.log("[publishingWorker] disabled via STUDIO_DISABLE_WORKER");
     return null;
   }
-
-  let redis;
-  try {
-    redis = getRedisConnection();
-  } catch (e) {
-    console.warn("[publishingWorker] Redis unavailable, worker skipped:", e.message);
+  if (!isRedisAvailable()) {
     return null;
   }
+
+  const redis = getRedisConnection();
 
   const worker = new Worker(
     "publish",

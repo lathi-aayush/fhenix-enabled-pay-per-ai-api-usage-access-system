@@ -1,11 +1,13 @@
 import Redis from "ioredis";
-import { getRedisConnection } from "../queues/publishingQueue.js";
+import { getRedisConnection, isRedisAvailable } from "../queues/publishingQueue.js";
 
 let client = null;
 let lastErrorLogged = 0;
 
 export function isRedisEnabled() {
-  return process.env.GATEWAY_DISABLE_REDIS !== "1";
+  if (process.env.GATEWAY_DISABLE_REDIS === "1") return false;
+  if (process.env.REDIS_DISABLED === "1") return false;
+  return isRedisAvailable();
 }
 
 export function getRedisClient() {

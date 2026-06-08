@@ -1,5 +1,5 @@
 import { Worker } from "bullmq";
-import { getRedisConnection } from "../queues/publishingQueue.js";
+import { getRedisConnection, isRedisAvailable } from "../queues/publishingQueue.js";
 import {
   writeUsageRecordInline,
   writeLedgerTxInline,
@@ -20,14 +20,11 @@ export function startGatewayWorker() {
     console.log("[gatewayWorker] disabled via GATEWAY_DISABLE_WORKER");
     return null;
   }
-
-  let redis;
-  try {
-    redis = getRedisConnection();
-  } catch (e) {
-    console.warn("[gatewayWorker] Redis unavailable:", e.message);
+  if (!isRedisAvailable()) {
     return null;
   }
+
+  const redis = getRedisConnection();
 
   const worker = new Worker(
     "gateway",

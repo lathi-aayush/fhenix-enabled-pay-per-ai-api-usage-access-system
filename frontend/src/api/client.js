@@ -62,3 +62,16 @@ export function setAuthToken(token) {
     delete api.defaults.headers.common.Authorization;
   }
 }
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const hadAuth = Boolean(
+      error.config?.headers?.Authorization || api.defaults.headers.common.Authorization
+    );
+    if (error.response?.status === 401 && hadAuth) {
+      window.dispatchEvent(new CustomEvent("auth:session-expired"));
+    }
+    return Promise.reject(error);
+  }
+);

@@ -24,7 +24,17 @@ export async function reconnectPera() {
     const first = Array.isArray(accounts) ? accounts[0] : null;
     _connectedAddress = normalizeAccountAddress(first);
     return _connectedAddress;
-  } catch {
+  } catch (err) {
+    const stale =
+      err?.message?.includes("Missing or invalid topic") ||
+      err?.message?.includes("No matching key");
+    if (stale) {
+      try {
+        await peraWallet.disconnect();
+      } catch {
+        /* ignore */
+      }
+    }
     _connectedAddress = null;
     return null;
   }
