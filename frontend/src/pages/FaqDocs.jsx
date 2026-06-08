@@ -39,7 +39,7 @@ export default function FaqDocs() {
     <div className="flex h-full">
       <div className="flex-1 max-w-4xl px-8 py-10 lg:px-12 mx-auto min-h-screen pb-32">
         <div className="text-[12px] text-slate-400 font-medium mb-3 flex items-center gap-1.5">
-          <span>Sentinel Protocol</span>
+          <span>Sentinal Protocol</span>
           <span className="material-symbols-outlined text-[10px]">chevron_right</span>
           <span className="text-slate-600 font-semibold">FAQ</span>
         </div>
@@ -75,7 +75,7 @@ export default function FaqDocs() {
               <div>
                 <h3 id="refunds" className="text-[17px] font-bold text-slate-900 mb-2">Can I get a refund for failed API calls?</h3>
                 <p className="text-[14px] text-slate-600 leading-relaxed">
-                  Since transactions are settled immediately on-chain, all settlements are final. However, Sentinel's SDK client automatically catches errors and will only execute on-chain payments if the challenge details match successfully.
+                  Since transactions are settled immediately on-chain, all settlements are final. However, Sentinal's SDK client automatically catches errors and will only execute on-chain payments if the challenge details match successfully.
                 </p>
               </div>
 

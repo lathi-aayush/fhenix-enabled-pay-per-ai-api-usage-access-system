@@ -2,11 +2,15 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/client.js";
+import { useAuth } from "../../context/AuthContext.jsx";
+import GuestConnectBanner from "../../components/GuestConnectBanner.jsx";
 
 export default function Drafts() {
+  const { user, isAuthenticated } = useAuth();
   const { data, isLoading } = useQuery({
     queryKey: ["studio-drafts"],
     queryFn: async () => (await api.get("/api/studio/drafts")).data,
+    enabled: Boolean(user),
   });
   const posts = data?.posts ?? [];
 
@@ -14,6 +18,7 @@ export default function Drafts() {
     <div className="pt-6 max-w-4xl">
       <h1 className="font-headline text-2xl font-semibold text-primary mb-2">Drafts</h1>
       <p className="text-sm text-on-surface-variant mb-6">In-progress posts not yet published.</p>
+      {!isAuthenticated && <GuestConnectBanner message="Connect Pera Wallet to view your drafts." className="mb-6" />}
       {isLoading && <p className="text-sm animate-pulse">Loading…</p>}
       <ul className="space-y-2">
         {posts.map((p) => (

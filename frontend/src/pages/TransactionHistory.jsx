@@ -50,9 +50,9 @@ export default function TransactionHistory() {
   }, [query]);
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="pt-4 pb-8 w-full">
         <div className="flex flex-wrap items-center gap-3 mb-6">
-          <Link to="/dashboard/browse" className="text-secondary hover:underline text-sm">
+          <Link to="/marketplace/browse" className="text-secondary hover:underline text-sm">
             ← Marketplace
           </Link>
           <span className="font-headline font-semibold text-primary">Billing &amp; transactions</span>

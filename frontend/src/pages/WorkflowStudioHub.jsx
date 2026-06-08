@@ -1,15 +1,22 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { api } from "../api/client.js";
 import { WORKFLOW_API } from "../api/workflowApi.js";
+import { useAuth } from "../context/AuthContext.jsx";
+import { useWalletAction } from "../hooks/useWalletAction.js";
+import GuestConnectBanner from "../components/GuestConnectBanner.jsx";
 
 export default function WorkflowStudioHub() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user, isAuthenticated } = useAuth();
+  const { runWithWallet } = useWalletAction();
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["workflows"],
     queryFn: async () => (await api.get(WORKFLOW_API.list)).data,
+    enabled: Boolean(user),
   });
 
   async function createWorkflow() {
@@ -19,6 +26,7 @@ export default function WorkflowStudioHub() {
         description: "",
       });
       if (res?.success) {
+        queryClient.invalidateQueries({ queryKey: ["workflows"] });
         navigate(`/studio/workflows/${res.data._id}`);
       }
     } catch (e) {
@@ -53,7 +61,7 @@ export default function WorkflowStudioHub() {
           </Link>
           <button
             type="button"
-            onClick={createWorkflow}
+            onClick={() => runWithWallet(() => createWorkflow())}
             className="px-4 py-2 text-sm font-semibold bg-[#031634] text-white rounded-md hover:opacity-90"
           >
             New workflow
@@ -61,10 +69,18 @@ export default function WorkflowStudioHub() {
         </div>
       </header>
 
-      {error && (
+      {!isAuthenticated && (
+        <GuestConnectBanner
+          message="Connect Pera Wallet to create and run workflows."
+          className="mb-4"
+        />
+      )}
+
+      {error && isAuthenticated && (
         <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-          Could not reach the workflow API. Start the backend on port 5001 and restart Vite with{" "}
-          <code className="text-xs">VITE_API_URL=http://localhost:5001</code>.
+          Could not reach the workflow API. Ensure the backend is running on port{" "}
+          <code className="text-xs">5000</code> (or set{" "}
+          <code className="text-xs">VITE_PROXY_TARGET</code> in <code className="text-xs">frontend/.env</code>).
         </div>
       )}
 
@@ -73,7 +89,11 @@ export default function WorkflowStudioHub() {
       ) : items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 p-12 text-center">
           <p className="text-slate-600 mb-4">No workflows yet. Start from a template or create one.</p>
-          <button type="button" onClick={createWorkflow} className="text-sm font-bold text-[#031634] underline">
+          <button
+            type="button"
+            onClick={() => runWithWallet(() => createWorkflow())}
+            className="text-sm font-bold text-[#031634] underline"
+          >
             Create your first workflow
           </button>
         </div>

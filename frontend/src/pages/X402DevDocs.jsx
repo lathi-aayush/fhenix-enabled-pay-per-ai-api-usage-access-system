@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
-const BASE_URL = "http://localhost:5001";
+const BASE_URL = "http://localhost:5000";
 
 const API_ENDPOINTS = [
   {
@@ -14,7 +14,7 @@ const API_ENDPOINTS = [
   "services": [
     {
       "id": "64f3a...",
-      "name": "Sentinel AI Official Chat",
+      "name": "Sentinal AI Official Chat",
       "description": "General-purpose AI assistant endpoint.",
       "costPerCall": 0.001,
       "creatorWallet": "ALGO_WALLET_ADDRESS...",
@@ -253,7 +253,7 @@ export default function X402DevDocs() {
         
         {/* Breadcrumbs */}
         <div className="text-[12px] text-slate-400 font-medium mb-3 flex items-center gap-1.5">
-          <span>Sentinel Protocol</span>
+          <span>Sentinal Protocol</span>
           <span className="material-symbols-outlined text-[10px]">chevron_right</span>
           <span className="text-slate-600 font-semibold">API Reference</span>
         </div>

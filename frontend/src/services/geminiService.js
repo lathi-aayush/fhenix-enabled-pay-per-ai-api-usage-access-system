@@ -84,7 +84,7 @@ function modeInstructions(mode) {
 
 function buildSystemInstruction({ mode, type, category }) {
   return [
-    "You are SentinelAI's Advanced Prompt Generator. Produce production-ready prompts only.",
+    "You are SentinalAI's Advanced Prompt Generator. Produce production-ready prompts only.",
     modeInstructions(mode),
     `CATEGORY: ${category}`,
     `PROMPT TYPE: ${type}`,

@@ -36,9 +36,9 @@ export default function CreatorProfile() {
 
   if (!profile) {
     return (
-      <div className="max-w-3xl">
+      <div className="pt-4 pb-8 w-full">
         <p className="text-on-surface-variant mb-4">Creator profile not found.</p>
-        <Link to="/dashboard/browse" className="text-sm text-secondary hover:underline">
+        <Link to="/marketplace/browse" className="text-sm text-secondary hover:underline">
           ← Back to Marketplace
         </Link>
       </div>
@@ -48,8 +48,8 @@ export default function CreatorProfile() {
   const displayName = profile.displayName || shortenWallet(profile.walletAddress);
 
   return (
-    <div className="max-w-5xl">
-      <Link to="/dashboard/browse" className="text-sm text-secondary hover:underline">
+    <div className="pt-4 pb-8 w-full">
+      <Link to="/marketplace/browse" className="text-sm text-secondary hover:underline">
         ← Marketplace
       </Link>
 

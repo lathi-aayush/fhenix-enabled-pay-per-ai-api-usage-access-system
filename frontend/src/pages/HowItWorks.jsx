@@ -41,11 +41,11 @@ export default function HowItWorks() {
     <div className="flex h-full">
       <div className="flex-1 max-w-4xl px-8 py-10 lg:px-12 mx-auto min-h-screen pb-32">
         <h1 className="text-3xl font-semibold text-slate-900 mb-6 tracking-tight">
-          How SentinelAI Works
+          How SentinalAI Works
         </h1>
 
         <p className="text-[15px] text-slate-600 mb-8 leading-relaxed">
-          SentinelAI is a decentralized, pay-per-usage AI gateway on Algorand. Users and autonomous
+          SentinalAI is a decentralized, pay-per-usage AI gateway on Algorand. Users and autonomous
           agents access premium models without subscriptions, credit-card billing, or shared API keys —
           every call is priced transparently and settled on-chain.
         </p>
@@ -68,8 +68,8 @@ export default function HowItWorks() {
                     A marketplace and studio for machine-native AI
                   </h3>
                   <p className="text-[14px] text-slate-600 max-w-2xl leading-relaxed">
-                    Creators publish AI services wrapped behind Sentinel&apos;s secure proxy. Users pay
-                    in ALGO per call — peer-to-peer, directly to the creator&apos;s wallet. Sentinel
+                    Creators publish AI services wrapped behind Sentinal&apos;s secure proxy. Users pay
+                    in ALGO per call — peer-to-peer, directly to the creator&apos;s wallet. Sentinal
                     Studio adds creative workflows (blogging, clips, chat) that consume those same
                     services natively, with micro-payments handled in the background.
                   </p>
@@ -147,7 +147,7 @@ export default function HowItWorks() {
                 </div>
                 <h4 className="font-semibold text-slate-900 text-[15px]">Receive the response</h4>
                 <p className="text-[13px] text-slate-600 leading-relaxed">
-                  Sentinel verifies the transaction on the Algorand indexer, logs usage, and returns
+                  Sentinal verifies the transaction on the Algorand indexer, logs usage, and returns
                   the AI output — plus an optional proof-of-intelligence attestation on-chain.
                 </p>
               </div>
@@ -218,7 +218,7 @@ export default function HowItWorks() {
                   <h4 className="font-semibold text-slate-900 text-[16px]">The Marketplace</h4>
                 </div>
                 <p className="text-[14px] text-slate-600 leading-relaxed">
-                  Creators wrap models from Groq, OpenAI, Anthropic, or Together behind Sentinel&apos;s
+                  Creators wrap models from Groq, OpenAI, Anthropic, or Together behind Sentinal&apos;s
                   proxy. They set per-1K-token pricing and a minimum charge; provider keys stay
                   AES-encrypted. Revenue lands in their Algorand wallet on every verified call — no
                   payout delays.
@@ -244,7 +244,7 @@ export default function HowItWorks() {
                     Integrate Pay-Per-Use AI in Minutes
                   </h3>
                   <p className="text-[14px] text-indigo-200 leading-relaxed">
-                    Build client-side or server-side applications that communicate directly with the Sentinel AI gateway. 
+                    Build client-side or server-side applications that communicate directly with the Sentinal AI gateway. 
                     The SDK abstracts the complete three-phase payment flow (invoke, pay, complete) into a single, seamless 
                     <code className="bg-indigo-900/60 px-1 py-0.5 rounded font-mono text-white text-[12px] mx-1">client.chat()</code> method.
                   </p>

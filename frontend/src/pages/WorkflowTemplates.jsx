@@ -4,17 +4,23 @@ import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { api } from "../api/client.js";
 import { WORKFLOW_API } from "../api/workflowApi.js";
+import { useAuth } from "../context/AuthContext.jsx";
+import { useWalletAction } from "../hooks/useWalletAction.js";
+import GuestConnectBanner from "../components/GuestConnectBanner.jsx";
 
 const CATEGORIES = ["All", "Agentic", "Creative", "Writing", "Media", "Research", "Code", "Data"];
 
 export default function WorkflowTemplates() {
   const [category, setCategory] = useState("All");
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+  const { runWithWallet } = useWalletAction();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["workflow-templates", category],
     queryFn: async () =>
       (await api.get(WORKFLOW_API.templates, { params: category !== "All" ? { category } : {} })).data,
+    enabled: Boolean(user),
   });
 
   const templates = data?.data ?? [];
@@ -58,9 +64,13 @@ export default function WorkflowTemplates() {
         ))}
       </div>
 
-      {error && (
+      {!isAuthenticated && (
+        <GuestConnectBanner message="Connect Pera Wallet to browse and use workflow templates." className="mb-4" />
+      )}
+
+      {error && isAuthenticated && (
         <p className="text-sm text-rose-600 mb-4">
-          Could not load templates. Ensure the backend is running on port 5001.
+          Could not load templates. Ensure the backend is running on port 5000.
         </p>
       )}
 
@@ -85,7 +95,7 @@ export default function WorkflowTemplates() {
               </p>
               <button
                 type="button"
-                onClick={() => useTemplate(t._id)}
+                onClick={() => runWithWallet(() => useTemplate(t._id))}
                 className="mt-4 w-full py-2 text-xs font-bold rounded-md bg-[#031634] text-white hover:opacity-90"
               >
                 Use template

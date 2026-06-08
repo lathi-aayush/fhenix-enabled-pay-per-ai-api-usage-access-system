@@ -45,7 +45,7 @@ export default function MarketplaceCreators() {
   }, [services]);
 
   return (
-    <div className="max-w-5xl">
+    <div className="pt-4 pb-8 w-full">
       <h1 className="font-headline text-2xl font-semibold text-primary mb-2">Creator Profiles</h1>
       <p className="text-sm text-on-surface-variant mb-6">
         Discover API creators and browse their published endpoints.
@@ -60,7 +60,7 @@ export default function MarketplaceCreators() {
           {creators.map((creator) => (
             <Link
               key={creator.walletAddress}
-              to={`/dashboard/creators/${encodeURIComponent(creator.walletAddress)}`}
+              to={`/marketplace/creators/${encodeURIComponent(creator.walletAddress)}`}
               className="bg-white border border-surface-variant rounded-md p-4 flex justify-between items-center hover:border-secondary transition-colors"
             >
               <div>

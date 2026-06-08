@@ -46,12 +46,12 @@ export default function X402Docs() {
         
         {/* Breadcrumbs */}
         <div className="text-[12px] text-slate-400 font-medium mb-3 flex items-center gap-1.5">
-          <span>Sentinel Protocol</span>
+          <span>Sentinal Protocol</span>
           <span className="material-symbols-outlined text-[10px]">chevron_right</span>
           <span className="text-slate-600 font-semibold">Getting Started</span>
         </div>
 
-        <h1 className="text-3xl font-bold text-slate-900 mb-6 tracking-tight">Getting Started with Sentinel Protocol (x402)</h1>
+        <h1 className="text-3xl font-bold text-slate-900 mb-6 tracking-tight">Getting Started with Sentinal Protocol (x402)</h1>
         
         <p className="text-[15px] text-slate-600 mb-8 leading-relaxed">
           Machine-payable API system enabling AI Agents to unlock pay-per-use services autonomously.
@@ -184,7 +184,7 @@ export default function X402Docs() {
                 <strong>Absolute Isolation:</strong> Agent burner wallets are isolated. They are loaded only with small amounts of utility tokens, protecting primary funds.
               </li>
               <li>
-                <strong>Decentralized Indexing:</strong> Real-time ledger lookup ensures trustless authentication. Sentinel checks the Algorand indexer node directly.
+                <strong>Decentralized Indexing:</strong> Real-time ledger lookup ensures trustless authentication. Sentinal checks the Algorand indexer node directly.
               </li>
             </ul>
           </section>

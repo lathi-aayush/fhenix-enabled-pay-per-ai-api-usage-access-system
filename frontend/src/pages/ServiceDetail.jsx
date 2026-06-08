@@ -4,9 +4,10 @@ import { Link, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useWalletAction } from "../hooks/useWalletAction.js";
+import GuestConnectBanner from "../components/GuestConnectBanner.jsx";
 import { getPublicApiBase } from "../utils/apiBase.js";
-import UserLiveWalletBar, { shortenWallet } from "../components/UserLiveWalletBar.jsx";
-import ProfileDropdown from "../components/ProfileDropdown.jsx";
+import { shortenWallet } from "../components/UserLiveWalletBar.jsx";
 import {
   addressesEqual,
   connectPera,
@@ -27,7 +28,8 @@ function sleep(ms) {
 
 export default function ServiceDetail() {
   const { id } = useParams();
-  const { user, logout, burnerReady } = useAuth();
+  const { user, logout, burnerReady, isAuthenticated } = useAuth();
+  const { runWithWallet } = useWalletAction();
   const [service, setService] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -308,7 +310,7 @@ curl -sS "${apiBase}/api/use" \\
 
   if (loading) {
     return (
-      <div className="min-h-screen pt-24 px-6 bg-surface flex items-center justify-center">
+      <div className="pt-4 pb-8 w-full flex items-center justify-center min-h-[40vh]">
         <p className="text-on-surface-variant animate-pulse">Loading service…</p>
       </div>
     );
@@ -316,9 +318,9 @@ curl -sS "${apiBase}/api/use" \\
 
   if (!service) {
     return (
-      <div className="min-h-screen pt-24 px-6 bg-surface flex flex-col items-center justify-center gap-4">
+      <div className="pt-4 pb-8 w-full flex flex-col items-center justify-center gap-4 min-h-[40vh]">
         <p className="text-on-surface-variant">Service not found.</p>
-        <Link to="/dashboard/browse" className="text-sm text-secondary hover:underline">
+        <Link to="/marketplace/browse" className="text-sm text-secondary hover:underline">
           ← Back to Marketplace
         </Link>
       </div>
@@ -329,16 +331,12 @@ curl -sS "${apiBase}/api/use" \\
   const devShort = shortenWallet(service.creatorWallet);
 
   return (
-    <div className="font-body text-on-surface max-w-3xl mx-auto">
-      <div className="flex justify-end items-center gap-4 mb-4">
-        <Link to="/dashboard/browse" className="text-sm text-secondary hover:underline shrink-0">
-          ← Marketplace
-        </Link>
-        {user?.walletAddress && <UserLiveWalletBar walletAddress={user.walletAddress} />}
-        <ProfileDropdown />
-      </div>
+    <div className="font-body text-on-surface pt-4 pb-8 w-full">
+      <Link to="/marketplace/browse" className="text-sm text-secondary hover:underline">
+        ← Marketplace
+      </Link>
 
-      <div className="pb-12">
+      <div className="mt-4 pb-4">
         <h1 className="font-headline text-3xl font-semibold text-primary">{service.title}</h1>
         <div className="mt-3">
           <StarRating rating={service.averageRating} reviewCount={service.reviewCount} size="lg" />
@@ -359,7 +357,7 @@ curl -sS "${apiBase}/api/use" \\
             <span className="px-3 py-1 rounded-md bg-white border border-surface-variant">
               Creator:{" "}
               <Link
-                to={`/dashboard/creators/${encodeURIComponent(service.creatorWallet)}`}
+                to={`/marketplace/creators/${encodeURIComponent(service.creatorWallet)}`}
                 className="text-secondary hover:underline font-medium"
               >
                 {devShort}
@@ -385,18 +383,25 @@ curl -sS "${apiBase}/api/use" \\
             </p>
           )}
 
+          {!isAuthenticated && (
+            <GuestConnectBanner
+              message="Connect Pera Wallet to get an API key and call this service."
+              className="mb-4"
+            />
+          )}
+
           <div className="border-t border-surface-variant pt-6">
             <p className="text-sm text-on-surface-variant mb-3">
-              Generate a <code className="font-mono text-xs">sk-sentinel-…</code> key. Each call: Sentinel runs the model
-              first, returns the exact ALGO charge, you pay on-chain, then Sentinel releases the answer.
+              Generate a <code className="font-mono text-xs">sk-sentinel-…</code> key. Each call: Sentinal runs the model
+              first, returns the exact ALGO charge, you pay on-chain, then Sentinal releases the answer.
             </p>
             <button
               type="button"
               disabled={generating || !canProxy}
-              onClick={generateKey}
+              onClick={() => runWithWallet(() => generateKey())}
               className="w-full sm:w-auto bg-primary text-white px-8 py-3 rounded-md font-medium hover:opacity-90 disabled:opacity-50"
             >
-              {generating ? "Working…" : "Get proxy API key"}
+              {generating ? "Working…" : isAuthenticated ? "Get proxy API key" : "Connect wallet to get API key"}
             </button>
           </div>
 
@@ -404,7 +409,7 @@ curl -sS "${apiBase}/api/use" \\
             <div className="border-t border-surface-variant pt-6 space-y-4">
               <h2 className="font-semibold text-primary">Chat with this AI</h2>
               <p className="text-sm text-on-surface-variant">
-                You can now chat with this AI directly in the Sentinel Studio.
+                You can now chat with this AI directly in the Sentinal Studio.
                 The Studio uses your Burner Wallet to automatically pay per response token.
               </p>
               <Link
@@ -423,7 +428,7 @@ curl -sS "${apiBase}/api/use" \\
             <h2 className="font-semibold text-primary">Reviews</h2>
             <button
               type="button"
-              onClick={() => setShowReviewModal(true)}
+              onClick={() => runWithWallet(() => setShowReviewModal(true))}
               className="text-sm bg-secondary text-on-secondary px-4 py-2 rounded-md hover:opacity-90"
             >
               Write a review

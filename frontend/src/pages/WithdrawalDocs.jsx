@@ -45,8 +45,8 @@ export default function WithdrawalDocs() {
         <h1 className="text-3xl font-semibold text-slate-900 mb-6 tracking-tight">Creator Payouts & Withdrawals</h1>
         
         <p className="text-[15px] text-slate-600 mb-8 leading-relaxed">
-          How Sentinel settles metered API earnings and handles on-chain creator withdrawals.
-          Sentinel operates on a decentralized, peer-to-peer micro-payment system. However, to accommodate platform routing, subscription pooling, and escrow payouts, the platform provides a **custodial vault system** where accumulated creator earnings are held in the secure Sentinel treasury and can be withdrawn on-chain on demand.
+          How Sentinal settles metered API earnings and handles on-chain creator withdrawals.
+          Sentinal operates on a decentralized, peer-to-peer micro-payment system. However, to accommodate platform routing, subscription pooling, and escrow payouts, the platform provides a **custodial vault system** where accumulated creator earnings are held in the secure Sentinal treasury and can be withdrawn on-chain on demand.
         </p>
 
         <div className="space-y-12 text-slate-800">
@@ -62,7 +62,7 @@ export default function WithdrawalDocs() {
                   </span>
                   <h3 className="text-xl font-semibold tracking-tight">Accrued Balance to Linked Wallet</h3>
                   <p className="text-[14px] text-slate-600 max-w-2xl leading-relaxed">
-                    When customers consume your endpoints, the platform routes a portion of their pay-per-use fees into the Sentinel vault. The Creator Withdrawal Dashboard aggregates these earnings and releases them directly to your linked Pera Wallet with a single click.
+                    When customers consume your endpoints, the platform routes a portion of their pay-per-use fees into the Sentinal vault. The Creator Withdrawal Dashboard aggregates these earnings and releases them directly to your linked Pera Wallet with a single click.
                   </p>
                 </div>
                 <div className="shrink-0 flex items-center justify-center w-20 h-20 rounded-full bg-emerald-50 border border-emerald-100">

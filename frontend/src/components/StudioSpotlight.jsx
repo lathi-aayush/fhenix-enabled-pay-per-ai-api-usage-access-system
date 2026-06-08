@@ -8,7 +8,7 @@ const TOOLS = [
     icon: "edit_note",
     color: "emerald",
     tagline: "Go from idea to polished post in seconds",
-    desc: "Type a topic, pick a tone, and SentinelAI drafts a full SEO-optimised article — intro, headers, body, and CTA — powered by your choice of LLM, billed per word generated.",
+    desc: "Type a topic, pick a tone, and SentinalAI drafts a full SEO-optimised article — intro, headers, body, and CTA — powered by your choice of LLM, billed per word generated.",
     badges: ["DeepSeek V3", "Markdown export", "SEO hints", "Tone control"],
     preview: {
       type: "blog",
@@ -28,7 +28,7 @@ const TOOLS = [
     badges: ["Auto-captions", "Scene detection", "Text overlays", "ALGO billing"],
     preview: {
       type: "video",
-      title: "Product Demo — Sentinel API Walkthrough",
+      title: "Product Demo — Sentinal API Walkthrough",
       meta: "Rendering · 2m 14s · 0.0089 ALGO charged",
       scenes: ["Intro", "API Call Demo", "Wallet Payment", "Outro"],
     },

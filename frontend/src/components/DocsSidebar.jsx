@@ -29,7 +29,7 @@ export default function DocsSidebar({ isCollapsed, setIsCollapsed }) {
       <div className={`flex-1 overflow-y-auto flex flex-col pt-8 transition-opacity duration-300 ${isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
         <div className="px-6 mb-8">
           <h3 className="text-slate-900 font-semibold">Documentation</h3>
-          <p className="text-slate-500 text-xs">Sentinel Protocol Guides</p>
+          <p className="text-slate-500 text-xs">Sentinal Protocol Guides</p>
         </div>
         <ul className="space-y-1 text-[13px] font-medium text-slate-600 px-4 pb-8">
           <li>
@@ -53,7 +53,7 @@ export default function DocsSidebar({ isCollapsed, setIsCollapsed }) {
               onClick={() => toggle("protocol")}
               className="flex items-center justify-between w-full px-3 py-1.5 rounded hover:bg-slate-50 transition-colors"
             >
-              <span className={`text-slate-900 ${location.pathname.includes('x402') || location.pathname.includes('cli') || location.pathname.includes('migration') ? 'font-semibold' : ''}`}>Sentinel Protocol</span>
+              <span className={`text-slate-900 ${location.pathname.includes('x402') || location.pathname.includes('cli') || location.pathname.includes('migration') ? 'font-semibold' : ''}`}>Sentinal Protocol</span>
               <span className="material-symbols-outlined text-[16px] text-slate-400">
                 {expanded.protocol ? "expand_more" : "chevron_right"}
               </span>

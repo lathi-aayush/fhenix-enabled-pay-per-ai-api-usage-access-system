@@ -6,6 +6,8 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { api } from "../../api/client.js";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useWalletAction } from "../../hooks/useWalletAction.js";
+import GuestConnectBanner from "../../components/GuestConnectBanner.jsx";
 import {
   PLAN_PRICE_ALGO,
   PLAN_PRICES,
@@ -78,13 +80,14 @@ const STATUS_LABELS = {
   awaiting_signature: "Approve the payment in Pera Wallet…",
   submitting_tx: "Submitting transaction…",
   confirming: "Waiting for on-chain confirmation…",
-  verifying: "Verifying payment with Sentinel…",
+  verifying: "Verifying payment with Sentinal…",
   success: "Upgrade complete.",
   error: "",
 };
 
 export default function StudioPlan() {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const { runWithWallet } = useWalletAction();
   const queryClient = useQueryClient();
   const { algodServer, receiverWallet, loading: paymentConfigLoading } = usePaymentConfig();
   const [payStatus, setPayStatus] = useState("idle");
@@ -95,6 +98,7 @@ export default function StudioPlan() {
   const { data: usage, refetch: refetchUsage } = useQuery({
     queryKey: ["studio-usage"],
     queryFn: async () => (await api.get("/api/studio/usage")).data,
+    enabled: Boolean(user),
   });
 
   const current = usage?.tier || "free";
@@ -178,7 +182,7 @@ export default function StudioPlan() {
   const busy = payStatus !== "idle" && payStatus !== "success" && payStatus !== "error";
 
   return (
-    <div className="pt-6 max-w-4xl">
+    <div className="pt-6 w-full">
       <div className="mb-8">
         <h1 className="font-headline text-2xl font-semibold text-primary">Plan &amp; upgrade</h1>
         <p className="text-sm text-on-surface-variant mt-1">
@@ -189,7 +193,10 @@ export default function StudioPlan() {
           {limit != null && <> · {used} of {limit} blogs</>}
           <> · {credits} of {creditPool} Studio Credits</>
         </p>
-        {!user?.walletAddress && (
+        {!isAuthenticated && (
+          <GuestConnectBanner message="Connect Pera Wallet to view usage and upgrade your Studio plan." className="mt-4" />
+        )}
+        {isAuthenticated && !user?.walletAddress && (
           <p className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded px-3 py-2 mt-3">
             Link your Pera wallet from the profile menu before upgrading.
           </p>
@@ -209,7 +216,7 @@ export default function StudioPlan() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {TIERS.map((t) => {
           const isCurrent = t.id === current;
           const isPaid = t.paid && PAID_TIERS.includes(t.id);
@@ -223,7 +230,7 @@ export default function StudioPlan() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
               whileHover={{ y: -4 }}
-              className={`relative rounded-md border p-5 bg-white flex flex-col ${
+              className={`relative rounded-md border p-5 bg-white flex flex-col min-h-[420px] h-full ${
                 isCurrent ? "border-[#031634] ring-1 ring-[#031634]/20" : "border-surface-variant"
               }`}
             >
@@ -264,7 +271,7 @@ export default function StudioPlan() {
                   <button
                     type="button"
                     disabled={isCurrent || busy || !receiverWallet || !user?.walletAddress}
-                    onClick={() => payUpgrade(t.id)}
+                    onClick={() => runWithWallet(() => payUpgrade(t.id))}
                     className="w-full py-2.5 rounded-md bg-[#031634] text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
                   >
                     {isCurrent ? "Current plan" : isThisPaying ? "Processing…" : `Pay ${algoPrice} ALGO`}

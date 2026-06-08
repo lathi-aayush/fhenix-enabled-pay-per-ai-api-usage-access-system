@@ -7,7 +7,20 @@ import ReactMarkdown from "react-markdown";
 import { toast } from "react-hot-toast";
 import algosdk from "algosdk";
 
-const EXPLORER_TX = "https://testnet.algoexplorer.io/tx/";
+function bytesToBase64(bytes) {
+  const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  let binary = "";
+  for (let i = 0; i < u8.length; i++) binary += String.fromCharCode(u8[i]);
+  return btoa(binary);
+}
+
+function buildXPaymentHeader(signedTxnBytes) {
+  const payload = {
+    paymentGroup: [bytesToBase64(signedTxnBytes)],
+    paymentIndex: 0,
+  };
+  return btoa(JSON.stringify(payload));
+}
 
 export default function StudioChat() {
   const { user, burnerReady } = useAuth();
@@ -69,7 +82,7 @@ export default function StudioChat() {
       try {
         await api.post(`/api/x402/use/${selectedServiceId}`, {
           messages: newMessages,
-          stream: true
+          stream: false,
         });
         throw new Error("Expected 402 Payment Required, but request succeeded without payment.");
       } catch (err) {
@@ -84,7 +97,7 @@ export default function StudioChat() {
       const amountMicroAlgos = Number(acceptReq.maxAmountRequired);
 
       // Step 2: Pay on-chain
-      toast.info(`Paying ${amountMicroAlgos / 1e6} ALGO to start stream...`);
+      toast(`Paying ${amountMicroAlgos / 1e6} ALGO to start chat...`);
       const algodUrl = import.meta.env.VITE_ALGORAND_NODE || "https://testnet-api.algonode.cloud";
       const algodClient = new algosdk.Algodv2("", algodUrl, "");
       
@@ -94,7 +107,7 @@ export default function StudioChat() {
         receiver: acceptReq.payTo,
         amount: BigInt(amountMicroAlgos),
         suggestedParams: params,
-        note: new TextEncoder().encode("SentinelAI Chat Stream"),
+        note: new TextEncoder().encode("SentinalAI Chat Stream"),
       });
 
       const signedTxn = txn.signTxn(burnerWallet.sk);
@@ -113,74 +126,44 @@ export default function StudioChat() {
         await new Promise(resolve => setTimeout(resolve, 1500));
       }
 
-      if (!confirmedTx) {
+      if (!confirmedTx?.["confirmed-round"]) {
         throw new Error("Transaction confirmation timed out.");
       }
 
-      const paymentPayload = {
-        paymentGroup: [Buffer.from(signedTxn).toString("base64")],
-        paymentIndex: 0,
-      };
-      const xPaymentHeader = Buffer.from(JSON.stringify(paymentPayload)).toString("base64");
+      // Allow Algorand indexer to catch up before x402 verification (backend polls indexer)
+      await new Promise((resolve) => setTimeout(resolve, 2500));
 
-      // Step 3: Stream Response
+      const xPaymentHeader = buildXPaymentHeader(signedTxn);
+
+      // Step 3: Paid AI call (JSON response — same transport as round 1 / x402-test.html)
       setStreaming(true);
-      
-      // Add empty assistant message placeholder
-      setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
-      const response = await fetch(`${api.defaults.baseURL || ""}/api/x402/use/${selectedServiceId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Payment': xPaymentHeader,
-          ...(api.defaults.headers.common || {})
-        },
-        body: JSON.stringify({ messages: newMessages, stream: true })
+      const { data } = await api.post(
+        `/api/x402/use/${selectedServiceId}`,
+        { messages: newMessages, stream: false },
+        { headers: { "X-Payment": xPaymentHeader } }
+      );
+
+      const assistantText = data?.choices?.[0]?.message?.content || "";
+      setMessages((prev) => {
+        const updated = [...prev];
+        const last = updated[updated.length - 1];
+        if (last?.role === "assistant") last.content = assistantText;
+        return updated;
       });
 
-      if (!response.ok) {
-        throw new Error(`Stream request failed with status ${response.status}`);
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        
-        buffer += decoder.decode(value, { stream: true });
-        const parts = buffer.split(/\r?\n\r?\n/);
-        buffer = parts.pop(); // keep the last incomplete chunk in the buffer
-
-        for (const part of parts) {
-          const lines = part.split(/\r?\n/);
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const data = line.slice(6).trim();
-              if (data === "[DONE]") continue;
-              try {
-                const parsed = JSON.parse(data);
-                const text = parsed.choices?.[0]?.delta?.content || "";
-                if (text) {
-                  setMessages(prev => {
-                    const updated = [...prev];
-                    const last = updated[updated.length - 1];
-                    last.content += text;
-                    return updated;
-                  });
-                }
-              } catch (e) {}
-            }
-          }
-        }
-      }
-      
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.error || err.message || "Failed to chat.");
+      const apiErr = err.response?.data;
+      const apiMsg =
+        apiErr?.detail ||
+        apiErr?.error ||
+        (typeof apiErr === "string" ? apiErr : null);
+      const message = apiMsg
+        ? `${err.response?.status ? `Request failed (${err.response.status})` : "Request failed"}: ${apiMsg}`
+        : err.message;
+      toast.error(message || "Failed to chat.");
       // Remove placeholder if it failed
       setMessages(prev => prev.filter(m => m.content !== ""));
     } finally {

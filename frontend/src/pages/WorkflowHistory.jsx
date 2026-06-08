@@ -3,16 +3,20 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client.js";
 import { WORKFLOW_API } from "../api/workflowApi.js";
+import { useAuth } from "../context/AuthContext.jsx";
+import GuestConnectBanner from "../components/GuestConnectBanner.jsx";
 import ExecutionPanel from "../components/workflow/controls/ExecutionPanel.jsx";
 
 export default function WorkflowHistory() {
   const [page, setPage] = useState(1);
   const [selectedRun, setSelectedRun] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const { user, isAuthenticated } = useAuth();
 
   const { data, isLoading } = useQuery({
     queryKey: ["workflow-runs", page],
     queryFn: async () => (await api.get(WORKFLOW_API.runs, { params: { page, limit: 20 } })).data,
+    enabled: Boolean(user),
   });
 
   const items = data?.data?.items ?? [];
@@ -28,13 +32,17 @@ export default function WorkflowHistory() {
   }
 
   return (
-    <div className="pt-6 flex gap-4 min-h-[70vh]">
+    <div className="pt-6">
+      <div className="flex gap-4 min-h-[70vh]">
       <div className="flex-1">
         <header className="mb-6">
           <Link to="/studio/workflows" className="text-xs text-secondary hover:underline">
             ← Workflows
           </Link>
           <h1 className="font-headline text-2xl font-semibold text-primary mt-2">Run history</h1>
+          {!isAuthenticated && (
+            <GuestConnectBanner message="Connect Pera Wallet to view workflow run history." className="mt-4" />
+          )}
         </header>
 
         <div className="bg-white border border-surface-variant rounded-xl overflow-hidden">
@@ -108,6 +116,7 @@ export default function WorkflowHistory() {
           <ExecutionPanel run={selectedRun} isOpen onClose={() => setPanelOpen(false)} onRerun={() => {}} />
         </div>
       )}
+      </div>
     </div>
   );
 }

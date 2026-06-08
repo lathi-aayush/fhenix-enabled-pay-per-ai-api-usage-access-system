@@ -4,69 +4,191 @@ import logo from "../assets/logo.png";
 import ProfileDropdown from "./ProfileDropdown.jsx";
 import UserLiveWalletBar from "./UserLiveWalletBar.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { usePeraLogin } from "../context/PeraLoginContext.jsx";
 import { goToHomeSection } from "../utils/scrollToSection.js";
+
+const ACCENT_STYLES = {
+  indigo: {
+    icon: "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100",
+    border: "hover:border-indigo-200",
+    title: "group-hover:text-indigo-700",
+  },
+  emerald: {
+    icon: "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100",
+    border: "hover:border-emerald-200",
+    title: "group-hover:text-emerald-700",
+  },
+};
 
 /* ─── Dropdown data ─────────────────────────────────────────────── */
 const menus = {
   Product: {
+    layout: "cards",
     sections: [
       {
-        title: "Platform",
         items: [
-          { icon: "storefront",             label: "API Marketplace",    sub: "Browse & buy AI APIs",          path: "/dashboard/browse",  auth: true  },
-          { icon: "movie_creation",         label: "AI Studio",          sub: "Blogging & publishing agents",  path: "/studio",            auth: true  },
-          { icon: "account_balance_wallet", label: "Pera Wallet",        sub: "Algorand micro-payments",       path: "/docs/how-it-works" },
-        ],
-      },
-      {
-        title: "Protocol",
-        items: [
-          { icon: "integration_instructions", label: "x402 Payments",    sub: "Keyless agent transactions",   path: "/docs/x402",    badge: "NEW" },
-          { icon: "monitoring",               label: "Analytics",         sub: "Usage & revenue dashboards",  path: "/studio/analytics",  auth: true  },
-          { icon: "gavel",                    label: "Smart Contract",    sub: "On-chain ledger stats & logs", path: "/dashboard/contract", auth: true, badge: "LIVE" },
-          { icon: "smart_toy",                label: "Agentic Workflows", sub: "n8n & LangChain integration", path: "/docs/x402-api" },
+          {
+            icon: "storefront",
+            label: "API Marketplace",
+            sub: "Browse and pay per API call",
+            path: "/marketplace/browse",
+            accent: "indigo",
+          },
+          {
+            icon: "movie_creation",
+            label: "AI Studio",
+            sub: "Blogging, prompts, and publishing agents",
+            path: "/studio",
+            accent: "emerald",
+          },
         ],
       },
     ],
-    cta: { label: "Explore Marketplace →", path: "/dashboard/browse", auth: true },
+    cta: { label: "Compare products →", scroll: "products" },
+  },
+  Protocol: {
+    sections: [
+      {
+        title: "Payments & Chain",
+        items: [
+          {
+            icon: "integration_instructions",
+            label: "x402 Payments",
+            sub: "Keyless agent transactions",
+            path: "/docs/x402",
+            badge: "NEW",
+          },
+          {
+            icon: "account_balance_wallet",
+            label: "Pera Wallet",
+            sub: "Algorand micro-payments",
+            path: "/docs/how-it-works",
+          },
+        ],
+      },
+    ],
+    cta: { label: "See how payments work →", path: "/docs/how-it-works" },
+  },
+  Developers: {
+    sections: [
+      {
+        title: "Build & Integrate",
+        items: [
+          { icon: "menu_book", label: "x402 Protocol Docs", sub: "Full API reference", path: "/docs/x402" },
+          { icon: "terminal", label: "Code Examples", sub: "cURL, JS, Python snippets", path: "/docs/x402-api" },
+          { icon: "code", label: "Developer SDK", sub: "JS/TS client library and demo", path: "/sdk-demo" },
+          {
+            icon: "smart_toy",
+            label: "Agentic Workflows",
+            sub: "n8n and LangChain integration",
+            path: "/docs/x402-api",
+          },
+        ],
+      },
+    ],
+    cta: { label: "Explore API Docs →", path: "/docs/x402" },
   },
   "Use Cases": {
     sections: [
       {
         title: "For Developers",
         items: [
-          { icon: "code",      label: "Build AI Apps",       sub: "Integrate AI in minutes",        path: "/dashboard/browse",  auth: true },
-          { icon: "api",       label: "REST & x402 APIs",    sub: "Keyless M2M payments",            path: "/docs/x402-api" },
-          { icon: "hub",       label: "Multi-Agent Systems", sub: "Orchestrate autonomous agents",   path: "/docs/x402" },
+          { icon: "code", label: "Build AI Apps", sub: "Integrate AI in minutes", path: "/marketplace/browse" },
+          { icon: "api", label: "REST and x402 APIs", sub: "Keyless M2M payments", path: "/docs/x402-api" },
+          { icon: "hub", label: "Multi-Agent Systems", sub: "Orchestrate autonomous agents", path: "/docs/x402" },
         ],
       },
       {
         title: "For Creators",
         items: [
-          { icon: "edit_note", label: "Blogging Agent",      sub: "Auto-publish articles",           path: "/studio/blogging-agent",  auth: true },
-          { icon: "bar_chart", label: "Earnings Dashboard",  sub: "Track API revenue on-chain",      path: "/creator",               auth: true, creatorOnly: true },
+          { icon: "edit_note", label: "Blogging Agent", sub: "Auto-publish articles", path: "/studio/blogging-agent" },
+          {
+            icon: "bar_chart",
+            label: "Earnings Dashboard",
+            sub: "Track API revenue on-chain",
+            path: "/creator",
+            auth: true,
+            creatorOnly: true,
+          },
         ],
       },
     ],
     cta: { label: "Get Started as Creator →", path: "/creator", auth: true },
   },
-  Resources: {
-    sections: [
-      {
-        title: "Docs & Guides",
-        items: [
-          { icon: "menu_book", label: "x402 Protocol Docs",  sub: "Full API reference",              path: "/docs/x402" },
-          { icon: "terminal",  label: "Code Examples",       sub: "cURL, JS, Python snippets",       path: "/docs/x402-api" },
-          { icon: "code",      label: "Developer SDK",       sub: "JS/TS client library & demo",     path: "/sdk-demo" },
-        ],
-      },
-    ],
-    cta: { label: "Explore API Docs →", path: "/docs/x402" },
-  },
 };
 
-/* ─── Dropdown Panel ─────────────────────────────────────────────── */
-function DropdownPanel({ data, open, onNavigate, onMouseEnter, onMouseLeave, isAuthenticated }) {
+const DESKTOP_MENU_ORDER = ["Product", "Protocol", "Developers", "Use Cases"];
+
+/* ─── Product 2-card panel ───────────────────────────────────────── */
+function ProductCardPanel({ data, open, onNavigate, onMouseEnter, onMouseLeave, isAuthenticated }) {
+  const items = data.sections[0]?.items ?? [];
+  const { cta } = data;
+
+  return (
+    <div
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      style={{
+        opacity: open ? 1 : 0,
+        transform: open ? "translateY(0) scale(1)" : "translateY(-6px) scale(0.98)",
+        pointerEvents: open ? "all" : "none",
+        transition: "opacity 300ms ease-out, transform 300ms ease-out",
+        transformOrigin: "top center",
+      }}
+      className="absolute left-1/2 -translate-x-1/2 top-full pt-2 w-[480px] z-50"
+    >
+      <div className="bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/60 overflow-hidden">
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-slate-100 rotate-45" />
+
+        <div className="grid grid-cols-2 gap-3 p-4">
+          {items.map((item) => {
+            const accent = ACCENT_STYLES[item.accent] || ACCENT_STYLES.indigo;
+            return (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => onNavigate(item)}
+                className={`group flex flex-col items-start gap-3 p-4 rounded-xl border border-slate-100 bg-slate-50/50 ${accent.border} hover:bg-white hover:shadow-md transition-all text-left min-h-[140px]`}
+              >
+                <span
+                  className={`flex items-center justify-center w-10 h-10 rounded-xl transition-colors flex-shrink-0 ${accent.icon}`}
+                >
+                  <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                </span>
+                <div className="flex-1 min-w-0 w-full">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={`text-sm font-semibold text-slate-800 transition-colors ${accent.title}`}>
+                      {item.label}
+                    </span>
+                    {item.auth && !isAuthenticated && (
+                      <span className="px-1.5 py-0.5 rounded text-[9px] text-slate-400 bg-slate-100 font-medium">
+                        Login required
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">{item.sub}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="border-t border-slate-50 px-4 py-3 bg-slate-50/80">
+          <button
+            type="button"
+            onClick={() => onNavigate(cta)}
+            className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+          >
+            {cta.label}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Standard dropdown panel ────────────────────────────────────── */
+function DropdownPanel({ data, open, onNavigate, onMouseEnter, onMouseLeave, isAuthenticated, panelWidth = "w-[620px]" }) {
   const { sections, cta } = data;
 
   return (
@@ -80,19 +202,19 @@ function DropdownPanel({ data, open, onNavigate, onMouseEnter, onMouseLeave, isA
         transition: "opacity 300ms ease-out, transform 300ms ease-out",
         transformOrigin: "top center",
       }}
-      className="absolute left-1/2 -translate-x-1/2 top-full pt-2 w-[620px] z-50"
+      className={`absolute left-1/2 -translate-x-1/2 top-full pt-2 ${panelWidth} z-50`}
     >
-      {/* inner card */}
       <div className="bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/60 overflow-hidden">
-        {/* tiny arrow */}
         <div className="absolute top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-slate-100 rotate-45" />
 
         <div className={`grid gap-0 ${sections.length === 2 ? "grid-cols-2" : "grid-cols-1"} p-5`}>
           {sections.map((sec) => (
             <div key={sec.title} className="space-y-0.5">
-              <p className="text-[10px] font-bold tracking-[0.12em] text-slate-400 uppercase px-2 mb-2">
-                {sec.title}
-              </p>
+              {sec.title && (
+                <p className="text-[10px] font-bold tracking-[0.12em] text-slate-400 uppercase px-2 mb-2">
+                  {sec.title}
+                </p>
+              )}
               {sec.items.map((item) => (
                 <button
                   key={item.label}
@@ -130,7 +252,6 @@ function DropdownPanel({ data, open, onNavigate, onMouseEnter, onMouseLeave, isA
           ))}
         </div>
 
-        {/* CTA footer */}
         <div className="border-t border-slate-50 px-5 py-3 bg-slate-50/80">
           <button
             type="button"
@@ -145,41 +266,61 @@ function DropdownPanel({ data, open, onNavigate, onMouseEnter, onMouseLeave, isA
   );
 }
 
-/* ─── Main MegaNav ───────────────────────────────────────────────── */
-function collectMobileLinks() {
-  const links = [];
-  Object.entries(menus).forEach(([menuName, data]) => {
-    data.sections.forEach((sec) => {
-      sec.items.forEach((item) => {
-        links.push({ ...item, menuName, section: sec.title });
-      });
-    });
-  });
-  links.push({
-    label: "How It Works",
-    sub: "Pay-per-use AI on Algorand",
-    path: "/docs/how-it-works",
-    icon: "help",
-  });
-  links.push({
-    label: "SDK",
-    sub: "JavaScript / TypeScript client",
-    path: "/sdk-demo",
-    icon: "code",
-  });
-  return links;
+function NavDropdown({ menuKey, data, openMenu, keepOpen, scheduleClose, onNavigate, isAuthenticated }) {
+  const isOpen = openMenu === menuKey;
+  const isProduct = data.layout === "cards";
+
+  return (
+    <div className="relative" onMouseEnter={() => keepOpen(menuKey)} onMouseLeave={scheduleClose}>
+      <button
+        type="button"
+        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+          isOpen ? "bg-slate-100 text-slate-900" : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+        }`}
+      >
+        {menuKey}
+        <span
+          className="material-symbols-outlined text-[14px] transition-transform duration-200"
+          style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+        >
+          expand_more
+        </span>
+      </button>
+      {isProduct ? (
+        <ProductCardPanel
+          data={data}
+          open={isOpen}
+          onNavigate={onNavigate}
+          onMouseEnter={() => keepOpen(menuKey)}
+          onMouseLeave={scheduleClose}
+          isAuthenticated={isAuthenticated}
+        />
+      ) : (
+        <DropdownPanel
+          data={data}
+          open={isOpen}
+          onNavigate={onNavigate}
+          onMouseEnter={() => keepOpen(menuKey)}
+          onMouseLeave={scheduleClose}
+          isAuthenticated={isAuthenticated}
+          panelWidth={menuKey === "Protocol" ? "w-[340px]" : "w-[620px]"}
+        />
+      )}
+    </div>
+  );
 }
 
-export default function MegaNav({ enterWithPera }) {
+/* ─── Main MegaNav ───────────────────────────────────────────────── */
+export default function MegaNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, user } = useAuth();
+  const { connectWithPera } = usePeraLogin();
   const [openMenu, setOpenMenu] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const closeTimer = useRef(null);
 
-  // Scroll listener for premium header dynamic classes
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 15);
@@ -188,7 +329,6 @@ export default function MegaNav({ enterWithPera }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
@@ -202,24 +342,20 @@ export default function MegaNav({ enterWithPera }) {
     closeTimer.current = setTimeout(() => setOpenMenu(null), 350);
   };
 
-  /** Handle item click — gate auth-required routes */
   const handleItemClick = (item) => {
     setOpenMenu(null);
     setMobileOpen(false);
 
-    // scroll target
     if (item.scroll) {
       goToHomeSection(navigate, item.scroll);
       return;
     }
 
-    // no path
     if (!item.path) return;
 
-    // auth required & not logged in → trigger Pera wallet connection
     if (item.auth && !isAuthenticated) {
       const role = item.creatorOnly ? "creator" : "user";
-      if (enterWithPera) enterWithPera(role, { redirect: item.path });
+      connectWithPera({ role, redirect: item.path });
       return;
     }
 
@@ -231,24 +367,19 @@ export default function MegaNav({ enterWithPera }) {
     if (isAuthenticated) {
       navigate("/dashboard/home");
     } else {
-      if (enterWithPera) enterWithPera("user");
+      connectWithPera({ redirect: "/dashboard/home" });
     }
   };
 
-  /* ─── All mobile nav items flattened ─── */
-  const mobileLinks = Object.entries(menus).flatMap(([, data]) =>
-    data.sections.flatMap((sec) => sec.items)
-  );
-
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled
-        ? "bg-white/80 backdrop-blur-md border-b border-slate-200/50 shadow-md py-0.5"
-        : "bg-white/50 backdrop-blur-sm border-b border-slate-100/30 shadow-sm py-1.5"
-    }`}>
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? "bg-white/80 backdrop-blur-md border-b border-slate-200/50 shadow-md py-0.5"
+          : "bg-white/50 backdrop-blur-sm border-b border-slate-100/30 shadow-sm py-1.5"
+      }`}
+    >
       <div className="max-w-screen-xl mx-auto px-6 h-14 flex items-center justify-between">
-
-        {/* Left: logo + nav */}
         <div className="flex items-center gap-7">
           <Link
             to="/"
@@ -263,106 +394,28 @@ export default function MegaNav({ enterWithPera }) {
           </Link>
 
           <nav className="hidden md:flex items-center gap-0.5">
-            {/* Product Dropdown */}
-            <div
-              className="relative"
-              onMouseEnter={() => keepOpen("Product")}
-              onMouseLeave={scheduleClose}
-            >
-              <button
-                type="button"
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                  openMenu === "Product"
-                    ? "bg-slate-100 text-slate-900"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                }`}
-              >
-                Product
-                <span
-                  className="material-symbols-outlined text-[14px] transition-transform duration-200"
-                  style={{ transform: openMenu === "Product" ? "rotate(180deg)" : "rotate(0deg)" }}
-                >
-                  expand_more
-                </span>
-              </button>
-              <DropdownPanel
-                data={menus.Product}
-                open={openMenu === "Product"}
+            {DESKTOP_MENU_ORDER.map((menuKey) => (
+              <NavDropdown
+                key={menuKey}
+                menuKey={menuKey}
+                data={menus[menuKey]}
+                openMenu={openMenu}
+                keepOpen={keepOpen}
+                scheduleClose={scheduleClose}
                 onNavigate={handleItemClick}
-                onMouseEnter={() => keepOpen("Product")}
-                onMouseLeave={scheduleClose}
                 isAuthenticated={isAuthenticated}
               />
-            </div>
+            ))}
 
-            {/* Use Cases Dropdown */}
-            <div
-              className="relative"
-              onMouseEnter={() => keepOpen("Use Cases")}
-              onMouseLeave={scheduleClose}
+            <Link
+              to="/docs/how-it-works"
+              className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
             >
-              <button
-                type="button"
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                  openMenu === "Use Cases"
-                    ? "bg-slate-100 text-slate-900"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                }`}
-              >
-                Use Cases
-                <span
-                  className="material-symbols-outlined text-[14px] transition-transform duration-200"
-                  style={{ transform: openMenu === "Use Cases" ? "rotate(180deg)" : "rotate(0deg)" }}
-                >
-                  expand_more
-                </span>
-              </button>
-              <DropdownPanel
-                data={menus["Use Cases"]}
-                open={openMenu === "Use Cases"}
-                onNavigate={handleItemClick}
-                onMouseEnter={() => keepOpen("Use Cases")}
-                onMouseLeave={scheduleClose}
-                isAuthenticated={isAuthenticated}
-              />
-            </div>
-
-
-            {/* Resources Dropdown */}
-            <div
-              className="relative"
-              onMouseEnter={() => keepOpen("Resources")}
-              onMouseLeave={scheduleClose}
-            >
-              <button
-                type="button"
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                  openMenu === "Resources"
-                    ? "bg-slate-100 text-slate-900"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                }`}
-              >
-                Resources
-                <span
-                  className="material-symbols-outlined text-[14px] transition-transform duration-200"
-                  style={{ transform: openMenu === "Resources" ? "rotate(180deg)" : "rotate(0deg)" }}
-                >
-                  expand_more
-                </span>
-              </button>
-              <DropdownPanel
-                data={menus.Resources}
-                open={openMenu === "Resources"}
-                onNavigate={handleItemClick}
-                onMouseEnter={() => keepOpen("Resources")}
-                onMouseLeave={scheduleClose}
-                isAuthenticated={isAuthenticated}
-              />
-            </div>
+              How it works
+            </Link>
           </nav>
         </div>
 
-        {/* Right: wallet + profile + hamburger */}
         <div className="flex items-center gap-3">
           {isAuthenticated && user?.walletAddress && (
             <UserLiveWalletBar walletAddress={user.walletAddress} />
@@ -380,7 +433,6 @@ export default function MegaNav({ enterWithPera }) {
             </button>
           )}
 
-          {/* Hamburger button — mobile only */}
           <button
             type="button"
             onClick={() => setMobileOpen((v) => !v)}
@@ -394,40 +446,40 @@ export default function MegaNav({ enterWithPera }) {
         </div>
       </div>
 
-      {/* ─── Mobile slide-out menu ─── */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 top-14 z-40 bg-white overflow-y-auto animate-in slide-in-from-top-2">
           <nav className="px-6 py-6 space-y-1">
-            {Object.entries(menus).map(([key, data]) => (
-              <div key={key} className="mb-4">
-                <p className="text-[10px] font-bold tracking-[0.12em] text-slate-400 uppercase mb-2">
-                  {key}
-                </p>
-                {data.sections.map((sec) =>
-                  sec.items.map((item) => (
-                    <button
-                      key={item.label}
-                      type="button"
-                      onClick={() => handleItemClick(item)}
-                      className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-slate-50 transition-colors text-left"
-                    >
-                      <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex-shrink-0">
-                        <span className="material-symbols-outlined text-[16px]">{item.icon}</span>
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-semibold text-slate-800">{item.label}</span>
-                        <p className="text-xs text-slate-400 truncate">{item.sub}</p>
-                      </div>
-                      {item.badge && (
-                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-indigo-500 text-white uppercase">
-                          {item.badge}
+            {DESKTOP_MENU_ORDER.map((key) => {
+              const data = menus[key];
+              return (
+                <div key={key} className="mb-4">
+                  <p className="text-[10px] font-bold tracking-[0.12em] text-slate-400 uppercase mb-2">{key}</p>
+                  {data.sections.map((sec) =>
+                    sec.items.map((item) => (
+                      <button
+                        key={`${key}-${item.label}`}
+                        type="button"
+                        onClick={() => handleItemClick(item)}
+                        className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-slate-50 transition-colors text-left"
+                      >
+                        <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex-shrink-0">
+                          <span className="material-symbols-outlined text-[16px]">{item.icon}</span>
                         </span>
-                      )}
-                    </button>
-                  ))
-                )}
-              </div>
-            ))}
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-slate-800">{item.label}</span>
+                          <p className="text-xs text-slate-400 truncate">{item.sub}</p>
+                        </div>
+                        {item.badge && (
+                          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-indigo-500 text-white uppercase">
+                            {item.badge}
+                          </span>
+                        )}
+                      </button>
+                    ))
+                  )}
+                </div>
+              );
+            })}
 
             <Link
               to="/docs/how-it-works"
@@ -437,7 +489,7 @@ export default function MegaNav({ enterWithPera }) {
               <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex-shrink-0">
                 <span className="material-symbols-outlined text-[16px]">info</span>
               </span>
-              <span className="text-sm font-semibold text-slate-800">How It Works</span>
+              <span className="text-sm font-semibold text-slate-800">How it works</span>
             </Link>
 
             {!isAuthenticated && (
@@ -458,4 +510,3 @@ export default function MegaNav({ enterWithPera }) {
     </header>
   );
 }
-

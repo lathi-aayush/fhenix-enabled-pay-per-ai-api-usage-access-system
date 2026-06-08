@@ -19,8 +19,8 @@ export default function Studio() {
     <div className="antialiased min-h-screen bg-[#f9f9f9]">
       <header className="bg-white fixed top-0 z-50 w-full border-b border-slate-100 h-16 px-6 flex justify-between items-center font-body text-sm">
         <Link to="/" className="flex items-center gap-2 text-xl font-bold tracking-tight font-headline text-slate-900">
-          <img src={logo} alt="Sentinel Logo" className="w-8 h-8 rounded-lg object-contain bg-white p-0.5 border border-slate-200" />
-          <span>Sentinel</span>
+          <img src={logo} alt="Sentinal Logo" className="w-8 h-8 rounded-lg object-contain bg-white p-0.5 border border-slate-200" />
+          <span>Sentinal</span>
         </Link>
         <div className="flex items-center gap-4">
           {user?.walletAddress && <UserLiveWalletBar walletAddress={user.walletAddress} />}

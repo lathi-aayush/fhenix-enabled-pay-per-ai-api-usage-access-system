@@ -2,6 +2,8 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/client.js";
+import { useAuth } from "../../context/AuthContext.jsx";
+import GuestConnectBanner from "../../components/GuestConnectBanner.jsx";
 
 function statusBadge(status) {
   const map = {
@@ -14,9 +16,11 @@ function statusBadge(status) {
 }
 
 export default function Published() {
+  const { user, isAuthenticated } = useAuth();
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["studio-published"],
     queryFn: async () => (await api.get("/api/studio/published")).data,
+    enabled: Boolean(user),
   });
   const posts = data?.posts ?? [];
 
@@ -26,8 +30,11 @@ export default function Published() {
         <div>
           <h1 className="font-headline text-2xl font-semibold text-primary mb-2">Published</h1>
           <p className="text-sm text-on-surface-variant">
-            Posts live on Sentinel Studio and connected platforms.
+            Posts live on Sentinal Studio and connected platforms.
           </p>
+          {!isAuthenticated && (
+            <GuestConnectBanner message="Connect Pera Wallet to view published posts." className="mt-4" />
+          )}
         </div>
         <button
           type="button"
@@ -64,7 +71,7 @@ export default function Published() {
                 {p.publishedPlatforms.map((pp, i) => (
                   <div key={i} className="text-xs text-on-surface-variant flex flex-wrap items-center gap-2">
                     <span className="font-semibold text-slate-600 min-w-[100px]">
-                      {pp.platform === "sentinel-studio" ? "Sentinel Studio" : pp.platform}
+                      {pp.platform === "sentinel-studio" ? "Sentinal Studio" : pp.platform}
                     </span>
                     {pp.platform === "sentinel-studio" ? (
                       <Link
@@ -130,6 +137,7 @@ export default function Published() {
           </Link>
         </div>
       )}
+
     </div>
   );
 }

@@ -296,7 +296,7 @@ router.post("/use/:serviceId", x402RateLimit, async (req, res) => {
           })
         ).toString("base64")
       );
-      res.flushHeaders();
+      res.flushHeaders?.();
       const streamRes = await forwardChatCompletionStream({
         provider: service.aiProvider,
         apiKey: providerKey,

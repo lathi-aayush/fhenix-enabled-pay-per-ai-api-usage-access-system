@@ -235,7 +235,7 @@ export async function sendBurnerPayment({ to, amountMicroAlgos, noteStr, algodSe
     sender: burner.addr,
     receiver: to,
     amount: Math.max(0, amountMicroAlgos),
-    note: new TextEncoder().encode(noteStr || "Sentinel workflow"),
+    note: new TextEncoder().encode(noteStr || "Sentinal workflow"),
     suggestedParams: params,
   });
   const signed = txn.signTxn(burner.sk);

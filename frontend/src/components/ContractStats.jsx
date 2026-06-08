@@ -135,7 +135,7 @@ export default function ContractStats() {
           Live Platform Metrics
         </h2>
         <p className="text-sm text-slate-500 max-w-xl mx-auto leading-relaxed">
-          Real usage from Sentinel and balances read directly from the Algorand blockchain.
+          Real usage from Sentinal and balances read directly from the Algorand blockchain.
         </p>
         {data?.network && (
           <span className="inline-flex items-center gap-1.5 mt-2 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/50 text-emerald-700">
@@ -266,7 +266,7 @@ export default function ContractStats() {
                   )}
                 </div>
                 <p className="text-[10px] text-slate-400 mt-3 border-t border-slate-100/50 pt-2 leading-relaxed">
-                  Global counters from deployed Sentinel smart contract
+                  Global counters from deployed Sentinal smart contract
                 </p>
               </>
             ) : (

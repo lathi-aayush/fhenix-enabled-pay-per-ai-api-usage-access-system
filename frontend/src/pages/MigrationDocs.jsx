@@ -39,21 +39,21 @@ export default function MigrationDocs() {
     <div className="flex h-full">
       <div className="flex-1 max-w-4xl px-8 py-10 lg:px-12 mx-auto min-h-screen pb-32">
         <div className="text-[12px] text-slate-400 font-medium mb-3 flex items-center gap-1.5">
-          <span>Sentinel Protocol</span>
+          <span>Sentinal Protocol</span>
           <span className="material-symbols-outlined text-[10px]">chevron_right</span>
           <span className="text-slate-600 font-semibold">Migration</span>
         </div>
 
         <h1 className="text-3xl font-bold text-slate-900 mb-6 tracking-tight">Migration Guide</h1>
         <p className="text-[15px] text-slate-600 mb-8 leading-relaxed">
-          Follow this guide to migrate your existing agents and creator services from Sentinel v1.0 to the optimized v2.0 protocol on the Algorand blockchain.
+          Follow this guide to migrate your existing agents and creator services from Sentinal v1.0 to the optimized v2.0 protocol on the Algorand blockchain.
         </p>
 
         <div className="space-y-12 text-slate-800">
           <section>
             <h2 id="overview" className="text-2xl font-bold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">Overview of v2.0 Changes</h2>
             <p className="text-[14px] text-slate-600 mb-4 leading-relaxed">
-              Sentinel v2.0 introduces deep performance gains and security upgrades:
+              Sentinal v2.0 introduces deep performance gains and security upgrades:
             </p>
             <ul className="space-y-3 text-[14px] text-slate-600 leading-relaxed list-disc pl-5">
               <li><strong>Gas Optimizations:</strong> Smart contract call fees have been reduced by over 30% via state grouping.</li>

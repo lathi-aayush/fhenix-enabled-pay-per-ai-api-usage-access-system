@@ -443,7 +443,7 @@ export default function SdkDemo() {
               </p>
               <div className="flex flex-wrap justify-center gap-3">
                 <Link
-                  to="/dashboard/browse"
+                  to="/marketplace/browse"
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-indigo-700 rounded-full text-sm font-semibold hover:bg-indigo-50 transition-colors shadow-md"
                 >
                   <span className="material-symbols-outlined text-[16px]">storefront</span>

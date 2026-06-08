@@ -533,7 +533,7 @@ export default function CreatorDashboard() {
                   <div className="bg-white/70 backdrop-blur-md border border-slate-200/80 rounded-2xl p-5 mb-8 shadow-sm">
                     <h2 className="font-headline text-lg font-bold text-slate-900 mb-1">Webhooks Configuration</h2>
                     <p className="text-xs text-slate-500 leading-relaxed">
-                      Sentinel can send HTTP POST notifications to your server whenever a customer completes a paid API call.
+                      Sentinal can send HTTP POST notifications to your server whenever a customer completes a paid API call.
                       Verify requests with the <span className="font-mono text-[10px] bg-slate-100 border border-slate-200/50 px-1 rounded font-bold text-indigo-600">X-Sentinel-Signature</span> HMAC SHA256 header.
                     </p>
                   </div>
@@ -706,7 +706,7 @@ export default function CreatorDashboard() {
                   <div className="bg-white/70 backdrop-blur-md border border-slate-200/80 rounded-2xl p-5 mb-8 shadow-sm">
                     <h2 className="font-headline text-lg font-bold text-slate-900 mb-1">Request withdrawal</h2>
                     <p className="text-xs text-slate-500 mb-4">
-                      Payouts are sent from the Sentinel TestNet treasury to:{" "}
+                      Payouts are sent from the Sentinal TestNet treasury to:{" "}
                       <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200/40">{user?.walletAddress?.slice(0, 12)}…</span>
                     </p>
                     <form onSubmit={submitWithdrawal} className="flex flex-col sm:flex-row gap-3 sm:items-end">

@@ -39,12 +39,12 @@ export default function CliDocs() {
     <div className="flex h-full">
       <div className="flex-1 max-w-4xl px-8 py-10 lg:px-12 mx-auto min-h-screen pb-32">
         <div className="text-[12px] text-slate-400 font-medium mb-3 flex items-center gap-1.5">
-          <span>Sentinel Protocol</span>
+          <span>Sentinal Protocol</span>
           <span className="material-symbols-outlined text-[10px]">chevron_right</span>
           <span className="text-slate-600 font-semibold">CLI Tool</span>
         </div>
 
-        <h1 className="text-3xl font-bold text-slate-900 mb-6 tracking-tight">Sentinel Command Line Interface (CLI)</h1>
+        <h1 className="text-3xl font-bold text-slate-900 mb-6 tracking-tight">Sentinal Command Line Interface (CLI)</h1>
         <p className="text-[15px] text-slate-600 mb-8 leading-relaxed">
           Automate billing smart contract deployments, check wallet balances, and monitor machine-payable transaction feeds directly from your local terminal.
         </p>

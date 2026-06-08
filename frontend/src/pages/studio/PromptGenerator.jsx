@@ -6,11 +6,17 @@ import PromptInput from "../../components/prompt-generator/PromptInput.jsx";
 import PromptAnalyzer from "../../components/prompt-generator/PromptAnalyzer.jsx";
 import { PromptOutputWithToolbar } from "../../components/prompt-generator/PromptOutput.jsx";
 import { usePromptGenerator } from "../../components/prompt-generator/usePromptGenerator.js";
+import { useAuth } from "../../context/AuthContext.jsx";
+import { useWalletAction } from "../../hooks/useWalletAction.js";
+import GuestConnectBanner from "../../components/GuestConnectBanner.jsx";
 
 export default function PromptGenerator() {
+  const { user, isAuthenticated } = useAuth();
+  const { runWithWallet } = useWalletAction();
   const { data: usage } = useQuery({
     queryKey: ["studio-usage"],
     queryFn: async () => (await api.get("/api/studio/usage")).data,
+    enabled: Boolean(user),
   });
   const promptLimit = usage?.monthlyPromptLimit;
   const promptsUsed = usage?.monthlyPromptsUsed ?? 0;
@@ -49,6 +55,10 @@ export default function PromptGenerator() {
         </div>
       </header>
 
+      {!isAuthenticated && (
+        <GuestConnectBanner message="Connect Pera Wallet to generate and save prompts." className="mb-6" />
+      )}
+
       {atCap && (
         <div className="mb-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           You&apos;ve reached this month&apos;s Prompt Generator limit on the {usage?.tier || "free"} plan.{" "}
@@ -68,8 +78,8 @@ export default function PromptGenerator() {
           setEnhanceEnabled={pg.setEnhanceEnabled}
           existingPrompt={pg.existingPrompt}
           setExistingPrompt={pg.setExistingPrompt}
-          onGenerate={pg.runGenerate}
-          onEnhance={pg.runEnhance}
+          onGenerate={() => runWithWallet(() => pg.runGenerate())}
+          onEnhance={() => runWithWallet(() => pg.runEnhance())}
           loading={pg.loading}
           atCap={atCap}
         />

@@ -43,11 +43,11 @@ export default function MarketplaceCard({ s, compact = false }) {
     <div
       role="button"
       tabIndex={0}
-      onClick={() => navigate(`/dashboard/services/${s._id}`)}
+      onClick={() => navigate(`/marketplace/services/${s._id}`)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          navigate(`/dashboard/services/${s._id}`);
+          navigate(`/marketplace/services/${s._id}`);
         }
       }}
       className="block bg-white border border-surface-variant rounded-md p-6 hover:border-secondary transition-colors editorial-shadow h-full cursor-pointer text-left"
@@ -72,7 +72,7 @@ export default function MarketplaceCard({ s, compact = false }) {
         <p className="mt-2 text-xs text-on-surface-variant">
           Creator:{" "}
           <Link
-            to={`/dashboard/creators/${encodeURIComponent(s.creatorWallet)}`}
+            to={`/marketplace/creators/${encodeURIComponent(s.creatorWallet)}`}
             onClick={(e) => e.stopPropagation()}
             className="text-secondary hover:underline font-medium"
           >

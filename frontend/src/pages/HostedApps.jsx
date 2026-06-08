@@ -4,13 +4,13 @@ import ComingSoon from "../components/ComingSoon.jsx";
 const HOSTED_APPS = [
   {
     id: "image",
-    title: "Sentinel Image Studio",
-    description: "Generate images using Stable Diffusion or DALL-E models using your Sentinel keys.",
+    title: "Sentinal Image Studio",
+    description: "Generate images using Stable Diffusion or DALL-E models using your Sentinal keys.",
     icon: "image",
   },
   {
     id: "coder",
-    title: "Sentinel Coder",
+    title: "Sentinal Coder",
     description: "An AI coding assistant web UI optimized for coding tasks and code generation.",
     icon: "code",
   },
@@ -32,7 +32,7 @@ export default function HostedApps() {
         <div className="relative z-10">
           <h1 className="font-headline text-3xl font-semibold mb-2 tracking-tight">Apps</h1>
           <p className="text-slate-300 max-w-lg">
-            Discover the SentinelAI app ecosystem. Hosted apps are coming soon.
+            Discover the SentinalAI app ecosystem. Hosted apps are coming soon.
           </p>
         </div>
       </div>

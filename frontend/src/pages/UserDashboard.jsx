@@ -98,7 +98,7 @@ export default function UserDashboard() {
   const subscriptions = gw.subscriptions || gwSummary.subscriptions || [];
 
   return (
-    <div className="max-w-7xl">
+    <div className="pt-4 pb-8 w-full">
       <h1 className="font-headline text-2xl font-semibold text-primary mb-2">Marketplace Home</h1>
       <p className="text-sm text-on-surface-variant mb-6">
         API economy and infrastructure overview for developer workflows.
@@ -144,7 +144,7 @@ export default function UserDashboard() {
           <section className="bg-white border border-surface-variant rounded-md p-5">
             <h2 className="font-semibold text-primary mb-4">Quick Actions</h2>
             <div className="grid gap-2 text-sm">
-              <Link to="/dashboard/browse" className="border border-outline-variant rounded-md px-3 py-2 hover:bg-slate-50 transition-colors">
+              <Link to="/marketplace/browse" className="border border-outline-variant rounded-md px-3 py-2 hover:bg-slate-50 transition-colors">
                 Browse APIs
               </Link>
               <Link to="/dashboard/creators" className="border border-outline-variant rounded-md px-3 py-2 hover:bg-slate-50 transition-colors">
@@ -355,7 +355,7 @@ export default function UserDashboard() {
             <h2 className="font-semibold text-primary">Agent Context JSON</h2>
             <p className="text-xs text-on-surface-variant mt-1 max-w-xl">
               Paste this JSON into any AI assistant (Claude, ChatGPT, Gemini, etc.) to let it
-              browse the live Sentinel API catalog and recommend the best service for your use-case.
+              browse the live Sentinal API catalog and recommend the best service for your use-case.
               The file updates automatically whenever APIs are added or changed.
             </p>
           </div>
@@ -421,7 +421,7 @@ export default function UserDashboard() {
         <p className="text-xs text-on-surface-variant mt-2">
           <span className="font-medium">Tip:</span> Say to your AI:{" "}
           <span className="italic text-slate-600">
-            "Here is the Sentinel marketplace JSON. Which service should I use for [your task]?"
+            "Here is the Sentinal marketplace JSON. Which service should I use for [your task]?"
           </span>
         </p>
       </section>

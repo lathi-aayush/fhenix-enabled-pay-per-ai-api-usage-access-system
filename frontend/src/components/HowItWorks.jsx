@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api/client.js";
 
 /* ── tiny hook: fires once when element enters viewport ── */
@@ -94,6 +93,7 @@ const marketplaceSteps = [
     desc: "Discover hundreds of AI APIs — image generation, NLP, speech, and more — published by verified creators.",
     pill: "Step 1",
     pillColor: "bg-[#031634] text-white",
+    link: "/marketplace/browse",
   },
   {
     icon: "account_balance_wallet",
@@ -104,6 +104,8 @@ const marketplaceSteps = [
     desc: "Link your Algorand Pera Wallet in one click. No credit card. No subscription. Just ALGO.",
     pill: "Step 2",
     pillColor: "bg-emerald-600 text-white",
+    videoEmbed: "https://www.youtube.com/embed/m720vHR8g1U?si=SmBaluRmj19-_yO2&start=57",
+    videoUrl: "https://youtu.be/m720vHR8g1U?si=-n0sLN5b0sqMuLBk&t=57",
   },
   {
     icon: "bolt",
@@ -170,37 +172,128 @@ function FlowArrow({ visible, delay }) {
   );
 }
 
+const VIDEO_HOVER_MIN_MS = 2000;
+
 /* ── Marketplace card ── */
 function MarketplaceCard({ step, index, visible }) {
+  const navigate = useNavigate();
+  const [hovered, setHovered] = useState(false);
+  const hoverStartedAt = useRef(null);
+  const hideTimer = useRef(null);
   const delay = 0.1 + index * 0.15;
+  const hasVideo = Boolean(step.videoEmbed);
+  const hasLink = Boolean(step.link);
+  const isClickable = hasVideo || hasLink;
+
+  useEffect(() => () => {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+  }, []);
+
+  function showVideoPopover() {
+    if (!hasVideo) return;
+    if (hideTimer.current) {
+      clearTimeout(hideTimer.current);
+      hideTimer.current = null;
+    }
+    if (!hoverStartedAt.current) hoverStartedAt.current = Date.now();
+    setHovered(true);
+  }
+
+  function hideVideoPopover() {
+    if (!hasVideo) return;
+    const elapsed = Date.now() - (hoverStartedAt.current || 0);
+    const remaining = Math.max(0, VIDEO_HOVER_MIN_MS - elapsed);
+    hideTimer.current = setTimeout(() => {
+      setHovered(false);
+      hoverStartedAt.current = null;
+      hideTimer.current = null;
+    }, remaining);
+  }
+
+  function openVideo() {
+    if (step.videoUrl) window.open(step.videoUrl, "_blank", "noopener,noreferrer");
+  }
+
+  function handleClick() {
+    if (hasVideo) openVideo();
+    else if (hasLink) navigate(step.link);
+  }
+
   return (
     <div
+      className="relative flex-1 min-w-[200px]"
+      onMouseEnter={showVideoPopover}
+      onMouseLeave={hideVideoPopover}
+      onClick={isClickable ? handleClick : undefined}
+      onKeyDown={
+        isClickable
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleClick();
+              }
+            }
+          : undefined
+      }
+      role={isClickable ? "link" : undefined}
+      tabIndex={isClickable ? 0 : undefined}
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(32px)",
         transition: `opacity 0.55s ${delay}s ease, transform 0.55s ${delay}s ease`,
       }}
-      className={`flex-1 min-w-[200px] rounded-2xl bg-gradient-to-br ${step.bg} border ${step.border} p-5 flex flex-col gap-3 group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-default`}
     >
-      <div className="flex items-center justify-between">
-        <span
-          className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${step.pillColor}`}
-        >
-          {step.pill}
-        </span>
+      {hasVideo && (
         <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center"
-          style={{ background: `${step.color}15` }}
+          className={`absolute left-1/2 -translate-x-1/2 z-50 w-[min(300px,calc(100vw-2rem))] transition-all duration-300 top-[calc(100%+12px)] md:top-auto md:bottom-[calc(100%+12px)] ${
+            hovered
+              ? "opacity-100 translate-y-0 pointer-events-auto"
+              : "opacity-0 translate-y-2 pointer-events-none"
+          }`}
+          aria-hidden={!hovered}
+          onClick={(e) => e.stopPropagation()}
         >
-          <span className="material-symbols-outlined text-[20px]" style={{ color: step.color }}>
-            {step.icon}
-          </span>
+          <div className="rounded-2xl border-2 border-emerald-500 overflow-hidden shadow-2xl shadow-emerald-500/20 bg-white">
+            <div className="aspect-video w-full">
+              <iframe
+                className="w-full h-full"
+                src={step.videoEmbed}
+                title="Connect Pera Wallet demo"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            </div>
+          </div>
         </div>
+      )}
+
+      <div
+        className={`h-full rounded-2xl bg-gradient-to-br ${step.bg} border ${step.border} p-5 flex flex-col gap-3 group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 ${
+          isClickable ? "cursor-pointer" : "cursor-default"
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <span
+            className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${step.pillColor}`}
+          >
+            {step.pill}
+          </span>
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: `${step.color}15` }}
+          >
+            <span className="material-symbols-outlined text-[20px]" style={{ color: step.color }}>
+              {step.icon}
+            </span>
+          </div>
+        </div>
+        <h4 className="font-headline font-bold text-slate-900 text-[15px] leading-snug group-hover:text-opacity-80 transition-colors">
+          {step.title}
+        </h4>
+        <p className="text-[12px] text-slate-500 leading-relaxed">{step.desc}</p>
       </div>
-      <h4 className="font-headline font-bold text-slate-900 text-[15px] leading-snug group-hover:text-opacity-80 transition-colors">
-        {step.title}
-      </h4>
-      <p className="text-[12px] text-slate-500 leading-relaxed">{step.desc}</p>
     </div>
   );
 }
@@ -303,22 +396,7 @@ function LiveApiDemo({ visible }) {
 }
 
 /* ── Main export ── */
-export default function HowItWorks({ enterWithPera }) {
-  const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
-
-  function goMarketplace() {
-    if (isAuthenticated) navigate("/dashboard/home");
-    else if (enterWithPera) enterWithPera("user");
-    else navigate("/");
-  }
-
-  function goStudio() {
-    if (isAuthenticated) navigate("/studio");
-    else if (enterWithPera) enterWithPera("user", { redirect: "/studio" });
-    else navigate("/");
-  }
-
+export default function HowItWorks() {
   const liveStats = useLivePlatformStats();
 
   const [sectionRef, sectionVisible] = useInView(0.05);
@@ -351,7 +429,7 @@ export default function HowItWorks({ enterWithPera }) {
           </span>
         </h2>
         <p className="text-slate-500 text-base max-w-xl leading-relaxed">
-          SentinelAI combines a decentralized <strong className="text-slate-700">API Marketplace</strong> powered by Algorand payments with an AI-first <strong className="text-slate-700">Studio</strong> for content creators.
+          SentinalAI combines a decentralized <strong className="text-slate-700">API Marketplace</strong> powered by Algorand payments with an AI-first <strong className="text-slate-700">Studio</strong> for content creators.
         </p>
 
         {/* animated stats */}

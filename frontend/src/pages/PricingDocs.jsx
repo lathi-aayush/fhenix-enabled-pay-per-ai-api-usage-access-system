@@ -39,14 +39,14 @@ export default function PricingDocs() {
     <div className="flex h-full">
       <div className="flex-1 max-w-4xl px-8 py-10 lg:px-12 mx-auto min-h-screen pb-32">
         <div className="text-[12px] text-slate-400 font-medium mb-3 flex items-center gap-1.5">
-          <span>Sentinel Protocol</span>
+          <span>Sentinal Protocol</span>
           <span className="material-symbols-outlined text-[10px]">chevron_right</span>
           <span className="text-slate-600 font-semibold">Pricing & Micro-payments</span>
         </div>
 
         <h1 className="text-3xl font-bold text-slate-900 mb-6 tracking-tight">Pricing & Micro-payments</h1>
         <p className="text-[15px] text-slate-600 mb-8 leading-relaxed">
-          Sentinel bypasses traditional SaaS monthly subscriptions, billing minimums, and credit card setups by replacing them with decentralized Web3 cryptographic micro-payments.
+          Sentinal bypasses traditional SaaS monthly subscriptions, billing minimums, and credit card setups by replacing them with decentralized Web3 cryptographic micro-payments.
         </p>
 
         <div className="space-y-12 text-slate-800">
@@ -89,7 +89,7 @@ export default function PricingDocs() {
                 <span className="material-symbols-outlined text-emerald-500 text-2xl">account_balance_wallet</span>
                 <h4 className="font-semibold text-slate-900 text-[15px]">Self-Custody & Safety</h4>
                 <p className="text-[13px] text-slate-600 leading-relaxed">
-                  Sentinel does not custody user keys. Burner wallets live inside local browser memory, allowing seamless machine-to-machine payments while keeping main funds safe.
+                  Sentinal does not custody user keys. Burner wallets live inside local browser memory, allowing seamless machine-to-machine payments while keeping main funds safe.
                 </p>
               </div>
             </div>
