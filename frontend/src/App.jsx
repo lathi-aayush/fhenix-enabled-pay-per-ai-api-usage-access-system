@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from "react";
-import { Navigate, Route, Routes, useParams } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
 import Home from "./pages/Home.jsx";
 import UserMarketplace from "./pages/UserMarketplace.jsx";
@@ -57,6 +57,50 @@ const WorkflowBuilder = lazy(() => import("./pages/WorkflowBuilder.jsx"));
 const WorkflowTemplates = lazy(() => import("./pages/WorkflowTemplates.jsx"));
 const WorkflowHistory = lazy(() => import("./pages/WorkflowHistory.jsx"));
 
+/** Where signed-out users land when they hit a protected route (not the marketing homepage). */
+const GUEST_FALLBACK = "/marketplace/browse";
+
+function GuestFallback() {
+  const location = useLocation();
+  return (
+    <Navigate
+      to={GUEST_FALLBACK}
+      replace
+      state={{ from: `${location.pathname}${location.search}${location.hash}`, needsAuth: true }}
+    />
+  );
+}
+
+function AuthAwareRedirect({ authed, guest = GUEST_FALLBACK }) {
+  const { isAuthenticated } = useAuth();
+  return <Navigate to={isAuthenticated ? authed : guest} replace />;
+}
+
+function NotFound() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8 text-center bg-[#f9f9f9]">
+      <h1 className="font-headline text-xl font-semibold text-primary">Page not found</h1>
+      <p className="text-sm text-slate-500 max-w-md">
+        That link may be outdated. Try one of these destinations instead.
+      </p>
+      <div className="flex flex-wrap justify-center gap-3 text-sm font-semibold">
+        <Link to="/" className="text-secondary hover:underline">
+          Home
+        </Link>
+        <Link to="/marketplace/browse" className="text-secondary hover:underline">
+          Marketplace
+        </Link>
+        <Link to="/studio" className="text-secondary hover:underline">
+          AI Studio
+        </Link>
+        <Link to="/docs/how-it-works" className="text-secondary hover:underline">
+          Docs
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function StudioSuspense({ children }) {
   return (
     <Suspense
@@ -108,7 +152,7 @@ function Guard({ role, children }) {
     );
   }
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <GuestFallback />;
   }
   // A Creator is also a valid user who can browse the marketplace and use studio tools
   if (role === "user" && (user.role === "user" || user.role === "creator")) {
@@ -130,7 +174,7 @@ function ProfileGuard({ children }) {
     );
   }
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <GuestFallback />;
   }
   return children;
 }
@@ -177,7 +221,10 @@ export default function App() {
       />
 
       <Route path="/user/marketplace" element={<Navigate to="/marketplace/browse" replace />} />
-      <Route path="/user/dashboard" element={<Navigate to="/dashboard/home" replace />} />
+      <Route
+        path="/user/dashboard"
+        element={<AuthAwareRedirect authed="/dashboard/home" guest="/marketplace/browse" />}
+      />
       <Route path="/user/analytics" element={<Navigate to="/dashboard/usage" replace />} />
       <Route path="/user/transactions" element={<Navigate to="/billing/transactions" replace />} />
       <Route path="/user/apps" element={<Navigate to="/studio/apps" replace />} />
@@ -192,11 +239,28 @@ export default function App() {
         <Route path="services/:id" element={<ServiceDetailRoute />} />
       </Route>
 
-      <Route path="/marketplace/home" element={<Navigate to="/dashboard/home" replace />} />
+      <Route
+        path="/marketplace/home"
+        element={<AuthAwareRedirect authed="/dashboard/home" guest="/marketplace/browse" />}
+      />
       <Route path="/marketplace/featured" element={<Navigate to="/marketplace/browse" replace />} />
       <Route path="/marketplace/categories" element={<Navigate to="/marketplace/browse" replace />} />
-      <Route path="/marketplace/keys" element={<Navigate to="/dashboard/keys" replace />} />
-      <Route path="/marketplace/usage" element={<Navigate to="/dashboard/usage" replace />} />
+      <Route
+        path="/marketplace/keys"
+        element={<AuthAwareRedirect authed="/dashboard/keys" guest="/marketplace/browse" />}
+      />
+      <Route
+        path="/marketplace/usage"
+        element={<AuthAwareRedirect authed="/dashboard/usage" guest="/marketplace/browse" />}
+      />
+
+      {/* Public aliases — must be registered before the guarded /dashboard tree */}
+      <Route path="/dashboard/browse" element={<Navigate to="/marketplace/browse" replace />} />
+      <Route path="/dashboard/featured" element={<Navigate to="/marketplace/browse" replace />} />
+      <Route path="/dashboard/categories" element={<Navigate to="/marketplace/browse" replace />} />
+      <Route path="/dashboard/creators" element={<Navigate to="/marketplace/creators" replace />} />
+      <Route path="/dashboard/creators/:walletAddress" element={<RedirectMarketplaceCreator />} />
+      <Route path="/dashboard/gateway-marketplace" element={<Navigate to="/marketplace/gateway" replace />} />
 
       <Route
         path="/dashboard"
@@ -406,7 +470,7 @@ export default function App() {
         }
       />
       <Route path="/dev-dashboard" element={<DevDashboard />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

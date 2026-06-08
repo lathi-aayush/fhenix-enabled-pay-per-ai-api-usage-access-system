@@ -147,7 +147,7 @@ export default function UserDashboard() {
               <Link to="/marketplace/browse" className="border border-outline-variant rounded-md px-3 py-2 hover:bg-slate-50 transition-colors">
                 Browse APIs
               </Link>
-              <Link to="/dashboard/creators" className="border border-outline-variant rounded-md px-3 py-2 hover:bg-slate-50 transition-colors">
+              <Link to="/marketplace/creators" className="border border-outline-variant rounded-md px-3 py-2 hover:bg-slate-50 transition-colors">
                 View Creators
               </Link>
               <Link to="/docs/how-it-works" className="border border-outline-variant rounded-md px-3 py-2 hover:bg-slate-50 transition-colors">

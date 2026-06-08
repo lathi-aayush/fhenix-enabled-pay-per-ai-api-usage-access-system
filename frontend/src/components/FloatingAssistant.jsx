@@ -7,6 +7,7 @@ import {
   matchAssistantQuery,
 } from "../constants/assistantKnowledge.js";
 import { goToHomeSection } from "../utils/scrollToSection.js";
+import { navigateToRoute } from "../utils/navigateToRoute.js";
 
 const TOP_SUGGESTIONS = getTopSuggestions();
 
@@ -67,7 +68,7 @@ export default function FloatingAssistant() {
       return;
     }
     if (action.type === "route") {
-      navigate(action.target);
+      navigateToRoute(navigate, action.target);
       setOpen(false);
     }
   }

@@ -355,7 +355,11 @@ export default function MegaNav() {
 
     if (item.auth && !isAuthenticated) {
       const role = item.creatorOnly ? "creator" : "user";
-      connectWithPera({ role, redirect: item.path });
+      const guestSafe =
+        item.path.startsWith("/dashboard") || item.path.startsWith("/billing") || item.path.startsWith("/creator")
+          ? "/marketplace/browse"
+          : item.path;
+      connectWithPera({ role, redirect: guestSafe });
       return;
     }
 
@@ -367,7 +371,7 @@ export default function MegaNav() {
     if (isAuthenticated) {
       navigate("/dashboard/home");
     } else {
-      connectWithPera({ redirect: "/dashboard/home" });
+      connectWithPera({ redirect: "/marketplace/browse" });
     }
   };
 

@@ -6,7 +6,7 @@ export default function UserSidebar({ activeTab }) {
   const { user } = useAuth();
   const tabs = [
     { id: "home", path: "/dashboard/home", icon: "home", label: "Home" },
-    { id: "marketplace", path: "/dashboard/browse", icon: "storefront", label: "Marketplace" },
+    { id: "marketplace", path: "/marketplace/browse", icon: "storefront", label: "Marketplace" },
     { id: "studio", path: "/studio", icon: "widgets", label: "Studio" },
     { id: "analytics", path: "/dashboard/usage", icon: "insights", label: "Analytics" },
     { id: "billing", path: "/billing/transactions", icon: "receipt_long", label: "Billing" },
@@ -16,12 +16,12 @@ export default function UserSidebar({ activeTab }) {
     {
       title: "Marketplace",
       items: [
-        { label: "Browse APIs", path: "/dashboard/browse" },
+        { label: "Browse APIs", path: "/marketplace/browse" },
         { label: "My API Keys", path: "/dashboard/keys" },
-        { label: "Creators", path: "/dashboard/creators" },
+        { label: "Creators", path: "/marketplace/creators" },
         { label: "Usage", path: "/dashboard/usage" },
         { label: "Gateway Wallet", path: "/dashboard/gateway" },
-        { label: "API Marketplace", path: "/dashboard/gateway-marketplace" },
+        { label: "API Marketplace", path: "/marketplace/gateway" },
         { label: "Smart Contract Stats", path: "/dashboard/contract" },
         { label: "Transactions", path: "/billing/transactions" },
         { label: "x402 Docs", path: "/docs/x402" },

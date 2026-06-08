@@ -10,5 +10,5 @@ export function goToHomeSection(navigate, sectionId) {
     window.history.replaceState(null, "", `/#${id}`);
     return;
   }
-  navigate(`/#${id}`);
+  navigate({ pathname: "/", hash: `#${id}` });
 }
