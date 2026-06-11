@@ -9,6 +9,7 @@ import { Service } from "../models/Service.js";
 import { User } from "../models/User.js";
 import { getBalanceCents } from "./gatewayBalanceService.js";
 import { getDeveloperEarningsSummary } from "./gatewayPayoutService.js";
+import { canonicalWalletAddress } from "../utils/userWallet.js";
 import {
   consumerPeriodKeys,
   developerPeriodKeys,
@@ -73,7 +74,8 @@ export async function getConsumerDashboard(userId) {
   let legacyRecentLogs = [];
   try {
     const user = await User.findById(userId).select("walletAddress").lean();
-    const wallet = user?.walletAddress;
+    const rawWallet = user?.walletAddress;
+    const wallet = rawWallet ? canonicalWalletAddress(rawWallet) : null;
     if (wallet) {
       const [legacyAgg, legacyLogs] = await Promise.all([
         ApiUsageLog.aggregate([
@@ -251,7 +253,8 @@ export async function getDeveloperDashboard(userId) {
   let legacyTokensServed = 0;
   try {
     const user = await User.findById(userId).select("walletAddress").lean();
-    const wallet = user?.walletAddress;
+    const rawWallet = user?.walletAddress;
+    const wallet = rawWallet ? canonicalWalletAddress(rawWallet) : null;
     if (wallet) {
       legacyServices = await Service.find({ creatorWallet: wallet }).lean();
       legacyServices.forEach((s) => {

@@ -3,6 +3,9 @@ import mongoose from "mongoose";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { AccessToken } from "../models/AccessToken.js";
 import { ApiUsageLog } from "../models/ApiUsageLog.js";
+import { User } from "../models/User.js";
+import { ProxyApi } from "../models/ProxyApi.js";
+import { GatewaySubscription } from "../models/GatewaySubscription.js";
 import { fetchAccountBalanceMicroAlgos } from "../services/algorandService.js";
 import { canonicalWalletAddress } from "../utils/userWallet.js";
 
@@ -30,35 +33,110 @@ router.get("/algo-balance", requireAuth, requireRole("user", "creator"), async (
 
 router.get("/proxy-keys", requireAuth, requireRole("user", "creator"), async (req, res) => {
   try {
-    if (!req.user.walletAddress) {
-      return res.json([]);
+    const user = await User.findById(req.user.userId).select("walletAddress sentinelApiKey").lean();
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
     }
-    const userWallet = canonicalWalletAddress(req.user.walletAddress);
-    const tokens = await AccessToken.find({ userWallet })
-      .sort({ createdAt: -1 })
-      .populate(
-        "serviceId",
-        "title pricePerThousandTokens minimumChargeAlgo aiProvider modelName totalUses"
-      )
-      .lean();
-    const out = tokens.map((t) => ({
-      id: t._id,
-      keySuffix: t.key.slice(-8),
-      key: t.key,
-      createdAt: t.createdAt,
-      service: t.serviceId
-        ? {
-            id: t.serviceId._id,
-            title: t.serviceId.title,
-            pricePerThousandTokens: t.serviceId.pricePerThousandTokens,
-            minimumChargeAlgo: t.serviceId.minimumChargeAlgo,
-            aiProvider: t.serviceId.aiProvider,
-            modelName: t.serviceId.modelName,
-            totalUses: t.serviceId.totalUses,
+
+    const userId = user._id;
+    let consumerKeys = [];
+
+    if (user.walletAddress) {
+      const userWallet = canonicalWalletAddress(user.walletAddress);
+
+      const tokens = await AccessToken.find({
+        $or: [{ userId }, { userWallet, userId: { $exists: false } }, { userWallet, userId: null }],
+      })
+        .sort({ createdAt: -1 })
+        .populate(
+          "serviceId",
+          "title pricePerThousandTokens minimumChargeAlgo aiProvider modelName totalUses creatorWallet"
+        )
+        .lean();
+
+      consumerKeys = tokens
+        .filter((t) => {
+          if (t.userId && String(t.userId) !== String(userId)) return false;
+          try {
+            return canonicalWalletAddress(t.userWallet) === userWallet;
+          } catch {
+            return false;
           }
-        : null,
+        })
+        .map((t) => ({
+          id: t._id,
+          type: "consumer",
+          keySuffix: t.key.slice(-8),
+          key: t.key,
+          createdAt: t.createdAt,
+          userWallet: t.userWallet,
+          service: t.serviceId
+            ? {
+                id: t.serviceId._id,
+                title: t.serviceId.title,
+                pricePerThousandTokens: t.serviceId.pricePerThousandTokens,
+                minimumChargeAlgo: t.serviceId.minimumChargeAlgo,
+                aiProvider: t.serviceId.aiProvider,
+                modelName: t.serviceId.modelName,
+                totalUses: t.serviceId.totalUses,
+              }
+            : null,
+        }));
+    }
+
+    const [proxyApis, gatewaySubs] = await Promise.all([
+      ProxyApi.find({ developerId: userId, isActive: true })
+        .select("-authHeaderEncrypted")
+        .sort({ updatedAt: -1 })
+        .lean(),
+      GatewaySubscription.find({ consumerId: userId, isActive: true })
+        .populate("apiId", "name proxySlug pricePerUnit pricingModel")
+        .sort({ updatedAt: -1 })
+        .lean(),
+    ]);
+
+    const rate = Number(process.env.ALGO_USD_CENTS_PER_ALGO || 35);
+
+    const publishedEndpoints = proxyApis.map((api) => ({
+      id: api._id,
+      type: "published",
+      name: api.name,
+      proxySlug: api.proxySlug,
+      proxyUrl: `/proxy/${api.proxySlug}/chat/completions`,
+      useUrl: "/api/use",
+      aiProvider: api.aiProvider,
+      modelName: api.modelName,
+      pricingModel: api.pricingModel,
+      pricePerUnitAlgo: (api.pricePerUnit || 0) / rate,
+      callCount: api.callCount || 0,
+      legacyServiceId: api.legacyServiceId,
     }));
-    res.json(out);
+
+    const gatewaySubscriptions = gatewaySubs.map((sub) => ({
+      id: sub._id,
+      type: "gateway",
+      key: sub.developerIssuedKey,
+      apiName: sub.apiId?.name,
+      proxySlug: sub.apiId?.proxySlug,
+      proxyUrl: sub.apiId ? `/proxy/${sub.apiId.proxySlug}/chat/completions` : null,
+      pricePerUnitAlgo: (sub.apiId?.pricePerUnit || 0) / rate,
+      pricingModel: sub.apiId?.pricingModel,
+    }));
+
+    const gatewayMasterKey = user.sentinelApiKey
+      ? {
+          type: "gateway_master",
+          key: user.sentinelApiKey,
+          label: "Sentinel gateway master key",
+        }
+      : null;
+
+    res.json({
+      consumerKeys,
+      publishedEndpoints,
+      gatewaySubscriptions,
+      gatewayMasterKey,
+    });
   } catch (e) {
     console.error("[proxy-keys]", e);
     res.status(500).json({ error: "Could not load proxy keys" });

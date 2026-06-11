@@ -27,6 +27,12 @@ import { forwardChatCompletion } from "../services/aiProxy.js";
 import { decryptSecret } from "../utils/encrypt.js";
 import { canonicalWalletAddress } from "../utils/userWallet.js";
 import { submitProofOfIntelligence } from "../services/proofOfIntelligence.js";
+import {
+  buildPaymentRequirements,
+  send402Response,
+  parseXPaymentHeader,
+  verifyX402Payment,
+} from "../services/x402Middleware.js";
 
 const router = Router();
 
@@ -453,11 +459,261 @@ async function completeFlow(req, res) {
   });
 }
 
+async function x402ChallengeFlow(req, res, auth) {
+  const { service } = auth;
+  const creatorWallet = normalizeAlgoAddress(String(service.creatorWallet || "").trim());
+  if (!creatorWallet || !algosdk.isValidAddress(creatorWallet)) {
+    return res.status(500).json({ error: "Service has an invalid creator wallet" });
+  }
+
+  const chargeAlgo = Number(service.minimumChargeAlgo);
+  const expectedMicroAlgos = algoToMicroAlgos(chargeAlgo);
+  if (expectedMicroAlgos <= 0) {
+    return res.status(500).json({ error: "Invalid minimum charge for this service" });
+  }
+
+  const resource = `${req.protocol}://${req.get("host")}/api/use`;
+  const paymentRequirements = buildPaymentRequirements({
+    payTo: creatorWallet,
+    amountMicroAlgos: expectedMicroAlgos,
+    resource,
+    description: `SentinelAI: ${service.title} — pay-per-use via proxy API (${chargeAlgo} ALGO)`,
+  });
+  return send402Response(res, paymentRequirements);
+}
+
+async function x402CompleteFlow(req, res, auth) {
+  const { token, service, key } = auth;
+  const userWallet = canonicalWalletAddress(token.userWallet);
+  const creatorWallet = normalizeAlgoAddress(String(service.creatorWallet || "").trim());
+  if (!creatorWallet || !algosdk.isValidAddress(creatorWallet)) {
+    return res.status(500).json({ error: "Service has an invalid creator wallet" });
+  }
+
+  const aiBody = buildAiBody(req.body);
+  if (!aiBody) {
+    return res.status(400).json({
+      error: "Provide either messages (array) or prompt (string) for the AI request",
+    });
+  }
+
+  const paymentPayload = parseXPaymentHeader(req.headers["x-payment"]);
+  if (!paymentPayload) {
+    return res.status(400).json({ error: "Invalid or missing X-Payment header" });
+  }
+
+  const chargeAlgo = Number(service.minimumChargeAlgo);
+  const expectedMicroAlgos = algoToMicroAlgos(chargeAlgo);
+
+  const verification = await verifyX402Payment({
+    payload: paymentPayload,
+    expectedReceiver: creatorWallet,
+    expectedMicroAlgos,
+  });
+
+  if (!verification.valid) {
+    return res.status(402).json({
+      error: "x402 payment verification failed",
+      detail: verification.error,
+    });
+  }
+
+  const { txId, senderAddress: payerWallet } = verification;
+
+  const alreadyUsed = await ApiUsageLog.findOne({ paymentTxId: txId, success: true });
+  if (alreadyUsed) {
+    return res.status(409).json({
+      error: "This transaction has already been used",
+      detail: "Each on-chain payment unlocks exactly one API response.",
+    });
+  }
+
+  let providerKey;
+  try {
+    providerKey = decryptSecret(service.encryptedApiKey);
+  } catch (e) {
+    console.error("[use/x402] decryptSecret", e);
+    return res.status(500).json({ error: "Server configuration error" });
+  }
+
+  let aiResponse;
+  try {
+    aiResponse = await forwardChatCompletion({
+      provider: service.aiProvider,
+      apiKey: providerKey,
+      model: service.modelName,
+      body: aiBody,
+      customEndpointUrl: service.customEndpointUrl || "",
+    });
+    providerKey = null;
+  } catch (err) {
+    providerKey = null;
+    console.error("[use/x402] AI provider error:", err?.message || err);
+    try {
+      await ApiUsageLog.create({
+        userWallet,
+        serviceId: service._id,
+        accessTokenId: token._id,
+        developerWallet: creatorWallet,
+        amountAlgo: chargeAlgo,
+        aiProvider: service.aiProvider,
+        modelName: service.modelName,
+        paymentTxId: txId,
+        success: false,
+        x402Payment: true,
+        errorDetail: String(err?.message || err).slice(0, 500),
+      });
+    } catch (logErr) {
+      console.error("[use/x402] failed-call log error:", logErr);
+    }
+    const status = err.status && Number.isFinite(err.status) ? err.status : 502;
+    return res.status(status).json({
+      error: "Upstream AI provider error",
+      detail: err.message || String(err),
+    });
+  }
+
+  let usage = extractTokenUsage(service.aiProvider, aiResponse);
+  if (!usage) {
+    const est = estimateTokensFromOpenAiMessages(aiBody.messages);
+    usage = { promptTokens: est, completionTokens: 0, totalTokens: est };
+  }
+
+  const actualChargeAlgo = computeChargeAlgo(
+    usage.totalTokens,
+    Number(service.pricePerThousandTokens),
+    chargeAlgo
+  );
+
+  try {
+    service.totalUses = (service.totalUses || 0) + 1;
+    service.totalRevenue = Number(service.totalRevenue || 0) + chargeAlgo;
+    await service.save();
+
+    const logDoc = await ApiUsageLog.create({
+      userWallet,
+      serviceId: service._id,
+      accessTokenId: token._id,
+      developerWallet: creatorWallet,
+      amountAlgo: chargeAlgo,
+      aiProvider: service.aiProvider,
+      modelName: service.modelName,
+      paymentTxId: txId,
+      success: true,
+      x402Payment: true,
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.completionTokens,
+      totalTokens: usage.totalTokens,
+      chargeAlgo: actualChargeAlgo,
+      pricePerThousandTokens: Number(service.pricePerThousandTokens),
+    });
+
+    notifyCreatorPurchaseWebhooks({
+      creatorWallet,
+      usageLog: logDoc,
+      service,
+      x402Payment: true,
+    });
+
+    const promptSnap = extractPromptTextFromAiBody(aiBody);
+    const responseSnap = extractResponseTextFromAi(aiResponse);
+    const ts = logDoc.createdAt ? new Date(logDoc.createdAt) : new Date();
+    void (async () => {
+      try {
+        const proofTxId = await submitProofOfIntelligence({
+          promptText: promptSnap,
+          responseText: responseSnap,
+          userWallet,
+          serviceId: String(service._id),
+          timestamp: ts.toISOString(),
+        });
+        if (proofTxId) {
+          await ApiUsageLog.updateOne({ _id: logDoc._id }, { $set: { proofTxId } });
+        }
+      } catch (proofErr) {
+        console.error("[use/x402] proof-of-intelligence error:", proofErr?.message || proofErr);
+      }
+    })();
+
+    void (async () => {
+      try {
+        const rate = Number(process.env.ALGO_USD_CENTS_PER_ALGO || 35);
+        const costCents = Math.round(chargeAlgo * rate);
+        const consumer = await User.findOne({ walletAddress: userWallet }).select("_id").lean();
+        const developer = await User.findOne({ walletAddress: creatorWallet }).select("_id").lean();
+        const proxyApi = await ProxyApi.findOne({ legacyServiceId: service._id }).select("_id").lean();
+        await UsageRecord.create({
+          requestId: `x402-proxy-${txId}`,
+          consumerId: consumer?._id || null,
+          developerId: developer?._id || null,
+          apiId: proxyApi?._id || service._id,
+          subscriptionId: null,
+          apiKeyPrefix: key?.slice(0, 12) || null,
+          projectId: null,
+          timestamp: ts,
+          method: "POST",
+          endpoint: "/api/use",
+          requestStatus: "success",
+          httpStatus: 200,
+          responseTimeMs: null,
+          tokensPrompt: usage.promptTokens || null,
+          tokensCompletion: usage.completionTokens || null,
+          tokensTotal: usage.totalTokens || null,
+          costUnits: 1,
+          costCents,
+          billingStatus: "charged",
+          errorMessage: null,
+        });
+      } catch (e) {
+        if (e?.code !== 11000) {
+          console.warn("[use/x402] cross-link UsageRecord failed:", e?.message);
+        }
+      }
+    })();
+  } catch (logErr) {
+    if (logErr?.code === 11000) {
+      return res.status(409).json({ error: "This transaction has already been used" });
+    }
+    console.error("[use/x402] usage log error:", logErr);
+    return res.status(500).json({ error: "Could not finalize usage log" });
+  }
+
+  return res.json({
+    ...aiResponse,
+    sentinelReceipt: {
+      paymentProtocol: "x402",
+      paymentTxId: txId,
+      payerWallet,
+      chargeAlgo,
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.completionTokens,
+      totalTokens: usage.totalTokens,
+      pricePerThousandTokens: Number(service.pricePerThousandTokens),
+    },
+  });
+}
+
 /**
- * Without txId: run AI, return payment quote (response cached, not returned).
- * With txId + paymentRef: verify payment and return cached AI response + receipt.
+ * Without txId: quote (legacy) or x402 402 challenge.
+ * With X-Payment + x402Enabled: verify payment and return AI response.
+ * With txId + paymentRef: legacy complete flow.
  */
 router.post("/", useRateLimit, async (req, res) => {
+  const auth = await resolveAuth(req);
+  if (auth.error) {
+    return res.status(auth.error).json({ error: auth.message });
+  }
+
+  const { service } = auth;
+  const paymentPayload = parseXPaymentHeader(req.headers["x-payment"]);
+
+  if (service.x402Enabled) {
+    if (paymentPayload) {
+      return x402CompleteFlow(req, res, auth);
+    }
+    return x402ChallengeFlow(req, res, auth);
+  }
+
   const txId = req.body?.txId;
   if (typeof txId === "string" && txId.trim()) {
     return completeFlow(req, res);

@@ -174,6 +174,7 @@ router.post(
 
     const apiKey = `sk-sentinel-${crypto.randomBytes(32).toString("hex")}`;
     await AccessToken.create({
+      userId: req.user.userId,
       userWallet,
       serviceId: service._id,
       key: apiKey,

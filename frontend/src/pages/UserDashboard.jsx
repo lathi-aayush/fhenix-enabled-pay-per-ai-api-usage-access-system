@@ -1,49 +1,87 @@
 import React from "react";
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { testnetTxUrl } from "../utils/explorer.js";
 
 export default function UserDashboard() {
   const { user } = useAuth();
+  const { pathname } = useLocation();
+  const keysOnly = pathname === "/dashboard/keys";
   const [keys, setKeys] = useState([]);
+  const [publishedEndpoints, setPublishedEndpoints] = useState([]);
+  const [gatewayKeys, setGatewayKeys] = useState([]);
   const [usage, setUsage] = useState([]);
   const [loading, setLoading] = useState(true);
   const [agentJson, setAgentJson] = useState(null);
   const [agentCopied, setAgentCopied] = useState(false);
   const [gatewayData, setGatewayData] = useState(null);
   const [profileData, setProfileData] = useState(null);
+  const [txSummary, setTxSummary] = useState(null);
+  const [txItems, setTxItems] = useState([]);
+  const [walletBalanceAlgo, setWalletBalanceAlgo] = useState(null);
+  const [creatorStats, setCreatorStats] = useState(null);
+
+  const applyKeysPayload = useCallback((data) => {
+    if (Array.isArray(data)) {
+      setKeys(data);
+      setPublishedEndpoints([]);
+      setGatewayKeys([]);
+      return;
+    }
+    setKeys(data?.consumerKeys ?? []);
+    setPublishedEndpoints(data?.publishedEndpoints ?? []);
+    const gateway = [...(data?.gatewaySubscriptions ?? [])];
+    if (data?.gatewayMasterKey?.key) {
+      gateway.unshift(data.gatewayMasterKey);
+    }
+    setGatewayKeys(gateway);
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
+      if (keysOnly) {
+        const { data } = await api.get("/api/user/proxy-keys");
+        applyKeysPayload(data);
+        return;
+      }
+
       const requests = [
         api.get("/api/user/proxy-keys"),
         api.get("/api/user/usage?limit=50"),
         api.get("/api/services/agent-context"),
+        api.get("/api/user/transactions?limit=500").catch(() => ({
+          data: { items: [], summary: { totalCalls: 0, totalTokensConsumed: 0, totalAlgoSpent: 0 } },
+        })),
+        api.get("/api/user/algo-balance").catch(() => ({ data: null })),
+        api.get("/api/gateway/consumer/dashboard").catch(() => ({ data: null })),
+        api.get("/api/profile/summary").catch(() => ({ data: null })),
       ];
 
-      // Fetch gateway consumer dashboard (may fail if not set up)
-      requests.push(
-        api.get("/api/gateway/consumer/dashboard").catch(() => ({ data: null }))
-      );
-      // Fetch profile summary (may fail)
-      requests.push(
-        api.get("/api/profile/summary").catch(() => ({ data: null }))
-      );
+      if (user?.role === "creator") {
+        requests.push(api.get("/api/creator/stats").catch(() => ({ data: null })));
+      }
 
-      const [k, u, ctx, gw, profile] = await Promise.all(requests);
-      setKeys(k.data ?? []);
+      const results = await Promise.all(requests);
+      const [k, u, ctx, tx, bal, gw, profile, creator] = results;
+
+      applyKeysPayload(k.data);
       setUsage(u.data ?? []);
       setAgentJson(ctx.data ?? null);
+      setTxSummary(tx.data?.summary ?? null);
+      setTxItems(tx.data?.items ?? []);
+      setWalletBalanceAlgo(bal.data?.balanceAlgo ?? null);
       setGatewayData(gw.data ?? null);
       setProfileData(profile.data ?? null);
+      setCreatorStats(creator?.data ?? null);
     } catch {
       toast.error("Failed to load dashboard");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.role, keysOnly, applyKeysPayload]);
 
   const copyAgentJson = useCallback(async () => {
     if (!agentJson) return;
@@ -81,21 +119,188 @@ export default function UserDashboard() {
     return () => document.removeEventListener("visibilitychange", onVis);
   }, [refresh]);
 
-  // Unified stats from both gateway + legacy
   const gw = gatewayData || {};
   const profile = profileData || {};
   const gwSummary = profile.gatewaySummary || {};
   const userSummary = profile.userSummary || {};
+  const creatorSummary = creatorStats || profile.creatorSummary || {};
 
-  const totalApiCalls = (gw.totals?.apiCalls || 0) || (gwSummary.totalCalls || 0) + (userSummary.totalCalls || 0);
-  const totalTokens = (gw.totals?.tokens || 0) || (gwSummary.totalTokens || 0) + (userSummary.totalTokens || 0);
-  const balanceCents = gw.balanceCents ?? gwSummary.balanceCents ?? 0;
-  const balanceAlgo = gw.balanceAlgo ?? gwSummary.balanceAlgo ?? 0;
-  const rate = gw.rate || 35;
+  const consumerCalls = Math.max(
+    gw.totals?.apiCalls ?? 0,
+    (gwSummary.totalCalls ?? 0) + (userSummary.totalCalls ?? 0),
+    txSummary?.totalCalls ?? 0
+  );
+  const consumerTokens = Math.max(
+    gw.totals?.tokens ?? 0,
+    (gwSummary.totalTokens ?? 0) + (userSummary.totalTokens ?? 0),
+    txSummary?.totalTokensConsumed ?? 0
+  );
 
-  // Merge recent logs from gateway
-  const recentLogs = gw.recentLogs || gwSummary.recentLogs || [];
-  const subscriptions = gw.subscriptions || gwSummary.subscriptions || [];
+  const onChainBalance = walletBalanceAlgo;
+  const gatewayPrepaidCents = gw.balanceCents ?? gwSummary.balanceCents ?? 0;
+  const gatewayPrepaidAlgo = gw.balanceAlgo ?? gwSummary.balanceAlgo ?? 0;
+
+  const recentLogs = gw.recentLogs?.length
+    ? gw.recentLogs
+    : gwSummary.recentLogs?.length
+      ? gwSummary.recentLogs
+      : userSummary.recentCalls?.length
+        ? userSummary.recentCalls.map((row) => ({
+            id: row.id,
+            apiName: row.serviceTitle,
+            timestamp: row.createdAt,
+            costAlgo: row.amountAlgo,
+            tokensTotal: row.totalTokens,
+            requestStatus: row.success === false ? "failed" : "success",
+            source: "legacy",
+            paymentTxId: row.paymentTxId,
+          }))
+        : txItems.length
+          ? txItems.map((row) => ({
+              id: row.id,
+              apiName: row.serviceTitle,
+              timestamp: row.createdAt,
+              costAlgo: row.amountAlgo ?? row.chargeAlgo,
+              tokensTotal: row.totalTokens,
+              requestStatus: row.success === false ? "failed" : "success",
+              source: "legacy",
+              paymentTxId: row.paymentTxId,
+            }))
+          : (profile.creatorSummary?.recentSales || []).map((row) => ({
+              id: row.id,
+              apiName: row.serviceTitle,
+              timestamp: row.createdAt,
+              costAlgo: row.amountAlgo,
+              tokensTotal: row.totalTokens,
+              requestStatus: row.success === false ? "failed" : "success",
+              source: "creator",
+              paymentTxId: row.paymentTxId,
+            }));
+
+  const subscriptions = gw.subscriptions?.length
+    ? gw.subscriptions
+    : gwSummary.subscriptions || [];
+  const isCreator = user?.role === "creator";
+
+  const hasAnyKeys =
+    keys.length > 0 || publishedEndpoints.length > 0 || gatewayKeys.length > 0;
+
+  const keysPanel = (
+    <div className="space-y-6">
+      {publishedEndpoints.length > 0 && (
+        <section className="bg-white border border-surface-variant rounded-md p-5">
+          <h2 className="font-semibold text-primary mb-1">Published endpoints</h2>
+          <p className="text-sm text-on-surface-variant mb-4">
+            APIs you listed on the marketplace as a creator.
+          </p>
+          <div className="space-y-3">
+            {publishedEndpoints.map((row) => (
+              <div
+                key={row.id}
+                className="bg-white border border-surface-variant rounded-md p-4 text-sm flex flex-col gap-1"
+              >
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <p className="font-semibold">{row.name}</p>
+                  <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">
+                    Your listing
+                  </span>
+                </div>
+                <p className="text-on-surface-variant text-xs">
+                  {row.aiProvider} · {row.modelName || "model"} ·{" "}
+                  {Number(row.pricePerUnitAlgo ?? 0).toFixed(6)} ALGO · {row.callCount ?? 0} calls
+                </p>
+                <p className="font-mono text-xs break-all mt-2 text-primary">{row.proxyUrl}</p>
+                {row.legacyServiceId && (
+                  <Link
+                    to={`/marketplace/services/${row.legacyServiceId}`}
+                    className="text-xs text-secondary hover:underline mt-1 w-fit"
+                  >
+                    View marketplace listing →
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section id="keys" className="bg-white border border-surface-variant rounded-md p-5">
+        <h2 className="font-semibold text-primary mb-1">Proxy API keys</h2>
+        <p className="text-sm text-on-surface-variant mb-4">
+          Keys you generated to call marketplace services
+          {user?.walletAddress ? "" : " — connect a wallet to generate keys"}.
+        </p>
+        {loading ? (
+          <p className="text-sm text-on-surface-variant">Loading keys…</p>
+        ) : keys.length === 0 ? (
+          <p className="text-sm text-on-surface-variant">
+            No proxy keys yet. Open a service in the marketplace and generate one.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {keys.map((row) => (
+              <div
+                key={row.id}
+                className="bg-white border border-surface-variant rounded-md p-4 text-sm flex flex-col gap-1"
+              >
+                <p className="font-semibold">{row.service?.title ?? "Service"}</p>
+                <p className="text-on-surface-variant text-xs">
+                  {row.service?.aiProvider} · {row.service?.modelName} ·{" "}
+                  {Number(row.service?.pricePerThousandTokens ?? 0).toFixed(6)} ALGO/1k tok · min{" "}
+                  {Number(row.service?.minimumChargeAlgo ?? 0).toFixed(6)} ALGO
+                </p>
+                <p className="font-mono text-xs break-all mt-2">{row.key}</p>
+                {row.createdAt && (
+                  <p className="text-[10px] text-on-surface-variant mt-1">
+                    Created {new Date(row.createdAt).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {gatewayKeys.length > 0 && (
+        <section className="bg-white border border-surface-variant rounded-md p-5">
+          <h2 className="font-semibold text-primary mb-1">Gateway keys</h2>
+          <p className="text-sm text-on-surface-variant mb-4">Keys for the API gateway proxy.</p>
+          <div className="space-y-3">
+            {gatewayKeys.map((row, idx) => (
+              <div
+                key={row.id ?? `gw-${idx}`}
+                className="bg-white border border-surface-variant rounded-md p-4 text-sm flex flex-col gap-1"
+              >
+                <p className="font-semibold">{row.apiName || row.label || "Gateway key"}</p>
+                {row.proxyUrl && (
+                  <p className="font-mono text-xs break-all text-on-surface-variant">{row.proxyUrl}</p>
+                )}
+                <p className="font-mono text-xs break-all mt-2">{row.key}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {!loading && !hasAnyKeys && (
+        <p className="text-sm text-on-surface-variant text-center py-4">
+          No keys or endpoints linked to your account yet.
+        </p>
+      )}
+    </div>
+  );
+
+  if (keysOnly) {
+    return (
+      <div className="pt-4 pb-8 w-full">
+        <h1 className="font-headline text-2xl font-semibold text-primary mb-2">My Keys</h1>
+        <p className="text-sm text-on-surface-variant mb-6">
+          Your marketplace proxy keys and published API endpoints.
+        </p>
+        {keysPanel}
+      </div>
+    );
+  }
 
   return (
     <div className="pt-4 pb-8 w-full">
@@ -110,88 +315,97 @@ export default function UserDashboard() {
           <p className="text-sm mt-1 font-semibold text-primary">{user?.displayName || "User"}</p>
         </div>
         <div className="bg-white border border-surface-variant rounded-md p-4">
-          <p className="text-xs text-on-surface-variant uppercase tracking-wide">Gateway Balance</p>
+          <p className="text-xs text-on-surface-variant uppercase tracking-wide">Wallet Balance</p>
           <p className="text-sm mt-1 font-mono text-primary">
-            {balanceCents > 0 ? `${balanceAlgo.toFixed(4)} ALGO` : user?.walletAddress ? "0 ALGO" : "No wallet"}
+            {!user?.walletAddress
+              ? "No wallet"
+              : onChainBalance != null
+                ? `${onChainBalance.toFixed(4)} ALGO`
+                : loading
+                  ? "…"
+                  : "—"}
           </p>
-          {balanceCents > 0 && (
-            <p className="text-xs text-on-surface-variant font-mono mt-0.5">${(balanceCents / 100).toFixed(2)}</p>
+          {gatewayPrepaidCents > 0 && (
+            <p className="text-xs text-on-surface-variant font-mono mt-0.5">
+              + {gatewayPrepaidAlgo.toFixed(4)} ALGO prepaid
+            </p>
           )}
         </div>
         <div className="bg-white border border-surface-variant rounded-md p-4">
-          <p className="text-xs text-on-surface-variant uppercase tracking-wide">Total API Calls</p>
-          <p className="text-2xl font-headline font-semibold text-primary mt-1">{totalApiCalls}</p>
+          <p className="text-xs text-on-surface-variant uppercase tracking-wide">Your API Calls</p>
+          <p className="text-2xl font-headline font-semibold text-primary mt-1">{consumerCalls}</p>
           {gw.totals?.legacyCalls > 0 && (
             <p className="text-xs text-on-surface-variant mt-0.5">
               {gw.totals.gatewayCalls} gateway · {gw.totals.legacyCalls} legacy
             </p>
           )}
+          {isCreator && (creatorSummary.totalUses ?? creatorStats?.totalUses) > 0 && (
+            <p className="text-xs text-on-surface-variant mt-0.5">
+              {creatorSummary.totalUses ?? creatorStats?.totalUses} on your endpoints
+            </p>
+          )}
         </div>
         <div className="bg-white border border-surface-variant rounded-md p-4">
           <p className="text-xs text-on-surface-variant uppercase tracking-wide">Tokens Used</p>
-          <p className="text-2xl font-headline font-semibold text-primary mt-1">{totalTokens.toLocaleString()}</p>
+          <p className="text-2xl font-headline font-semibold text-primary mt-1">{consumerTokens.toLocaleString()}</p>
+          {isCreator && (creatorSummary.totalTokensServed ?? creatorStats?.totalTokensServed) > 0 && (
+            <p className="text-xs text-on-surface-variant mt-0.5">
+              {(creatorSummary.totalTokensServed ?? creatorStats?.totalTokensServed).toLocaleString()} served on your APIs
+            </p>
+          )}
         </div>
         <div className="bg-white border border-surface-variant rounded-md p-4">
-          <p className="text-xs text-on-surface-variant uppercase tracking-wide">Active Subscriptions</p>
-          <p className="text-2xl font-headline font-semibold text-primary mt-1">{subscriptions.length}</p>
+          <p className="text-xs text-on-surface-variant uppercase tracking-wide">
+            {isCreator ? "Creator Revenue" : "Active Subscriptions"}
+          </p>
+          {isCreator ? (
+            <>
+              <p className="text-2xl font-headline font-semibold text-primary mt-1 font-mono">
+                {(creatorSummary.totalRevenue ?? creatorStats?.totalRevenue ?? 0).toFixed(4)} ALGO
+              </p>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                {creatorSummary.serviceCount ?? creatorStats?.serviceCount ?? 0} published endpoint
+                {(creatorSummary.serviceCount ?? creatorStats?.serviceCount ?? 0) === 1 ? "" : "s"}
+              </p>
+            </>
+          ) : (
+            <p className="text-2xl font-headline font-semibold text-primary mt-1">{subscriptions.length}</p>
+          )}
         </div>
       </section>
 
       {loading ? (
         <p className="text-on-surface-variant">Loading…</p>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-3">
-          <section className="bg-white border border-surface-variant rounded-md p-5">
-            <h2 className="font-semibold text-primary mb-4">Quick Actions</h2>
-            <div className="grid gap-2 text-sm">
-              <Link to="/marketplace/browse" className="border border-outline-variant rounded-md px-3 py-2 hover:bg-slate-50 transition-colors">
-                Browse APIs
-              </Link>
-              <Link to="/marketplace/creators" className="border border-outline-variant rounded-md px-3 py-2 hover:bg-slate-50 transition-colors">
-                View Creators
-              </Link>
-              <Link to="/docs/how-it-works" className="border border-outline-variant rounded-md px-3 py-2 hover:bg-slate-50 transition-colors">
-                How It Works
-              </Link>
-              <Link to="/dashboard/usage" className="border border-outline-variant rounded-md px-3 py-2 hover:bg-slate-50 transition-colors">
-                Open Usage Analytics
-              </Link>
-              <Link to="/dashboard/contract" className="border border-[#e2e8f0] rounded-md px-3 py-2 hover:bg-slate-50 transition-colors flex items-center justify-between text-indigo-600 font-semibold">
-                <span>On-Chain Smart Contract</span>
-                <span className="material-symbols-outlined text-[16px]">gavel</span>
-              </Link>
-              <Link to="/creator/new" className="border border-outline-variant rounded-md px-3 py-2 hover:bg-slate-50 transition-colors">
-                Create Endpoint
-              </Link>
-            </div>
-          </section>
-
+        <div className="grid gap-4 lg:grid-cols-2">
           <section id="usage" className="bg-white border border-surface-variant rounded-md p-5">
             <h2 className="font-semibold text-primary mb-4">Unified API Activity</h2>
             <ul className="space-y-2 text-sm">
               <li className="flex justify-between">
-                <span>Total API calls</span>
-                <span className="font-mono">{totalApiCalls}</span>
+                <span>Your API calls</span>
+                <span className="font-mono">{consumerCalls}</span>
               </li>
               <li className="flex justify-between">
-                <span>Gateway balance</span>
-                <span className="font-mono">{balanceAlgo.toFixed(4)} ALGO</span>
-              </li>
-              <li className="flex justify-between">
-                <span>Legacy ALGO spent</span>
+                <span>On-chain wallet</span>
                 <span className="font-mono">
-                  {(gw.totals?.legacySpentAlgo || userSummary.totalSpent || 0).toFixed(4)} ALGO
+                  {onChainBalance != null ? `${onChainBalance.toFixed(4)} ALGO` : "—"}
                 </span>
               </li>
-              <li className="flex justify-between">
-                <span>Gateway spent (this month)</span>
-                <span className="font-mono">
-                  {((gw.period?.spendAlgo?.month || 0)).toFixed(4)} ALGO
-                </span>
-              </li>
+              {isCreator && (
+                <li className="flex justify-between">
+                  <span>Creator revenue</span>
+                  <span className="font-mono">
+                    {(creatorSummary.totalRevenue ?? creatorStats?.totalRevenue ?? 0).toFixed(4)} ALGO
+                  </span>
+                </li>
+              )}
               <li className="flex justify-between">
                 <span>Active endpoints</span>
-                <span className="font-mono">{keys.length}</span>
+                <span className="font-mono">
+                  {isCreator
+                    ? creatorSummary.serviceCount ?? creatorStats?.serviceCount ?? keys.length
+                    : keys.length}
+                </span>
               </li>
             </ul>
           </section>
@@ -213,8 +427,16 @@ export default function UserDashboard() {
               </li>
               <li className="flex justify-between">
                 <span>Low balance alert</span>
-                <span className={gw.lowBalance ? "text-amber-600 font-semibold" : "text-on-surface-variant"}>
-                  {gw.lowBalance ? "⚠ Low balance" : "OK"}
+                <span
+                  className={
+                    gw.lowBalance || (onChainBalance != null && onChainBalance < 0.5)
+                      ? "text-amber-600 font-semibold"
+                      : "text-on-surface-variant"
+                  }
+                >
+                  {gw.lowBalance || (onChainBalance != null && onChainBalance < 0.5)
+                    ? "⚠ Low balance"
+                    : "OK"}
                 </span>
               </li>
             </ul>
@@ -241,28 +463,7 @@ export default function UserDashboard() {
           )}
 
           {/* Legacy API Keys */}
-          <section id="keys" className="lg:col-span-2 bg-white border border-surface-variant rounded-md p-5">
-            <h2 className="font-semibold text-primary mb-4">My API Keys</h2>
-            {keys.length === 0 ? (
-              <p className="text-sm text-on-surface-variant">
-                No keys yet. Open a service in the marketplace and generate one.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {keys.map((row) => (
-                  <div key={row.id} className="bg-white border border-surface-variant rounded-md p-4 text-sm flex flex-col gap-1">
-                    <p className="font-semibold">{row.service?.title ?? "Service"}</p>
-                    <p className="text-on-surface-variant text-xs">
-                      {row.service?.aiProvider} · {row.service?.modelName} ·{" "}
-                      {Number(row.service?.pricePerThousandTokens ?? 0).toFixed(6)} ALGO/1k tok · min{" "}
-                      {Number(row.service?.minimumChargeAlgo ?? 0).toFixed(6)} ALGO
-                    </p>
-                    <p className="font-mono text-xs break-all mt-2">{row.key}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          <div className="lg:col-span-2">{keysPanel}</div>
 
           {/* Recent Activity (unified) */}
           <section className="bg-white border border-surface-variant rounded-md p-5">
@@ -322,7 +523,7 @@ export default function UserDashboard() {
                       )}
                       {(row.paymentTxId) && (
                         <a
-                          href={`https://testnet.algoexplorer.io/tx/${row.paymentTxId}`}
+                          href={testnetTxUrl(row.paymentTxId)}
                           target="_blank"
                           rel="noreferrer"
                           className="text-xs text-secondary underline font-mono"

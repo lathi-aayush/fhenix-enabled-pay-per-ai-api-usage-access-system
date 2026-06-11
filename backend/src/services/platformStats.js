@@ -23,8 +23,25 @@ function detectNetwork() {
   return "testnet";
 }
 
-export function explorerBase(network) {
-  return network === "mainnet" ? "https://algoexplorer.io" : "https://testnet.algoexplorer.io";
+const LORA_BASE = "https://lora.algokit.io";
+
+function loraNetwork(network) {
+  return network === "mainnet" ? "mainnet" : "testnet";
+}
+
+export function explorerTxUrl(network, txId) {
+  if (!txId) return null;
+  return `${LORA_BASE}/${loraNetwork(network)}/transaction/${txId}`;
+}
+
+export function explorerAddressUrl(network, address) {
+  if (!address) return null;
+  return `${LORA_BASE}/${loraNetwork(network)}/account/${address}`;
+}
+
+export function explorerApplicationUrl(network, appId) {
+  if (appId == null || appId === "") return null;
+  return `${LORA_BASE}/${loraNetwork(network)}/application/${appId}`;
 }
 
 function getAlgod() {
@@ -50,7 +67,6 @@ async function getAccountBalanceAlgo(address) {
 
 export async function getPlatformStats() {
   const network = detectNetwork();
-  const explorer = explorerBase(network);
   const rate = Number(process.env.ALGO_USD_CENTS_PER_ALGO || 35);
 
   // --- Legacy aggregation (safe) ---
@@ -168,7 +184,7 @@ export async function getPlatformStats() {
 
   return {
     network,
-    explorer,
+    explorer: `${LORA_BASE}/${loraNetwork(network)}`,
     homepage: {
       apisAvailable: activeServices + activeProxyApis,
       onChainTxns: Math.max(verifiedOnChain, totalApiCalls, contractPurchases),
@@ -190,14 +206,14 @@ export async function getPlatformStats() {
     treasury: {
       address: treasuryWallet || null,
       balanceAlgo: treasuryBalanceAlgo,
-      explorerUrl: treasuryWallet ? `${explorer}/address/${treasuryWallet}` : null,
+      explorerUrl: explorerAddressUrl(network, treasuryWallet),
     },
     contract: {
       configured: contractConfigured,
       appId: contractCfg.appId || null,
       address: contractCfg.contractAddress || null,
       explorerUrl: contractConfigured
-        ? `${explorer}/application/${contractCfg.appId}`
+        ? explorerApplicationUrl(network, contractCfg.appId)
         : null,
       totalPurchases: contractGlobals?.totalPurchases ?? 0,
       totalAlgoProcessed: (contractGlobals?.totalAlgoReceivedMicro ?? 0) / 1e6,

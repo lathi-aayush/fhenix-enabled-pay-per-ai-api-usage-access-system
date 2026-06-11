@@ -122,7 +122,6 @@ export default function ContractStats() {
 
   const p = data?.platform;
   const treasury = data?.treasury;
-  const contract = data?.contract;
   const networkLabel = data?.network === "mainnet" ? "MainNet" : "TestNet";
 
   return (
@@ -174,7 +173,7 @@ export default function ContractStats() {
         />
       </div>
 
-      <div className="mt-6 grid sm:grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="mt-6 max-w-xl">
         {/* Platform Treasury Card */}
         <motion.div 
           initial={{ opacity: 0, y: 15 }}
@@ -221,72 +220,6 @@ export default function ContractStats() {
             Live balance from Algorand · receives Studio upgrades and platform flows
           </p>
         </motion.div>
-
-        {/* On-Chain Vault Contract Card */}
-        <motion.div 
-          initial={{ opacity: 0, y: 15 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="group bg-gradient-to-br from-white/95 to-slate-50/50 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:border-slate-300 transition-all duration-500 flex flex-col justify-between"
-        >
-          <div>
-            <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">On-chain vault contract</p>
-            {contract?.configured ? (
-              <>
-                <p className="font-headline text-2xl text-slate-900 font-bold mt-2">
-                  <AnimatedCounter to={contract.totalPurchases ?? 0} /> purchases
-                </p>
-                <p className="font-headline text-lg text-emerald-600 font-mono font-bold mt-1">
-                  <AnimatedCounter to={contract.totalAlgoProcessed ?? 0} decimals={4} suffix=" ALGO" />
-                </p>
-                <div className="font-mono text-xs text-slate-400 mt-2 break-all bg-slate-50 p-2 rounded-lg border border-slate-100 flex flex-col gap-0.5">
-                  <div>App ID: {contract.appId}</div>
-                  <div className="break-all">Address: {contract.address}</div>
-                </div>
-              </>
-            ) : (
-              <p className="text-xs text-slate-500 mt-3 leading-relaxed">
-                No vault app deployed yet. Marketplace payments still go directly to creator wallets and
-                are tracked above.
-              </p>
-            )}
-          </div>
-
-          {contract?.configured ? (
-            <>
-              <div className="flex flex-wrap gap-2 mt-4">
-                {contract.address && (
-                  <button
-                    type="button"
-                    onClick={() => copyText(contract.address, "Contract address")}
-                    className="text-xs px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-colors"
-                  >
-                    Copy address
-                  </button>
-                )}
-                {contract.explorerUrl && (
-                  <a
-                    href={contract.explorerUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-colors text-slate-700 font-semibold"
-                  >
-                    View app
-                  </a>
-                )}
-              </div>
-              <p className="text-[10px] text-slate-400 mt-3 border-t border-slate-100/50 pt-2 leading-relaxed">
-                Global counters from deployed Sentinal smart contract
-              </p>
-            </>
-          ) : (
-            <p className="text-[10px] text-slate-400 mt-3 border-t border-slate-100/50 pt-2 font-mono">
-              Deploy the contract and set contract/contract_info.json or ALGO_APP_ID in the backend to enable counters.
-            </p>
-          )}
-        </motion.div>
-
       </div>
     </div>
   );

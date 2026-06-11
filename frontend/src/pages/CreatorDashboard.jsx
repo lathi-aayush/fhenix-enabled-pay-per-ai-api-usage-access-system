@@ -6,6 +6,7 @@ import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getPublicApiBase } from "../utils/apiBase.js";
 import MegaNav from "../components/MegaNav.jsx";
+import { testnetTxUrl } from "../utils/explorer.js";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function CreatorDashboard() {
@@ -236,8 +237,6 @@ export default function CreatorDashboard() {
     { id: "webhooks", label: "Webhooks & Events" },
     { id: "withdrawals", label: "Earnings & Payouts" },
     { id: "contract", label: "Smart Contract Stats", href: "/dashboard/contract" },
-    { id: "gateway", label: "Gateway v2", href: "/creator/gateway" },
-    { id: "gateway-admin", label: "Gateway Admin", href: "/creator/gateway-admin" },
   ];
 
   return (
@@ -511,7 +510,7 @@ export default function CreatorDashboard() {
                             <span>{row.createdAt ? new Date(row.createdAt).toLocaleString() : ""}</span>
                             {(row.paymentTxId || row.payoutTxId) && (
                               <a
-                                href={`https://testnet.algoexplorer.io/tx/${row.paymentTxId || row.payoutTxId}`}
+                                href={testnetTxUrl(row.paymentTxId || row.payoutTxId)}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="inline-flex items-center gap-0.5 text-slate-500 hover:text-indigo-600 transition-colors font-mono font-bold"
@@ -780,7 +779,7 @@ export default function CreatorDashboard() {
                               <td className="px-5 py-3.5">
                                 {row.txId ? (
                                   <a
-                                    href={`https://testnet.algoexplorer.io/tx/${row.txId}`}
+                                    href={testnetTxUrl(row.txId)}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="font-mono text-xs text-indigo-600 hover:text-indigo-700 underline font-bold"

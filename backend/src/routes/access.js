@@ -31,6 +31,7 @@ router.post(
     }
     const key = `sk-sentinel-${crypto.randomBytes(32).toString("hex")}`;
     const doc = await AccessToken.create({
+      userId: req.user.userId,
       userWallet,
       serviceId,
       key,

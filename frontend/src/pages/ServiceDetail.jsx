@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { api } from "../api/client.js";
+import { callProxyX402Use } from "../api/proxyX402Use.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useWalletAction } from "../hooks/useWalletAction.js";
 import GuestConnectBanner from "../components/GuestConnectBanner.jsx";
@@ -19,8 +20,7 @@ import { chargeForTokens, wordsToApproxTokens } from "../utils/tokenPricing.js";
 import { useTokenEstimate } from "../hooks/useTokenEstimate.js";
 import { getBurnerWallet } from "../wallet/burner.js";
 import { StarRating } from "../components/MarketplaceCard.jsx";
-
-const EXPLORER_TX = "https://testnet.algoexplorer.io/tx/";
+import { testnetTxUrl } from "../utils/explorer.js";
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -113,6 +113,26 @@ export default function ServiceDetail() {
     loadReviews();
   }, [id]);
 
+  useEffect(() => {
+    if (!id || !/^[a-f0-9]{24}$/i.test(id) || !isAuthenticated) {
+      setApiKey(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await api.get(`/api/access/${id}`);
+        const existing = Array.isArray(data) ? data[0]?.key : null;
+        if (!cancelled && existing) setApiKey(existing);
+      } catch {
+        /* no key yet */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, isAuthenticated, user?.walletAddress]);
+
   async function submitReview(e) {
     e.preventDefault();
     if (!user) {
@@ -178,6 +198,23 @@ export default function ServiceDetail() {
 
   function handleCopySnippet() {
     if (!apiKey) return;
+    if (service?.x402Enabled) {
+      const snippet = `# x402 via proxy API (Bearer required):
+# 1) POST /api/use without X-Payment → HTTP 402 + payment requirements
+curl -sS "${apiBase}/api/use" \\
+  -H "Authorization: Bearer ${apiKey}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"prompt":"Hello"}'
+
+# 2) Sign ALGO payment, submit on-chain, retry with X-Payment header
+curl -sS "${apiBase}/api/use" \\
+  -H "Authorization: Bearer ${apiKey}" \\
+  -H "Content-Type: application/json" \\
+  -H "X-Payment: <BASE64_EXACT_AVM_PAYLOAD>" \\
+  -d '{"prompt":"Hello"}'`;
+      navigator.clipboard.writeText(snippet).then(() => toast.success("x402 cURL copied"));
+      return;
+    }
     const snippet = `# 1) Quote (no txId) — returns paymentRef + chargeAlgo
 curl -sS "${apiBase}/api/use" \\
   -H "Authorization: Bearer ${apiKey}" \\
@@ -221,6 +258,32 @@ curl -sS "${apiBase}/api/use" \\
     setPayStage("quoting");
 
     try {
+      if (service.x402Enabled) {
+        if (!burnerReady) {
+          throw new Error("Burner wallet is still loading. Wait a moment and try again.");
+        }
+        setQuotedCharge(Number(service.minimumChargeAlgo) || null);
+        setPayStage("sign");
+        const burnerWallet = getBurnerWallet();
+        const { aiResponse, txId, receipt } = await callProxyX402Use({
+          apiKey,
+          serviceId: service._id,
+          body: { prompt: prompt.trim() },
+          algodServer,
+          burnerWallet,
+        });
+        setLastTxId(txId);
+        setLastReceipt(receipt || null);
+        setPayStage("done");
+        const text =
+          aiResponse?.choices?.[0]?.message?.content ??
+          aiResponse?.message?.content ??
+          JSON.stringify(aiResponse);
+        setAiPreview(typeof text === "string" ? text : String(text));
+        toast.success("x402 payment verified — AI response ready");
+        return;
+      }
+
       const { data: quote } = await api.post(
         "/api/use",
         { prompt: prompt.trim() },
@@ -328,6 +391,7 @@ curl -sS "${apiBase}/api/use" \\
   }
 
   const canProxy = service.providerConfigured === true;
+  const x402Enabled = Boolean(service.x402Enabled);
   const devShort = shortenWallet(service.creatorWallet);
 
   return (
@@ -353,6 +417,11 @@ curl -sS "${apiBase}/api/use" \\
           <span className="px-3 py-1 rounded-md bg-white border border-surface-variant">
             Calls: <strong>{service.totalUses ?? 0}</strong>
           </span>
+          {x402Enabled && (
+            <span className="px-3 py-1 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold">
+              x402 via proxy
+            </span>
+          )}
           {service.creatorWallet && (
             <span className="px-3 py-1 rounded-md bg-white border border-surface-variant">
               Creator:{" "}
@@ -392,8 +461,10 @@ curl -sS "${apiBase}/api/use" \\
 
           <div className="border-t border-surface-variant pt-6">
             <p className="text-sm text-on-surface-variant mb-3">
-              Generate a <code className="font-mono text-xs">sk-sentinel-…</code> key. Each call: Sentinal runs the model
-              first, returns the exact ALGO charge, you pay on-chain, then Sentinal releases the answer.
+              Generate a <code className="font-mono text-xs">sk-sentinel-…</code> proxy key.{" "}
+              {x402Enabled
+                ? `Calls use x402 on POST /api/use (${Number.isFinite(minC) ? minC.toFixed(6) : "min"} ALGO per call).`
+                : "Each call: quote → pay on-chain → complete to unlock the AI response."}
             </p>
             <button
               type="button"
@@ -407,14 +478,68 @@ curl -sS "${apiBase}/api/use" \\
 
           {apiKey && canProxy && (
             <div className="border-t border-surface-variant pt-6 space-y-4">
-              <h2 className="font-semibold text-primary">Chat with this AI</h2>
+              <h2 className="font-semibold text-primary">
+                {x402Enabled ? "Try this API (x402)" : "Try this API"}
+              </h2>
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={3}
+                placeholder="Enter your prompt…"
+                className="w-full border border-outline-variant rounded-md px-3 py-2 text-sm"
+              />
+              <label className="flex items-start gap-2 text-sm text-on-surface-variant">
+                <input
+                  type="checkbox"
+                  checked={costAck}
+                  onChange={(e) => setCostAck(e.target.checked)}
+                  className="mt-1"
+                />
+                <span>
+                  I understand each call charges from my burner wallet
+                  {x402Enabled && Number.isFinite(minC) ? ` (min ${minC.toFixed(6)} ALGO)` : ""}.
+                </span>
+              </label>
+              <button
+                type="button"
+                disabled={invokeBusy || !prompt.trim()}
+                onClick={runPaidInvoke}
+                className="bg-secondary text-on-secondary px-6 py-2.5 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50"
+              >
+                {invokeBusy ? "Processing…" : x402Enabled ? "Run with x402" : "Run paid invoke"}
+              </button>
+              {aiPreview && (
+                <div className="mt-4 p-4 bg-surface-container rounded-md border border-outline-variant">
+                  <p className="text-xs font-semibold text-on-surface-variant mb-2">AI response</p>
+                  <p className="text-sm whitespace-pre-wrap">{aiPreview}</p>
+                  {lastTxId && (
+                    <p className="mt-3 text-xs text-on-surface-variant font-mono">
+                      Payment tx:{" "}
+                      <a
+                        href={testnetTxUrl(lastTxId)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-indigo-600 hover:underline"
+                      >
+                        {lastTxId.slice(0, 10)}…
+                      </a>
+                      {lastReceipt?.paymentProtocol === "x402" ? " (x402)" : ""}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {apiKey && canProxy && (
+            <div className="border-t border-surface-variant pt-6 space-y-4">
+              <h2 className="font-semibold text-primary">Studio Chat</h2>
               <p className="text-sm text-on-surface-variant">
-                You can now chat with this AI directly in the Sentinal Studio.
-                The Studio uses your Burner Wallet to automatically pay per response token.
+                Open this service in Sentinal Studio for a full chat experience.
               </p>
               <Link
                 to={`/studio/chat?serviceId=${service._id}`}
-                className="inline-flex items-center gap-2 bg-secondary text-on-secondary px-6 py-2.5 rounded-md text-sm font-medium hover:opacity-90"
+                className="inline-flex items-center gap-2 border border-outline-variant px-6 py-2.5 rounded-md text-sm font-medium hover:bg-slate-50"
               >
                 <span className="material-symbols-outlined text-[20px]">chat</span>
                 Open in Studio Chat
@@ -476,11 +601,21 @@ curl -sS "${apiBase}/api/use" \\
           <div className="bg-surface-container-lowest max-w-lg w-full rounded-md border border-surface-variant p-8 shadow-xl max-h-[90vh] overflow-y-auto">
             <h2 className="font-headline text-xl font-semibold text-primary">Your proxy key</h2>
             <p className="text-sm text-on-surface-variant mt-2">
-              Call <code className="font-mono text-xs">POST /api/use</code> without <code className="font-mono text-xs">txId</code>{" "}
-              to run the model and receive <code className="font-mono text-xs">paymentRef</code> + exact{" "}
-              <code className="font-mono text-xs">chargeAlgo</code>. Pay that amount with <code className="font-mono text-xs">paymentRef</code>{" "}
-              in the note, then POST again with <code className="font-mono text-xs">txId</code> +{" "}
-              <code className="font-mono text-xs">paymentRef</code> to unlock the response.
+              {x402Enabled ? (
+                <>
+                  This service uses x402 on <code className="font-mono text-xs">POST /api/use</code>. Send your proxy key
+                  as <code className="font-mono text-xs">Authorization: Bearer …</code>, receive HTTP 402, pay on-chain,
+                  then retry with the <code className="font-mono text-xs">X-Payment</code> header.
+                </>
+              ) : (
+                <>
+                  Call <code className="font-mono text-xs">POST /api/use</code> without <code className="font-mono text-xs">txId</code>{" "}
+                  to receive <code className="font-mono text-xs">paymentRef</code> + exact{" "}
+                  <code className="font-mono text-xs">chargeAlgo</code>. Pay with <code className="font-mono text-xs">paymentRef</code>{" "}
+                  in the note, then POST again with <code className="font-mono text-xs">txId</code> +{" "}
+                  <code className="font-mono text-xs">paymentRef</code>.
+                </>
+              )}
             </p>
             <div className="mt-4 p-4 bg-surface-container rounded-md font-mono text-xs break-all border border-outline-variant select-all">
               {apiKey}

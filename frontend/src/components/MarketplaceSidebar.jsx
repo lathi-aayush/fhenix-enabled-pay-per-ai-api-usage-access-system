@@ -8,7 +8,6 @@ import logo from "../assets/logo.png";
 export const BROWSE_TABS = [
   { id: "browse", path: "/marketplace/browse", icon: "storefront", label: "Browse APIs" },
   { id: "creators", path: "/marketplace/creators", icon: "group", label: "Creator Profiles" },
-  { id: "gateway", path: "/marketplace/gateway", icon: "api", label: "Gateway APIs" },
 ];
 
 export const ACCOUNT_TABS = [

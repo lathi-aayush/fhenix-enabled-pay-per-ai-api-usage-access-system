@@ -1,6 +1,12 @@
 import algosdk from "algosdk";
 import { buildPaymentTx, createAlgodClient, submitSignedPayment } from "./algorand.js";
 import { HttpClient } from "./http.js";
+import { SentinelPaymentError } from "./errors.js";
+import {
+  buildX402PaymentHeader,
+  parseX402Challenge,
+  postX402Endpoint,
+} from "./x402Payment.js";
 import type { Signer } from "./signer.js";
 import type {
   ChatMessage,
@@ -39,6 +45,7 @@ export class SentinelClient {
   readonly network: NonNullable<SentinelClientOptions["network"]>;
   readonly algodClient: algosdk.Algodv2;
   private readonly http: HttpClient;
+  private readonly timeout: number;
 
   constructor(options: SentinelClientOptions) {
     if (!options.apiKey?.trim()) {
@@ -47,8 +54,9 @@ export class SentinelClient {
     this.apiKey = options.apiKey.trim();
     this.baseUrl = (options.baseUrl || DEFAULT_BASE_URL).replace(/\/$/, "");
     this.network = options.network ?? "testnet";
+    this.timeout = options.timeout ?? 120_000;
     this.algodClient = createAlgodClient(this.network, options.algodServer, options.algodToken ?? "");
-    this.http = new HttpClient(this.baseUrl, options.timeout ?? 120_000);
+    this.http = new HttpClient(this.baseUrl, this.timeout);
   }
 
   /** Fetch public pricing/metadata for a service (no API key required). */
@@ -88,10 +96,59 @@ export class SentinelClient {
   }
 
   /**
-   * High-level helper: invoke → sign payment → submit → complete.
-   * Streaming is deferred to SDK v1.1; opts.stream is ignored in v1.0.
+   * High-level helper: POST /api/use with proxy key.
+   * - x402-enabled services: 402 challenge → pay → retry with X-Payment
+   * - legacy services: quote → sign payment → submit → complete
    */
   async chat(
+    messages: ChatMessage[],
+    signer: Signer,
+    opts?: ChatOptions
+  ): Promise<CompleteResponse> {
+    const msgs = normalizeMessages(messages, opts);
+    const body = buildUseBody(msgs, opts);
+
+    try {
+      await postX402Endpoint({
+        baseUrl: this.baseUrl,
+        path: "/api/use",
+        apiKey: this.apiKey,
+        body,
+        timeout: this.timeout,
+      });
+      return this.chatLegacy(messages, signer, opts);
+    } catch (err) {
+      if (!(err instanceof SentinelPaymentError) || err.status !== 402 || !err.body) {
+        throw err;
+      }
+      const { payTo, amountMicroAlgos } = parseX402Challenge(
+        err.body as Record<string, unknown> & { error?: string }
+      );
+      const serviceId = opts?.serviceId ?? "proxy";
+      const { xPaymentHeader } = await buildX402PaymentHeader({
+        serviceId,
+        payTo,
+        amountMicroAlgos,
+        signer,
+        algodClient: this.algodClient,
+      });
+      const { data } = await postX402Endpoint<CompleteResponse>({
+        baseUrl: this.baseUrl,
+        path: "/api/use",
+        apiKey: this.apiKey,
+        body,
+        xPaymentHeader,
+        timeout: this.timeout,
+      });
+      if (!data.sentinelReceipt) {
+        throw new Error("Unexpected x402 complete response: missing sentinelReceipt");
+      }
+      return data;
+    }
+  }
+
+  /** Legacy quote → pay → complete (non-x402 services). */
+  async chatLegacy(
     messages: ChatMessage[],
     signer: Signer,
     opts?: ChatOptions

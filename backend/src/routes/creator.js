@@ -32,6 +32,55 @@ function stripServiceForPublic(s) {
   };
 }
 
+router.get("/directory", async (_req, res) => {
+  const services = await Service.find({ isPaused: false })
+    .select("creatorWallet totalUses isSentinalOfficial")
+    .lean();
+
+  const byWallet = new Map();
+  for (const s of services) {
+    if (!s.creatorWallet) continue;
+    let wallet;
+    try {
+      wallet = canonicalWalletAddress(s.creatorWallet);
+    } catch {
+      continue;
+    }
+    const existing = byWallet.get(wallet) || {
+      walletAddress: wallet,
+      apis: 0,
+      totalUses: 0,
+      hasOfficial: false,
+    };
+    existing.apis += 1;
+    existing.totalUses += Number(s.totalUses) || 0;
+    if (s.isSentinalOfficial) existing.hasOfficial = true;
+    byWallet.set(wallet, existing);
+  }
+
+  const wallets = [...byWallet.keys()];
+  const users = wallets.length
+    ? await User.find({ walletAddress: { $in: wallets } })
+        .select("walletAddress displayName photoURL")
+        .lean()
+    : [];
+
+  const userByWallet = new Map(users.map((u) => [u.walletAddress, u]));
+
+  const creators = [...byWallet.values()]
+    .map((c) => {
+      const user = userByWallet.get(c.walletAddress);
+      return {
+        ...c,
+        displayName: user?.displayName?.trim() || null,
+        photoURL: user?.photoURL ?? null,
+      };
+    })
+    .sort((a, b) => b.apis - a.apis || b.totalUses - a.totalUses);
+
+  res.json(creators);
+});
+
 router.get(
   "/public/:walletAddress",
   param("walletAddress").isString().trim().notEmpty(),

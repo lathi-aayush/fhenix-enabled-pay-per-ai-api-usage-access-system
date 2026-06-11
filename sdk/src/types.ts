@@ -12,6 +12,8 @@ export interface ChatOptions {
   temperature?: number;
   maxTokens?: number;
   max_tokens?: number;
+  /** Used in x402 payment transaction note (optional). */
+  serviceId?: string;
   /** Reserved for v1.1 streaming support */
   stream?: boolean;
 }
@@ -47,12 +49,14 @@ export interface InvokeResponse {
 }
 
 export interface SentinelReceipt {
+  paymentProtocol?: "x402";
   paymentTxId: string;
   chargeAlgo: number;
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
   pricePerThousandTokens: number;
+  payerWallet?: string;
 }
 
 export interface ChatChoice {
@@ -90,6 +94,38 @@ export interface ServicePublicInfo {
   reviewCount: number;
   x402Enabled: boolean;
   providerConfigured: boolean;
+}
+
+export interface X402ClientOptions {
+  /** Base URL of the Sentinel API (no trailing slash). */
+  baseUrl?: string;
+  /** Algorand network for payment submission. Default: testnet */
+  network?: AlgorandNetwork;
+  algodServer?: string;
+  algodToken?: string;
+  timeout?: number;
+}
+
+export interface X402SentinelReceipt {
+  paymentProtocol: "x402";
+  paymentTxId: string;
+  serviceId: string;
+  amountAlgo: number;
+  network: string;
+}
+
+export interface X402CompleteResponse {
+  id?: string;
+  object?: string;
+  created?: number;
+  model?: string;
+  choices?: ChatChoice[];
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  };
+  sentinelReceipt: X402SentinelReceipt;
 }
 
 export interface ApiErrorBody {

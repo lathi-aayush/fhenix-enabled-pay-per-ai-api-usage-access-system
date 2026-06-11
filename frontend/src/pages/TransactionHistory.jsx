@@ -4,8 +4,7 @@ import toast from "react-hot-toast";
 import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useEffect, useMemo, useState } from "react";
-
-const EXPLORER_TX = "https://testnet.algoexplorer.io/tx/";
+import { testnetTxUrl } from "../utils/explorer.js";
 
 export default function TransactionHistory() {
   const { user } = useAuth();
@@ -152,7 +151,7 @@ export default function TransactionHistory() {
                     <td className="px-3 py-2">
                       {row.proofTxId ? (
                         <a
-                          href={`${EXPLORER_TX}${row.proofTxId}`}
+                          href={testnetTxUrl(row.proofTxId)}
                           target="_blank"
                           rel="noreferrer"
                           className="text-secondary underline"

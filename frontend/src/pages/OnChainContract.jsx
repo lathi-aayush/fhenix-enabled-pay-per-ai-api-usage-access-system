@@ -118,7 +118,8 @@ export default function OnChainContract() {
                   <th className="px-4 py-3.5">User Wallet</th>
                   <th className="px-4 py-3.5">Service Requested</th>
                   <th className="px-4 py-3.5">On-Chain Charge</th>
-                  <th className="px-4 py-3.5">Verified Proof</th>
+                  <th className="px-4 py-3.5">Transaction ID</th>
+                  <th className="px-4 py-3.5">Protocol</th>
                   <th className="px-4 py-3.5">Timestamp</th>
                 </tr>
               </thead>
@@ -167,35 +168,42 @@ export default function OnChainContract() {
                         </div>
                       </td>
 
-                      {/* Verified Proof (Explorer links) */}
+                      {/* Transaction ID */}
                       <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          {act.paymentTxId ? (
+                        {act.paymentTxId ? (
+                          <div className="flex items-center gap-2">
                             <a
                               href={act.paymentExplorerUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors underline decoration-indigo-200 hover:decoration-indigo-600"
+                              className="font-mono text-xs text-indigo-600 hover:text-indigo-800 hover:underline"
                             >
-                              <span>Payment Tx</span>
-                              <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                              {act.paymentTxId.slice(0, 8)}…{act.paymentTxId.slice(-4)}
                             </a>
-                          ) : (
-                            <span className="text-slate-400 italic text-xs">No payment tx</span>
-                          )}
+                            <button
+                              onClick={() => copyText(act.paymentTxId, "Transaction ID")}
+                              className="text-slate-400 hover:text-indigo-600 transition-colors"
+                              title="Copy Transaction ID"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">content_copy</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic text-xs">—</span>
+                        )}
+                      </td>
 
-                          {act.proofTxId && (
-                            <a
-                              href={act.proofExplorerUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-800 transition-colors underline decoration-emerald-200 hover:decoration-emerald-600"
-                            >
-                              <span>Proof Tx</span>
-                              <span className="material-symbols-outlined text-[12px]">open_in_new</span>
-                            </a>
-                          )}
-                        </div>
+                      {/* Protocol */}
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        {act.x402Payment ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700">
+                            x402
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                            api/use
+                          </span>
+                        )}
                       </td>
 
                       {/* Timestamp */}

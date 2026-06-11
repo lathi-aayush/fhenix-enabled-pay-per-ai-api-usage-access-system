@@ -1,19 +1,19 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { api } from "../api/client.js";
 import { shortenWallet } from "../components/MarketplaceCard.jsx";
 
 export default function MarketplaceCreators() {
-  const [services, setServices] = useState([]);
+  const [creators, setCreators] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const { data } = await api.get("/api/services");
-        if (!cancelled) setServices(Array.isArray(data) ? data : []);
+        const { data } = await api.get("/api/creator/directory");
+        if (!cancelled) setCreators(Array.isArray(data) ? data : []);
       } catch {
         toast.error("Failed to load creators");
       } finally {
@@ -24,25 +24,6 @@ export default function MarketplaceCreators() {
       cancelled = true;
     };
   }, []);
-
-  const creators = useMemo(() => {
-    const byWallet = new Map();
-    for (const s of services) {
-      if (!s.creatorWallet) continue;
-      const key = s.creatorWallet;
-      const existing = byWallet.get(key) || {
-        walletAddress: key,
-        apis: 0,
-        totalUses: 0,
-        hasOfficial: false,
-      };
-      existing.apis += 1;
-      existing.totalUses += Number(s.totalUses) || 0;
-      if (s.isSentinalOfficial) existing.hasOfficial = true;
-      byWallet.set(key, existing);
-    }
-    return [...byWallet.values()].sort((a, b) => b.apis - a.apis || b.totalUses - a.totalUses);
-  }, [services]);
 
   return (
     <div className="pt-4 pb-8 w-full">
@@ -57,31 +38,38 @@ export default function MarketplaceCreators() {
         <p className="text-on-surface-variant text-sm">No creators have published services yet.</p>
       ) : (
         <div className="space-y-3">
-          {creators.map((creator) => (
-            <Link
-              key={creator.walletAddress}
-              to={`/marketplace/creators/${encodeURIComponent(creator.walletAddress)}`}
-              className="bg-white border border-surface-variant rounded-md p-4 flex justify-between items-center hover:border-secondary transition-colors"
-            >
-              <div>
-                <p className="font-semibold text-primary font-mono text-sm">
-                  {shortenWallet(creator.walletAddress)}
-                </p>
-                <p className="text-xs text-on-surface-variant mt-1">
-                  {creator.apis} listed API{creator.apis === 1 ? "" : "s"} · {creator.totalUses} total calls
-                </p>
-              </div>
-              <span
-                className={`text-xs px-2 py-1 rounded ${
-                  creator.hasOfficial
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-slate-100 text-slate-600"
-                }`}
+          {creators.map((creator) => {
+            const label = creator.displayName?.trim() || shortenWallet(creator.walletAddress);
+            return (
+              <Link
+                key={creator.walletAddress}
+                to={`/marketplace/creators/${encodeURIComponent(creator.walletAddress)}`}
+                className="bg-white border border-surface-variant rounded-md p-4 flex justify-between items-center hover:border-secondary transition-colors"
               >
-                {creator.hasOfficial ? "Official listing" : "Community"}
-              </span>
-            </Link>
-          ))}
+                <div>
+                  <p
+                    className={`font-semibold text-primary text-sm ${
+                      creator.displayName?.trim() ? "" : "font-mono"
+                    }`}
+                  >
+                    {label}
+                  </p>
+                  <p className="text-xs text-on-surface-variant mt-1">
+                    {creator.apis} listed API{creator.apis === 1 ? "" : "s"} · {creator.totalUses} total calls
+                  </p>
+                </div>
+                <span
+                  className={`text-xs px-2 py-1 rounded ${
+                    creator.hasOfficial
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-slate-100 text-slate-600"
+                  }`}
+                >
+                  {creator.hasOfficial ? "Official listing" : "Community"}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

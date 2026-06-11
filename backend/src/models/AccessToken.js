@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const accessTokenSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      index: true,
+    },
     userWallet: { type: String, required: true, index: true },
     serviceId: {
       type: mongoose.Schema.Types.ObjectId,

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { ApiUsageLog } from "../models/ApiUsageLog.js";
-import { getPlatformStats, explorerBase } from "../services/platformStats.js";
+import { getPlatformStats, explorerTxUrl } from "../services/platformStats.js";
 
 const router = Router();
 
@@ -45,11 +45,10 @@ router.get("/activity", async (_req, res) => {
       chargeAlgo: Number(log.chargeAlgo ?? log.amountAlgo ?? 0),
       paymentTxId: log.paymentTxId ?? null,
       proofTxId: log.proofTxId ?? null,
+      x402Payment: Boolean(log.x402Payment),
       createdAt: log.createdAt,
-      paymentExplorerUrl: log.paymentTxId
-        ? `${explorerBase(network)}/tx/${log.paymentTxId}`
-        : null,
-      proofExplorerUrl: log.proofTxId ? `${explorerBase(network)}/tx/${log.proofTxId}` : null,
+      paymentExplorerUrl: explorerTxUrl(network, log.paymentTxId),
+      proofExplorerUrl: explorerTxUrl(network, log.proofTxId),
     }));
 
     return res.json({ network, activities });
