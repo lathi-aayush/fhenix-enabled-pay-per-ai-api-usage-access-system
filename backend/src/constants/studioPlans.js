@@ -1,29 +1,29 @@
 /**
  * Sentinel AI Studio — subscription pricing, credit wallet, and x402 overage tiers.
- * Exchange rates: set ALGO_USD_RATE and INR_USD_RATE in env (update weekly).
+ * Exchange rates: set ETH_USD_RATE and INR_USD_RATE in env (update weekly).
  */
 
-const ALGO_USD = Number(process.env.ALGO_USD_RATE) || 0.129;
+const ETH_USD = Number(process.env.ETH_USD_RATE) || 0.129;
 const INR_USD = Number(process.env.INR_USD_RATE) || 84.5;
-export const ALGO_INR_RATE = ALGO_USD * INR_USD;
+export const ETH_INR_RATE = ETH_USD * INR_USD;
 
-/** @param {number} microAlgos */
-export function microToAlgo(microAlgos) {
-  return microAlgos / 1_000_000;
+/** @param {number} wei */
+export function weiToEth(wei) {
+  return wei / 1e18;
 }
 
-/** @param {number} microAlgos */
-export function microToInr(microAlgos) {
-  return microToAlgo(microAlgos) * ALGO_INR_RATE;
+/** @param {number} wei */
+export function weiToInr(wei) {
+  return weiToEth(wei) * ETH_INR_RATE;
 }
 
-/** @param {number} microAlgos */
-export function microToUsd(microAlgos) {
-  return microToAlgo(microAlgos) * ALGO_USD;
+/** @param {number} wei */
+export function weiToUsd(wei) {
+  return weiToEth(wei) * ETH_USD;
 }
 
 /**
- * Monthly subscription prices in microAlgos (1 ALGO = 1_000_000 microAlgos).
+ * Monthly subscription prices in wei (1 ALGO = 1e18 wei).
  * @type {Record<string, number>}
  */
 export const PLAN_PRICES = {
@@ -59,18 +59,13 @@ export const CREDIT_WEIGHTS = {
   clipcraft_pack: 5,
 };
 
-/** Overage tiers → microALGO (charged via x402 when credits exhausted). */
+/** Overage tiers → wei (charged via x402 when credits exhausted). */
 export const OVERAGE_PRICES = {
-  lite: Number(process.env.STUDIO_OVERAGE_LITE_MICROALGO) ||
-    Math.round(Number(process.env.STUDIO_OVERAGE_LITE_ALGO || 0.5) * 1_000_000),
-  blog: Number(process.env.STUDIO_OVERAGE_BLOG_MICROALGO) ||
-    Math.round(Number(process.env.STUDIO_OVERAGE_BLOG_ALGO || 1.0) * 1_000_000),
-  creative: Number(process.env.STUDIO_OVERAGE_CREATIVE_MICROALGO) ||
-    Math.round(Number(process.env.STUDIO_OVERAGE_CREATIVE_ALGO || 2.5) * 1_000_000),
-  agentic_med: Number(process.env.STUDIO_OVERAGE_AGENTIC_MED_MICROALGO) ||
-    Math.round(Number(process.env.STUDIO_OVERAGE_AGENTIC_MED_ALGO || 5) * 1_000_000),
-  agentic_full: Number(process.env.STUDIO_OVERAGE_AGENTIC_FULL_MICROALGO) ||
-    Math.round(Number(process.env.STUDIO_OVERAGE_AGENTIC_FULL_ALGO || 15) * 1_000_000),
+  lite: BigInt(Math.round(Number(process.env.STUDIO_OVERAGE_LITE_ETH || 0.0002) * 1e18)),
+  blog: BigInt(Math.round(Number(process.env.STUDIO_OVERAGE_BLOG_ETH || 0.0003) * 1e18)),
+  creative: BigInt(Math.round(Number(process.env.STUDIO_OVERAGE_CREATIVE_ETH || 0.001) * 1e18)),
+  agentic_med: BigInt(Math.round(Number(process.env.STUDIO_OVERAGE_AGENTIC_MED_ETH || 0.002) * 1e18)),
+  agentic_full: BigInt(Math.round(Number(process.env.STUDIO_OVERAGE_AGENTIC_FULL_ETH || 0.005) * 1e18)),
 };
 
 /** Run type → overage tier. */
@@ -136,8 +131,13 @@ export const RUN_TYPE_LABELS = {
   clipcraft_pack: "ClipCraft pack",
 };
 
-export function getPlanPriceMicro(tier) {
+export function getPlanPriceWei(tier) {
   return PLAN_PRICES[tier] ?? null;
+}
+
+/** @deprecated use getPlanPriceWei */
+export function getPlanPriceMicro(tier) {
+  return getPlanPriceWei(tier);
 }
 
 export function isPaidTier(tier) {

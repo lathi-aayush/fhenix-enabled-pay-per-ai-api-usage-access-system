@@ -14,7 +14,7 @@ import { WORKFLOW_OPEN_EXECUTION_PANEL, openWorkflowExecutionPanel } from "../ut
 import { useWorkflowPersistence } from "../hooks/useWorkflowPersistence.js";
 import { useWorkflowExecutor } from "../hooks/useWorkflowExecutor.js";
 import { useAuth } from "../context/AuthContext.jsx";
-import { getBurnerBalance, getDefaultAlgodServer } from "../wallet/burner.js";
+import { getSessionBalance } from "../wallet/sessionKey.js";
 
 function BuilderInner() {
   const { workflowId: paramId } = useParams();
@@ -37,8 +37,8 @@ function BuilderInner() {
   const [selectedId, setSelectedId] = useState(null);
   const [burnerBal, setBurnerBal] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { burnerReady } = useAuth();
-  const algodServer = getDefaultAlgodServer();
+  const { sessionKeyReady } = useAuth();
+  
 
   const effectiveId = workflowId || paramId;
   const { isRunning, currentRun, liveLogs, runWorkflow } = useWorkflowExecutor(effectiveId);
@@ -84,19 +84,19 @@ function BuilderInner() {
   }, [paramId, loadWorkflow, navigate]);
 
   useEffect(() => {
-    if (!burnerReady) {
+    if (!sessionKeyReady) {
       setBurnerBal(null);
       return;
     }
     const refresh = () =>
-      getBurnerBalance(algodServer)
+      getSessionBalance()
         .then((m) => setBurnerBal(m / 1e6))
         .catch(() => setBurnerBal(null));
     refresh();
     const onBal = () => refresh();
     window.addEventListener("walletBalanceUpdate", onBal);
     return () => window.removeEventListener("walletBalanceUpdate", onBal);
-  }, [burnerReady, algodServer]);
+  }, [sessionKeyReady, algodServer]);
 
   const selectedNode = nodes.find((n) => n.id === selectedId);
 

@@ -99,7 +99,7 @@ export async function getAdminDashboard() {
 
   const rev = platformRevenue[0] || { platformFees: 0, gross: 0 };
 
-  const rate = Number(process.env.ALGO_USD_CENTS_PER_ALGO || 35);
+  const rate = Number(process.env.ETH_USD_RATE || 35);
   return {
     rate,
     summary: {

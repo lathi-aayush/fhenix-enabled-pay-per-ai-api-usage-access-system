@@ -2,10 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { api } from "../../api/client.js";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { getBurnerWallet } from "../../wallet/burner.js";
+import { getSessionKeyWallet } from "../../wallet/sessionKey.js";
 import ReactMarkdown from "react-markdown";
 import { toast } from "react-hot-toast";
-import algosdk from "algosdk";
 
 function bytesToBase64(bytes) {
   const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
@@ -75,7 +74,7 @@ export default function StudioChat() {
 
     try {
       if (!burnerReady) throw new Error("Burner wallet is not ready.");
-      const burnerWallet = getBurnerWallet();
+      const sessionWallet = getSessionKeyWallet();
 
       // Step 1: Request quote (402 Payment Required expected)
       let challengeData;
@@ -103,14 +102,14 @@ export default function StudioChat() {
       
       const params = await algodClient.getTransactionParams().do();
       const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-        sender: burnerWallet.addr,
+        sender: sessionWallet.addr,
         receiver: acceptReq.payTo,
         amount: BigInt(amountMicroAlgos),
         suggestedParams: params,
         note: new TextEncoder().encode("SentinalAI Chat Stream"),
       });
 
-      const signedTxn = txn.signTxn(burnerWallet.sk);
+      const signedTxn = txn.signTxn(sessionWallet.sk);
       const txId = txn.txID();
       await algodClient.sendRawTransaction(signedTxn).do();
 

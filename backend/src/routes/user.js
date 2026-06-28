@@ -6,7 +6,7 @@ import { ApiUsageLog } from "../models/ApiUsageLog.js";
 import { User } from "../models/User.js";
 import { ProxyApi } from "../models/ProxyApi.js";
 import { GatewaySubscription } from "../models/GatewaySubscription.js";
-import { fetchAccountBalanceMicroAlgos } from "../services/algorandService.js";
+import { getBalanceEth } from "../services/evmService.js";
 import { canonicalWalletAddress } from "../utils/userWallet.js";
 
 const router = Router();
@@ -14,10 +14,10 @@ const router = Router();
 router.get("/algo-balance", requireAuth, requireRole("user", "creator"), async (req, res) => {
   try {
     if (!req.user.walletAddress) {
-      return res.json({ balanceMicroAlgos: 0, balanceAlgo: 0 });
+      return res.json({ balanceWei: '0', balanceEth: 0 });
     }
     const userWallet = canonicalWalletAddress(req.user.walletAddress);
-    const micro = await fetchAccountBalanceMicroAlgos(userWallet);
+    const micro = await getBalanceEth(userWallet);
     res.json({
       balanceMicroAlgos: micro,
       balanceAlgo: micro / 1e6,
@@ -95,7 +95,7 @@ router.get("/proxy-keys", requireAuth, requireRole("user", "creator"), async (re
         .lean(),
     ]);
 
-    const rate = Number(process.env.ALGO_USD_CENTS_PER_ALGO || 35);
+    const rate = Number(process.env.ETH_USD_RATE || 35);
 
     const publishedEndpoints = proxyApis.map((api) => ({
       id: api._id,

@@ -4,10 +4,10 @@ const serviceSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
     description: { type: String, default: "" },
-    /** ALGO charged per 1000 tokens (input + output) */
+    /** ETH charged per 1000 tokens (input + output) */
     pricePerThousandTokens: { type: Number, required: true, min: 0 },
-    /** Floor charge per successful paid call (ALGO) */
-    minimumChargeAlgo: { type: Number, required: true, min: 0 },
+    /** Floor charge per successful paid call (ETH) */
+    minimumChargeEth: { type: Number, required: true, min: 0 },
     creatorWallet: { type: String, required: true, index: true },
     totalUses: { type: Number, default: 0 },
     totalRevenue: { type: Number, default: 0 },

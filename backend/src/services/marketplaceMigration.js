@@ -18,7 +18,7 @@ function slugify(title, id) {
 }
 
 function algoMinimumToCents(minimumChargeAlgo) {
-  const rate = Number(process.env.ALGO_USD_CENTS_PER_ALGO || 35);
+  const rate = Number(process.env.ETH_USD_RATE || 35);
   const algo = Number(minimumChargeAlgo) || 0;
   return Math.max(1, Math.round(algo * rate));
 }
@@ -41,7 +41,7 @@ export function serviceToProxyApiPayload(service, developerId) {
       Number(service.pricePerThousandTokens) > 0 ? "per_1000_tokens" : "per_request",
     pricePerUnit:
       Number(service.pricePerThousandTokens) > 0
-        ? Math.max(1, Math.round(Number(service.pricePerThousandTokens) * Number(process.env.ALGO_USD_CENTS_PER_ALGO || 35)))
+        ? Math.max(1, Math.round(Number(service.pricePerThousandTokens) * Number(process.env.ETH_USD_RATE || 35)))
         : algoMinimumToCents(service.minimumChargeAlgo),
     authType: "bearer",
     authHeaderEncrypted: service.encryptedApiKey,

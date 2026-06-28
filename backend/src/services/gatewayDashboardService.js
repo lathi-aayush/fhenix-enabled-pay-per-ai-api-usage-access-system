@@ -111,7 +111,7 @@ export async function getConsumerDashboard(userId) {
     .populate("apiId", "name proxySlug pricePerUnit pricingModel category")
     .lean();
 
-  const rate = Number(process.env.ALGO_USD_CENTS_PER_ALGO || 35);
+  const rate = Number(process.env.ETH_USD_RATE || 35);
   return {
     rate,
     balanceCents,
@@ -275,7 +275,7 @@ export async function getDeveloperDashboard(userId) {
 
   const apiMap = Object.fromEntries(apis.map((a) => [String(a._id), a]));
 
-  const rate = Number(process.env.ALGO_USD_CENTS_PER_ALGO || 35);
+  const rate = Number(process.env.ETH_USD_RATE || 35);
 
   // Sum gateway revenue
   const gatewayTotalRevenueCents = perApiAgg.reduce((acc, r) => acc + (r.revenueCents || 0), 0);
@@ -373,7 +373,7 @@ export async function getUsageLogs(userId, { role, page = 1, limit = 25, apiId }
     UsageRecord.countDocuments(filter),
   ]);
 
-  const rate = Number(process.env.ALGO_USD_CENTS_PER_ALGO || 35);
+  const rate = Number(process.env.ETH_USD_RATE || 35);
   return {
     page,
     limit,

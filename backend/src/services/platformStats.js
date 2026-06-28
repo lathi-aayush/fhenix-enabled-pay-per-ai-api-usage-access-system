@@ -1,4 +1,3 @@
-import algosdk from "algosdk";
 import { ApiUsageLog } from "../models/ApiUsageLog.js";
 import { UsageRecord } from "../models/UsageRecord.js";
 import { ProxyApi } from "../models/ProxyApi.js";
@@ -6,70 +5,21 @@ import { GatewaySubscription } from "../models/GatewaySubscription.js";
 import { Service } from "../models/Service.js";
 import { User } from "../models/User.js";
 import { getContractConfig } from "../config/contractConfig.js";
-import { readContractGlobalUints } from "./contractAlgod.js";
+import {
+  getBalanceEth,
+  isValidEvmAddress,
+  explorerTxUrl,
+  explorerAddressUrl,
+} from "./evmService.js";
 
 const SUCCESS_LOG_MATCH = {
   $or: [{ success: true }, { success: { $exists: false } }],
 };
 
-function detectNetwork() {
-  const node = (
-    process.env.ALGORAND_NODE ||
-    process.env.ALGOD_SERVER ||
-    process.env.ALGO_INDEXER_URL ||
-    ""
-  ).toLowerCase();
-  if (node.includes("mainnet") && !node.includes("testnet")) return "mainnet";
-  return "testnet";
-}
-
-const LORA_BASE = "https://lora.algokit.io";
-
-function loraNetwork(network) {
-  return network === "mainnet" ? "mainnet" : "testnet";
-}
-
-export function explorerTxUrl(network, txId) {
-  if (!txId) return null;
-  return `${LORA_BASE}/${loraNetwork(network)}/transaction/${txId}`;
-}
-
-export function explorerAddressUrl(network, address) {
-  if (!address) return null;
-  return `${LORA_BASE}/${loraNetwork(network)}/account/${address}`;
-}
-
-export function explorerApplicationUrl(network, appId) {
-  if (appId == null || appId === "") return null;
-  return `${LORA_BASE}/${loraNetwork(network)}/application/${appId}`;
-}
-
-function getAlgod() {
-  const server = (
-    process.env.ALGOD_SERVER ||
-    process.env.ALGORAND_NODE ||
-    "https://testnet-api.algonode.cloud"
-  ).replace(/\/$/, "");
-  const token = process.env.ALGOD_TOKEN || "";
-  return new algosdk.Algodv2(token, server, "");
-}
-
-async function getAccountBalanceAlgo(address) {
-  if (!address || !algosdk.isValidAddress(address)) return null;
-  try {
-    const acct = await getAlgod().accountInformation(address).do();
-    return Number(acct.amount) / 1e6;
-  } catch (e) {
-    console.warn("[platformStats] account balance:", e?.message || e);
-    return null;
-  }
-}
-
 export async function getPlatformStats() {
-  const network = detectNetwork();
-  const rate = Number(process.env.ALGO_USD_CENTS_PER_ALGO || 35);
+  const ethUsdRate = Number(process.env.ETH_USD_RATE || 3200);
 
-  // --- Legacy aggregation (safe) ---
+  // --- Legacy aggregation ---
   let usageRow = null;
   try {
     const rows = await ApiUsageLog.aggregate([
@@ -78,17 +28,12 @@ export async function getPlatformStats() {
         $group: {
           _id: null,
           totalApiCalls: { $sum: 1 },
-          totalAlgoPaid: { $sum: "$amountAlgo" },
+          totalEthPaid: { $sum: { $ifNull: ["$amountEth", 0] } },
           totalTokens: { $sum: { $ifNull: ["$totalTokens", 0] } },
           verifiedOnChain: {
             $sum: {
               $cond: [
-                {
-                  $and: [
-                    { $ne: ["$paymentTxId", null] },
-                    { $ne: ["$paymentTxId", ""] },
-                  ],
-                },
+                { $and: [{ $ne: ["$txId", null] }, { $ne: ["$txId", ""] }] },
                 1,
                 0,
               ],
@@ -102,7 +47,7 @@ export async function getPlatformStats() {
     console.warn("[platformStats] legacy aggregation failed:", e?.message);
   }
 
-  // --- Gateway aggregation (safe) ---
+  // --- Gateway aggregation ---
   let gatewayRow = null;
   try {
     const rows = await UsageRecord.aggregate([
@@ -121,7 +66,7 @@ export async function getPlatformStats() {
     console.warn("[platformStats] gateway aggregation failed:", e?.message);
   }
 
-  // --- Count docs (safe) ---
+  // --- Count docs ---
   let activeServices = 0;
   let activeProxyApis = 0;
   let connectedWallets = 0;
@@ -139,62 +84,48 @@ export async function getPlatformStats() {
     console.warn("[platformStats] count queries failed:", e?.message);
   }
 
-  // --- Treasury balance (safe) ---
+  // --- Treasury balance (Base Sepolia ETH) ---
   const treasuryWallet = String(
-    process.env.TREASURY_WALLET || process.env.RECEIVER_WALLET || ""
+    process.env.TREASURY_WALLET_ADDRESS || process.env.RECEIVER_WALLET || ""
   ).trim();
-  let treasuryBalanceAlgo = null;
-  try {
-    treasuryBalanceAlgo = await getAccountBalanceAlgo(treasuryWallet);
-  } catch (e) {
-    console.warn("[platformStats] treasury balance failed:", e?.message);
-  }
-
-  // --- Contract state (safe) ---
-  let contractCfg = { appId: 0, contractAddress: "" };
-  let contractGlobals = null;
-  try {
-    contractCfg = getContractConfig();
-    if (contractCfg.appId) {
-      contractGlobals = await readContractGlobalUints();
+  let treasuryBalanceEth = null;
+  if (treasuryWallet && isValidEvmAddress(treasuryWallet)) {
+    try {
+      treasuryBalanceEth = await getBalanceEth(treasuryWallet);
+    } catch (e) {
+      console.warn("[platformStats] treasury balance failed:", e?.message);
     }
-  } catch (e) {
-    console.warn("[platformStats] contract read failed:", e?.message);
   }
 
-  const contractConfigured = Boolean(
-    contractCfg.appId && contractCfg.contractAddress && algosdk.isValidAddress(contractCfg.contractAddress)
-  );
+  // --- Contract config ---
+  const contractCfg = getContractConfig();
+  const contractConfigured = Boolean(contractCfg.address && isValidEvmAddress(contractCfg.address));
 
-  // --- Merge legacy + gateway totals ---
+  // --- Merge totals ---
   const legacyCalls = usageRow?.totalApiCalls ?? 0;
   const gatewayCalls = gatewayRow?.totalCalls ?? 0;
   const totalApiCalls = legacyCalls + gatewayCalls;
-
-  const legacyAlgo = usageRow?.totalAlgoPaid ?? 0;
-  const gatewayAlgoEquiv = (gatewayRow?.totalCostCents ?? 0) / rate;
-  const totalAlgoPaid = legacyAlgo + gatewayAlgoEquiv;
-
-  const legacyTokens = usageRow?.totalTokens ?? 0;
-  const gatewayTokens = gatewayRow?.totalTokens ?? 0;
-  const totalTokens = legacyTokens + gatewayTokens;
-
+  const totalEthPaid = usageRow?.totalEthPaid ?? 0;
+  const gatewayEthEquiv = ((gatewayRow?.totalCostCents ?? 0) / 100) / ethUsdRate;
+  const totalEthProcessed = totalEthPaid + gatewayEthEquiv;
+  const totalTokens = (usageRow?.totalTokens ?? 0) + (gatewayRow?.totalTokens ?? 0);
   const verifiedOnChain = usageRow?.verifiedOnChain ?? 0;
-  const contractPurchases = contractGlobals?.totalPurchases ?? 0;
 
   return {
-    network,
-    explorer: `${LORA_BASE}/${loraNetwork(network)}`,
+    network: "Base Sepolia",
+    chainId: 84532,
+    explorer: "https://sepolia.basescan.org",
     homepage: {
       apisAvailable: activeServices + activeProxyApis,
-      onChainTxns: Math.max(verifiedOnChain, totalApiCalls, contractPurchases),
+      onChainTxns: Math.max(verifiedOnChain, totalApiCalls),
       avgLatencyMs: totalApiCalls > 0 ? Math.min(120, Math.max(28, Math.round(42 - activeServices * 0.5))) : 42,
     },
     platform: {
       totalApiCalls,
       legacyApiCalls: legacyCalls,
       gatewayApiCalls: gatewayCalls,
-      totalAlgoPaid,
+      totalEthPaid,
+      totalEthProcessed,
       totalTokensServed: totalTokens,
       verifiedPayments: verifiedOnChain,
       activeServices,
@@ -205,19 +136,14 @@ export async function getPlatformStats() {
     },
     treasury: {
       address: treasuryWallet || null,
-      balanceAlgo: treasuryBalanceAlgo,
-      explorerUrl: explorerAddressUrl(network, treasuryWallet),
+      balanceEth: treasuryBalanceEth,
+      explorerUrl: treasuryWallet ? explorerAddressUrl(treasuryWallet) : null,
     },
     contract: {
       configured: contractConfigured,
-      appId: contractCfg.appId || null,
-      address: contractCfg.contractAddress || null,
-      explorerUrl: contractConfigured
-        ? explorerApplicationUrl(network, contractCfg.appId)
-        : null,
-      totalPurchases: contractGlobals?.totalPurchases ?? 0,
-      totalAlgoProcessed: (contractGlobals?.totalAlgoReceivedMicro ?? 0) / 1e6,
-      minPaymentAlgo: (contractGlobals?.minPayment ?? 0) / 1e6,
+      address: contractCfg.address || null,
+      chainId: contractCfg.chainId,
+      explorerUrl: contractConfigured ? explorerAddressUrl(contractCfg.address) : null,
     },
   };
 }

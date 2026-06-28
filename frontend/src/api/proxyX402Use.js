@@ -1,18 +1,41 @@
+/**
+ * proxyX402Use.js — EVM/Base Sepolia x402 payment for /api/use proxy calls.
+ * Replaces the Algorand version (burner wallet + algosdk).
+ *
+ * Uses the session key wallet to sign and submit ETH transfers for x402 calls.
+ */
+
 import { api } from "./client.js";
+import { getSessionKeyWallet } from "../wallet/sessionKey.js";
+import { getTxUrl } from "../utils/explorer.js";
 
 /**
- * Proxy-authenticated x402 on POST /api/use (Bearer sk-sentinel-* required).
+ * Encode the X-Payment header for Base Sepolia.
+ * Format: base64(JSON({ txHash, network, amount, payTo }))
+ */
+function buildXPaymentHeader({ txHash, accept }) {
+  const payload = {
+    txHash,
+    network: accept.network ?? "eip155:84532",
+    payTo: accept.payTo,
+    amount: accept.maxAmountRequired ?? accept.amount,
+  };
+  return btoa(JSON.stringify(payload));
+}
+
+/**
+ * Make an x402-authenticated call to POST /api/use using the session key wallet.
  *
  * @param {object} opts
- * @param {string} opts.apiKey
- * @param {string} opts.serviceId
- * @param {object} opts.body
- * @param {string} opts.algodServer
- * @param {{ addr: string, sk: Uint8Array }} opts.burnerWallet
+ * @param {string} opts.apiKey       Bearer API key (sk-sentinel-*)
+ * @param {string} opts.serviceId    Service MongoDB ID
+ * @param {object} opts.body         AI request body
+ * @returns {Promise<{ aiResponse, txHash, receipt }>}
  */
-export async function callProxyX402Use({ apiKey, serviceId, body, algodServer, burnerWallet }) {
+export async function callProxyX402Use({ apiKey, serviceId, body }) {
   const headers = { Authorization: `Bearer ${apiKey}` };
 
+  // Step 1: Trigger 402 challenge
   let challengeData;
   try {
     await api.post("/api/use", body, { headers });
@@ -26,56 +49,40 @@ export async function callProxyX402Use({ apiKey, serviceId, body, algodServer, b
   }
 
   const accept = challengeData?.accepts?.[0];
-  if (!accept?.payTo || accept.maxAmountRequired == null) {
+  if (!accept?.payTo || (accept.maxAmountRequired == null && accept.amount == null)) {
     throw new Error("Invalid x402 payment challenge from server");
   }
 
-  const receiver = String(accept.payTo).trim();
-  const amountMicroAlgos = Math.round(Number(accept.maxAmountRequired));
-  if (!Number.isFinite(amountMicroAlgos) || amountMicroAlgos <= 0) {
-    throw new Error("Invalid x402 charge amount from server");
-  }
+  const amountWei = BigInt(accept.maxAmountRequired ?? accept.amount);
+  if (amountWei <= 0n) throw new Error("Invalid x402 charge amount from server");
 
-  const algosdk = (await import("algosdk")).default;
-  const algod = new algosdk.Algodv2("", algodServer.trim(), "");
+  // Step 2: Check session key balance
+  const sessionWallet = getSessionKeyWallet();
+  const balanceHex = await window.ethereum?.request({
+    method: "eth_getBalance",
+    params: [sessionWallet.address, "latest"],
+  });
+  const balance = BigInt(balanceHex || "0x0");
 
-  let burnerBalanceInfo;
-  try {
-    burnerBalanceInfo = await algod.accountInformation(burnerWallet.addr).do();
-  } catch {
-    throw new Error("Burner wallet has zero balance. Please click 'Manage' > 'Fund' in the top bar.");
-  }
-
-  const params = await algod.getTransactionParams().do();
-  const txFee = Number(params.fee) || 1000;
-  if (Number(burnerBalanceInfo.amount) < amountMicroAlgos + txFee) {
+  if (balance < amountWei) {
     throw new Error(
-      `Burner wallet does not have enough funds. Required: ${(amountMicroAlgos + txFee) / 1_000_000} ALGO.`
+      `Session key wallet has insufficient balance. Required: ${Number(amountWei) / 1e18} ETH. ` +
+      `Fund ${sessionWallet.address} from your MetaMask wallet.`
     );
   }
 
-  const note = new TextEncoder().encode(`x402:sentinel:${serviceId}`);
-  const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-    sender: burnerWallet.addr,
-    receiver,
-    amount: amountMicroAlgos,
-    note,
-    suggestedParams: params,
-  });
+  // Step 3: Send ETH payment via session key relay (backend signs with private key)
+  const { txHash } = await (async () => {
+    const { data } = await api.post("/api/profile/session-key/send", {
+      privateKey: sessionWallet.privateKey,
+      to: accept.payTo,
+      amountWei: amountWei.toString(),
+    });
+    return data;
+  })();
 
-  const signedTxn = txn.signTxn(burnerWallet.sk);
-  const submitted = await algod.sendRawTransaction(signedTxn).do();
-  const txId = submitted?.txid ?? submitted?.txId;
-  if (!txId) {
-    throw new Error("Network did not return a transaction id after submit.");
-  }
-  await algosdk.waitForConfirmation(algod, txId, 4);
-
-  const paymentPayload = {
-    paymentGroup: [Buffer.from(signedTxn).toString("base64")],
-    paymentIndex: 0,
-  };
-  const xPaymentHeader = Buffer.from(JSON.stringify(paymentPayload)).toString("base64");
+  // Step 4: Build X-Payment header and retry the AI call
+  const xPaymentHeader = buildXPaymentHeader({ txHash, accept });
 
   const { data: final } = await api.post("/api/use", body, {
     headers: { ...headers, "X-Payment": xPaymentHeader },
@@ -83,6 +90,12 @@ export async function callProxyX402Use({ apiKey, serviceId, body, algodServer, b
 
   const receipt = final?.sentinelReceipt ?? null;
   const { sentinelReceipt: _sr, ...aiResponse } = final || {};
+  const settledTxHash = receipt?.paymentTxHash ?? txHash;
 
-  return { aiResponse, txId, receipt };
+  return {
+    aiResponse,
+    txHash: settledTxHash,
+    receipt,
+    explorerUrl: getTxUrl(settledTxHash),
+  };
 }

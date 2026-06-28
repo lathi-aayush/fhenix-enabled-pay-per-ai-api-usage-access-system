@@ -8,19 +8,11 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useWalletAction } from "../hooks/useWalletAction.js";
 import GuestConnectBanner from "../components/GuestConnectBanner.jsx";
 import { getPublicApiBase } from "../utils/apiBase.js";
-import { shortenWallet } from "../components/UserLiveWalletBar.jsx";
-import {
-  addressesEqual,
-  connectPera,
-  normalizeAccountAddress,
-  reconnectPera,
-  signAndSendPayment,
-} from "../wallet/pera.js";
+import { connectMetaMask, sendEthPayment, normalizeAddress as normalizeAccountAddress } from "../wallet/metamask.js";
 import { chargeForTokens, wordsToApproxTokens } from "../utils/tokenPricing.js";
 import { useTokenEstimate } from "../hooks/useTokenEstimate.js";
-import { getBurnerWallet } from "../wallet/burner.js";
 import { StarRating } from "../components/MarketplaceCard.jsx";
-import { testnetTxUrl } from "../utils/explorer.js";
+import { getTxUrl as testnetTxUrl } from "../utils/explorer.js";
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -28,14 +20,14 @@ function sleep(ms) {
 
 export default function ServiceDetail() {
   const { id } = useParams();
-  const { user, logout, burnerReady, isAuthenticated } = useAuth();
+  const { user, logout, sessionKeyReady, isAuthenticated } = useAuth();
   const { runWithWallet } = useWalletAction();
   const [service, setService] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [apiKey, setApiKey] = useState(null);
   const [showKeyModal, setShowKeyModal] = useState(false);
-  const [algodServer, setAlgodServer] = useState("https://testnet-api.algonode.cloud");
+  const rpcUrl = import.meta.env.VITE_RPC_URL || "https://sepolia.base.org";
   const [prompt, setPrompt] = useState("");
   const [invokeBusy, setInvokeBusy] = useState(false);
   const [costAck, setCostAck] = useState(false);
@@ -56,7 +48,7 @@ export default function ServiceDetail() {
   const apiBase = getPublicApiBase();
 
   const ppt = Number(service?.pricePerThousandTokens);
-  const minC = Number(service?.minimumChargeAlgo);
+  const minC = Number(service?.minimumChargeEth);
 
   const promptWordCount = useMemo(() => {
     const w = prompt.trim().split(/\s+/).filter(Boolean).length;
@@ -83,7 +75,7 @@ export default function ServiceDetail() {
         ]);
         if (!cancelled) {
           setService(svc);
-          if (net?.algodServer) setAlgodServer(net.algodServer);
+          // rpcUrl is now from env (VITE_RPC_URL)
         }
       } catch {
         toast.error("Service not found");
@@ -215,7 +207,7 @@ curl -sS "${apiBase}/api/use" \\
       navigator.clipboard.writeText(snippet).then(() => toast.success("x402 cURL copied"));
       return;
     }
-    const snippet = `# 1) Quote (no txId) — returns paymentRef + chargeAlgo
+    const snippet = `# 1) Quote (no txId) — returns paymentRef + chargeEth
 curl -sS "${apiBase}/api/use" \\
   -H "Authorization: Bearer ${apiKey}" \\
   -H "Content-Type: application/json" \\
@@ -259,17 +251,17 @@ curl -sS "${apiBase}/api/use" \\
 
     try {
       if (service.x402Enabled) {
-        if (!burnerReady) {
-          throw new Error("Burner wallet is still loading. Wait a moment and try again.");
+        if (!sessionKeyReady) {
+          throw new Error("Session key wallet is still loading. Wait a moment and try again.");
         }
-        setQuotedCharge(Number(service.minimumChargeAlgo) || null);
+        setQuotedCharge(Number(service.minimumChargeEth) || null);
         setPayStage("sign");
-        const burnerWallet = getBurnerWallet();
+        const burnerWallet = getSessionKeyWallet();
         const { aiResponse, txId, receipt } = await callProxyX402Use({
           apiKey,
           serviceId: service._id,
           body: { prompt: prompt.trim() },
-          algodServer,
+          rpcUrl,
           burnerWallet,
         });
         setLastTxId(txId);
@@ -294,8 +286,8 @@ curl -sS "${apiBase}/api/use" \\
         throw new Error("Unexpected quote response from server");
       }
 
-      const micro = Number(quote.expectedMicroAlgos);
-      const charge = Number(quote.chargeAlgo);
+      const micro = Number(quote.expectedWei);
+      const charge = Number(quote.chargeEth);
       if (!Number.isFinite(micro) || micro <= 0) {
         throw new Error("Invalid charge from server");
       }
@@ -303,42 +295,12 @@ curl -sS "${apiBase}/api/use" \\
       setQuotedCharge(charge);
       setPayStage("sign");
 
-      if (!burnerReady) {
-        throw new Error("Burner wallet is still loading. Wait a moment and try again.");
-      }
-      const burnerWallet = getBurnerWallet();
-      const algosdk = (await import("algosdk")).default;
-      const algod = new algosdk.Algodv2("", algodServer.trim(), "");
-      let burnerBalanceInfo;
-      try {
-        burnerBalanceInfo = await algod.accountInformation(burnerWallet.addr).do();
-      } catch (e) {
-        throw new Error("Burner wallet has zero balance. Please click 'Manage' > 'Fund' in the top bar.");
-      }
-
-      const params = await algod.getTransactionParams().do();
-      const txFee = Number(params.fee) || 1000;
-      
-      if (Number(burnerBalanceInfo.amount) < micro + txFee) {
-        throw new Error(`Burner wallet does not have enough funds for this request. Required: ${(micro + txFee) / 1000000} ALGO. Please click 'Manage' > 'Fund' in the top bar.`);
-      }
-
-      const note = new TextEncoder().encode(quote.paymentRef);
-      const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-        sender: burnerWallet.addr,
-        receiver: to,
-        amount: Math.round(micro),
-        note,
-        suggestedParams: params,
+      // Submit ETH payment via MetaMask (marketplace 2-step flow)
+      const { txHash: txId } = await sendEthPayment({
+        from: user.walletAddress,
+        to,
+        amountWei: BigInt(micro),
       });
-
-      const signedTxn = txn.signTxn(burnerWallet.sk);
-      const submitted = await algod.sendRawTransaction(signedTxn).do();
-      const txId = submitted?.txid ?? submitted?.txId;
-      if (!txId) {
-        throw new Error("Network did not return a transaction id after submit.");
-      }
-      await algosdk.waitForConfirmation(algod, txId, 4);
 
       setLastTxId(txId);
       setPayStage("confirming_chain");
@@ -496,7 +458,7 @@ curl -sS "${apiBase}/api/use" \\
                   className="mt-1"
                 />
                 <span>
-                  I understand each call charges from my burner wallet
+                  I understand each call charges from my session key wallet
                   {x402Enabled && Number.isFinite(minC) ? ` (min ${minC.toFixed(6)} ALGO)` : ""}.
                 </span>
               </label>
@@ -611,7 +573,7 @@ curl -sS "${apiBase}/api/use" \\
                 <>
                   Call <code className="font-mono text-xs">POST /api/use</code> without <code className="font-mono text-xs">txId</code>{" "}
                   to receive <code className="font-mono text-xs">paymentRef</code> + exact{" "}
-                  <code className="font-mono text-xs">chargeAlgo</code>. Pay with <code className="font-mono text-xs">paymentRef</code>{" "}
+                  <code className="font-mono text-xs">chargeEth</code>. Pay with <code className="font-mono text-xs">paymentRef</code>{" "}
                   in the note, then POST again with <code className="font-mono text-xs">txId</code> +{" "}
                   <code className="font-mono text-xs">paymentRef</code>.
                 </>

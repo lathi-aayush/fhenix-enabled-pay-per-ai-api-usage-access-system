@@ -8,11 +8,11 @@ const ENV_RECEIVER =
   "";
 
 const DEFAULT_ALGOD =
-  import.meta.env.VITE_ALGO_NODE_URL?.trim() || "https://testnet-api.algonode.cloud";
+  import.meta.env.VITE_RPC_URL?.trim() || "https://sepolia.base.org";
 
 export function usePaymentConfig() {
   const [config, setConfig] = useState({
-    algodServer: DEFAULT_ALGOD,
+    rpcUrl: DEFAULT_ALGOD,
     receiverWallet: ENV_RECEIVER,
     loading: !ENV_RECEIVER,
   });
@@ -26,7 +26,7 @@ export function usePaymentConfig() {
         const receiverWallet = data?.receiverWallet?.trim() || ENV_RECEIVER;
         if (receiverWallet) setCachedReceiverWallet(receiverWallet);
         setConfig({
-          algodServer: data?.algodServer?.trim() || DEFAULT_ALGOD,
+          rpcUrl: data?.rpcUrl?.trim() || DEFAULT_ALGOD,
           receiverWallet,
           loading: false,
         });

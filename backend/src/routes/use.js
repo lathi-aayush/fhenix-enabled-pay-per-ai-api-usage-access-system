@@ -1,7 +1,7 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import crypto from "crypto";
-import algosdk from "algosdk";
+import { ethers } from "ethers";
 import { AccessToken } from "../models/AccessToken.js";
 import { Service } from "../models/Service.js";
 import { ApiUsageLog } from "../models/ApiUsageLog.js";
@@ -10,29 +10,26 @@ import { User } from "../models/User.js";
 import { ProxyApi } from "../models/ProxyApi.js";
 import { notifyCreatorPurchaseWebhooks } from "../services/creatorWebhookDispatcher.js";
 import {
-  algoToMicroAlgos,
-  decodeNote,
-  lookupConfirmedTransactionOnIndexer,
-  normalizeAlgoAddress,
-  parsePaymentFromIndexer,
-} from "../services/algorandService.js";
+  normalizeEvmAddress,
+  isValidEvmAddress,
+  weiWithinTolerance,
+  explorerTxUrl,
+} from "../services/evmService.js";
 import {
-  computeChargeAlgo,
+  computeChargeEth,
   estimateTokensFromOpenAiMessages,
   extractTokenUsage,
-  microAlgosWithinTolerance,
 } from "../services/billing.js";
 import { registerPending, consumePending } from "../services/pendingUseCache.js";
 import { forwardChatCompletion } from "../services/aiProxy.js";
 import { decryptSecret } from "../utils/encrypt.js";
 import { canonicalWalletAddress } from "../utils/userWallet.js";
-import { submitProofOfIntelligence } from "../services/proofOfIntelligence.js";
 import {
   buildPaymentRequirements,
   send402Response,
-  parseXPaymentHeader,
+  decodeXPaymentHeader,
   verifyX402Payment,
-} from "../services/x402Middleware.js";
+} from "../services/fhenixX402Middleware.js";
 
 const router = Router();
 
@@ -139,8 +136,8 @@ async function invokeFlow(req, res) {
   }
   const { token, service } = auth;
   const userWallet = canonicalWalletAddress(token.userWallet);
-  const creatorWallet = normalizeAlgoAddress(String(service.creatorWallet || "").trim());
-  if (!creatorWallet || !algosdk.isValidAddress(creatorWallet)) {
+  const creatorWallet = normalizeEvmAddress(String(service.creatorWallet || "").trim());
+  if (!creatorWallet || !isValidEvmAddress(creatorWallet)) {
     return res.status(500).json({ error: "Service has an invalid creator wallet" });
   }
 
@@ -150,9 +147,9 @@ async function invokeFlow(req, res) {
   const estimatedTotalTokens = promptTokens + estimatedCompletionTokens;
 
   const ppt = Number(service.pricePerThousandTokens);
-  const minC = Number(service.minimumChargeAlgo);
-  const chargeAlgo = computeChargeAlgo(estimatedTotalTokens, ppt, minC);
-  const expectedMicroAlgos = algoToMicroAlgos(chargeAlgo);
+  const minC = Number(service.minimumChargeEth);
+  const chargeEth = computeChargeEth(estimatedTotalTokens, ppt, minC);
+  const expectedMicroAlgos = ethers.parseEther(String(chargeEth);
 
   if (expectedMicroAlgos <= 0) {
     return res.status(500).json({ error: "Invalid computed charge for this call" });
@@ -166,16 +163,16 @@ async function invokeFlow(req, res) {
     paymentRef,
     aiBody, // Cached prompt/messages payload to be executed once paid
     expectedMicroAlgos,
-    chargeAlgo,
+    chargeEth,
     promptTokens,
     completionTokens: estimatedCompletionTokens,
     totalTokens: estimatedTotalTokens,
     pricePerThousandTokens: ppt,
-    minimumChargeAlgo: minC,
+    minimumChargeEth: minC,
     serviceId: service._id,
     userWallet,
     accessTokenId: token._id,
-    developerWallet: creatorWallet,
+    creatorWallet: creatorWallet,
     aiProvider: service.aiProvider,
     modelName: service.modelName,
     promptText,
@@ -184,19 +181,19 @@ async function invokeFlow(req, res) {
   return res.json({
     awaitingPayment: true,
     paymentRef,
-    chargeAlgo,
+    chargeEth,
     expectedMicroAlgos,
     promptTokens,
     completionTokens: estimatedCompletionTokens,
     totalTokens: estimatedTotalTokens,
     pricePerThousandTokens: ppt,
-    minimumChargeAlgo: minC,
-    developerWallet: creatorWallet,
+    minimumChargeEth: minC,
+    creatorWallet: creatorWallet,
   });
 }
 
 async function completeFlow(req, res) {
-  const txId = String(req.body?.txId || "").trim();
+  const txId = String(req.body?.txHash || "").trim();
   const paymentRef = String(req.body?.paymentRef || "").trim();
   if (!txId) {
     return res.status(400).json({ error: "txId is required" });
@@ -212,7 +209,7 @@ async function completeFlow(req, res) {
   const { token, service } = auth;
 
   const usedOk = await ApiUsageLog.findOne({
-    paymentTxId: txId,
+    txHash: txId,
     success: true,
   });
   if (usedOk) {
@@ -234,7 +231,7 @@ async function completeFlow(req, res) {
     return res.status(400).json({ error: "Payment session does not match this API key's service" });
   }
   const userWallet = canonicalWalletAddress(token.userWallet);
-  if (normalizeAlgoAddress(pending.userWallet) !== normalizeAlgoAddress(userWallet)) {
+  if (normalizeEvmAddress(pending.userWallet) !== normalizeEvmAddress(userWallet)) {
     return res.status(400).json({ error: "Payment session does not match this wallet" });
   }
 
@@ -258,21 +255,21 @@ async function completeFlow(req, res) {
     return res.status(400).json({ error: "Invalid transaction type (expected payment)" });
   }
 
-  const creatorWallet = normalizeAlgoAddress(String(service.creatorWallet || "").trim());
+  const creatorWallet = normalizeEvmAddress(String(service.creatorWallet || "").trim());
   const { sender, receiver, amount, note } = parsed;
-  const senderN = normalizeAlgoAddress(sender);
-  const receiverN = normalizeAlgoAddress(receiver);
-  const userN = normalizeAlgoAddress(userWallet);
-  const creatorN = normalizeAlgoAddress(creatorWallet);
+  const senderN = normalizeEvmAddress(sender);
+  const receiverN = normalizeEvmAddress(receiver);
+  const userN = normalizeEvmAddress(userWallet);
+  const creatorN = normalizeEvmAddress(creatorWallet);
 
   // Allow any sender (like a Burner Wallet) to fund the AI request, as long as it matches the paymentRef UUID.
   if (receiverN !== creatorN) {
     return res.status(400).json({ error: "Payment receiver does not match the service developer wallet" });
   }
-  if (!microAlgosWithinTolerance(Number(amount), Number(pending.expectedMicroAlgos), 1)) {
+  if (!weiWithinTolerance(Number(amount), Number(pending.expectedMicroAlgos), 1)) {
     return res.status(400).json({
       error: "Payment amount does not match the quoted charge for this call",
-      detail: `Expected about ${pending.chargeAlgo} ALGO (±1%).`,
+      detail: `Expected about ${pending.chargeEth} ALGO (±1%).`,
     });
   }
 
@@ -309,8 +306,8 @@ async function completeFlow(req, res) {
         userWallet,
         serviceId: service._id,
         accessTokenId: token._id,
-        developerWallet: creatorWallet,
-        amountAlgo: 0,
+        creatorWallet: creatorWallet,
+        amountEth: 0,
         aiProvider: service.aiProvider,
         modelName: service.modelName,
         success: false,
@@ -341,28 +338,28 @@ async function completeFlow(req, res) {
     };
   }
 
-  const chargeAlgo = Number(pending.chargeAlgo);
+  const chargeEth = Number(pending.chargeEth);
 
   try {
     service.totalUses = (service.totalUses || 0) + 1;
-    service.totalRevenue = Number(service.totalRevenue || 0) + chargeAlgo;
+    service.totalRevenue = Number(service.totalRevenue || 0) + chargeEth;
     await service.save();
 
     const logDoc = await ApiUsageLog.create({
       userWallet,
       serviceId: service._id,
       accessTokenId: token._id,
-      developerWallet: creatorWallet,
-      amountAlgo: chargeAlgo,
+      creatorWallet: creatorWallet,
+      amountEth: chargeEth,
       aiProvider: service.aiProvider,
       modelName: service.modelName,
-      paymentTxId: txId,
+      txHash: txId,
       paymentRef,
       success: true,
       promptTokens: usage.promptTokens,
       completionTokens: usage.completionTokens,
       totalTokens: usage.totalTokens,
-      chargeAlgo,
+      chargeEth,
       pricePerThousandTokens: pending.pricePerThousandTokens,
     });
 
@@ -379,7 +376,7 @@ async function completeFlow(req, res) {
 
     void (async () => {
       try {
-        const proofTxId = await submitProofOfIntelligence({
+        const proofTxId = await /* proofOfIntelligence removed */({
           promptText: promptSnap,
           responseText: responseSnap,
           userWallet,
@@ -398,7 +395,7 @@ async function completeFlow(req, res) {
     void (async () => {
       try {
         const rate = Number(process.env.ALGO_USD_CENTS_PER_ALGO || 35);
-        const costCents = Math.round(chargeAlgo * rate);
+        const costCents = Math.round(chargeEth * rate);
 
         // Find the user's MongoDB _id and developer's _id for proper linking
         const consumer = await User.findOne({ walletAddress: userWallet }).select("_id").lean();
@@ -449,8 +446,8 @@ async function completeFlow(req, res) {
   return res.json({
     ...aiResponse,
     sentinelReceipt: {
-      paymentTxId: txId,
-      chargeAlgo,
+      txHash: txId,
+      chargeEth,
       promptTokens: usage.promptTokens,
       completionTokens: usage.completionTokens,
       totalTokens: usage.totalTokens,
@@ -461,32 +458,34 @@ async function completeFlow(req, res) {
 
 async function x402ChallengeFlow(req, res, auth) {
   const { service } = auth;
-  const creatorWallet = normalizeAlgoAddress(String(service.creatorWallet || "").trim());
-  if (!creatorWallet || !algosdk.isValidAddress(creatorWallet)) {
+  const creatorWallet = normalizeEvmAddress(String(service.creatorWallet || "").trim());
+  if (!creatorWallet || !isValidEvmAddress(creatorWallet)) {
     return res.status(500).json({ error: "Service has an invalid creator wallet" });
   }
 
-  const chargeAlgo = Number(service.minimumChargeAlgo);
-  const expectedMicroAlgos = algoToMicroAlgos(chargeAlgo);
+  const chargeEth = Number(service.minimumChargeEth);
+  const expectedMicroAlgos = ethers.parseEther(String(chargeEth);
   if (expectedMicroAlgos <= 0) {
     return res.status(500).json({ error: "Invalid minimum charge for this service" });
   }
 
   const resource = `${req.protocol}://${req.get("host")}/api/use`;
-  const paymentRequirements = buildPaymentRequirements({
-    payTo: creatorWallet,
-    amountMicroAlgos: expectedMicroAlgos,
-    resource,
-    description: `SentinelAI: ${service.title} — pay-per-use via proxy API (${chargeAlgo} ALGO)`,
-  });
+  const paymentRequirements = await Promise.resolve(
+    buildPaymentRequirements({
+      payTo: creatorWallet,
+      amountMicroAlgos: expectedMicroAlgos,
+      resource,
+      description: `SentinelAI: ${service.title} — pay-per-use via proxy API (${chargeEth} ALGO)`,
+    })
+  );
   return send402Response(res, paymentRequirements);
 }
 
 async function x402CompleteFlow(req, res, auth) {
   const { token, service, key } = auth;
   const userWallet = canonicalWalletAddress(token.userWallet);
-  const creatorWallet = normalizeAlgoAddress(String(service.creatorWallet || "").trim());
-  if (!creatorWallet || !algosdk.isValidAddress(creatorWallet)) {
+  const creatorWallet = normalizeEvmAddress(String(service.creatorWallet || "").trim());
+  if (!creatorWallet || !isValidEvmAddress(creatorWallet)) {
     return res.status(500).json({ error: "Service has an invalid creator wallet" });
   }
 
@@ -497,18 +496,22 @@ async function x402CompleteFlow(req, res, auth) {
     });
   }
 
-  const paymentPayload = parseXPaymentHeader(req.headers["x-payment"]);
+  const paymentPayload = decodeXPaymentHeader(req.headers["x-payment"]);
   if (!paymentPayload) {
     return res.status(400).json({ error: "Invalid or missing X-Payment header" });
   }
 
-  const chargeAlgo = Number(service.minimumChargeAlgo);
-  const expectedMicroAlgos = algoToMicroAlgos(chargeAlgo);
+  const chargeEth = Number(service.minimumChargeEth);
+  const expectedMicroAlgos = ethers.parseEther(String(chargeEth);
 
+  const resource = `${req.protocol}://${req.get("host")}/api/use`;
   const verification = await verifyX402Payment({
     payload: paymentPayload,
+    xPaymentHeader: req.headers["x-payment"],
     expectedReceiver: creatorWallet,
     expectedMicroAlgos,
+    resource,
+    description: `SentinelAI: ${service.title} — pay-per-use via proxy API (${chargeEth} ALGO)`,
   });
 
   if (!verification.valid) {
@@ -520,7 +523,7 @@ async function x402CompleteFlow(req, res, auth) {
 
   const { txId, senderAddress: payerWallet } = verification;
 
-  const alreadyUsed = await ApiUsageLog.findOne({ paymentTxId: txId, success: true });
+  const alreadyUsed = await ApiUsageLog.findOne({ txHash: txId, success: true });
   if (alreadyUsed) {
     return res.status(409).json({
       error: "This transaction has already been used",
@@ -554,11 +557,11 @@ async function x402CompleteFlow(req, res, auth) {
         userWallet,
         serviceId: service._id,
         accessTokenId: token._id,
-        developerWallet: creatorWallet,
-        amountAlgo: chargeAlgo,
+        creatorWallet: creatorWallet,
+        amountEth: chargeEth,
         aiProvider: service.aiProvider,
         modelName: service.modelName,
-        paymentTxId: txId,
+        txHash: txId,
         success: false,
         x402Payment: true,
         errorDetail: String(err?.message || err).slice(0, 500),
@@ -579,32 +582,32 @@ async function x402CompleteFlow(req, res, auth) {
     usage = { promptTokens: est, completionTokens: 0, totalTokens: est };
   }
 
-  const actualChargeAlgo = computeChargeAlgo(
+  const actualchargeEth = computeChargeEth(
     usage.totalTokens,
     Number(service.pricePerThousandTokens),
-    chargeAlgo
+    chargeEth
   );
 
   try {
     service.totalUses = (service.totalUses || 0) + 1;
-    service.totalRevenue = Number(service.totalRevenue || 0) + chargeAlgo;
+    service.totalRevenue = Number(service.totalRevenue || 0) + chargeEth;
     await service.save();
 
     const logDoc = await ApiUsageLog.create({
       userWallet,
       serviceId: service._id,
       accessTokenId: token._id,
-      developerWallet: creatorWallet,
-      amountAlgo: chargeAlgo,
+      creatorWallet: creatorWallet,
+      amountEth: chargeEth,
       aiProvider: service.aiProvider,
       modelName: service.modelName,
-      paymentTxId: txId,
+      txHash: txId,
       success: true,
       x402Payment: true,
       promptTokens: usage.promptTokens,
       completionTokens: usage.completionTokens,
       totalTokens: usage.totalTokens,
-      chargeAlgo: actualChargeAlgo,
+      chargeEth: actualchargeEth,
       pricePerThousandTokens: Number(service.pricePerThousandTokens),
     });
 
@@ -620,7 +623,7 @@ async function x402CompleteFlow(req, res, auth) {
     const ts = logDoc.createdAt ? new Date(logDoc.createdAt) : new Date();
     void (async () => {
       try {
-        const proofTxId = await submitProofOfIntelligence({
+        const proofTxId = await /* proofOfIntelligence removed */({
           promptText: promptSnap,
           responseText: responseSnap,
           userWallet,
@@ -638,7 +641,7 @@ async function x402CompleteFlow(req, res, auth) {
     void (async () => {
       try {
         const rate = Number(process.env.ALGO_USD_CENTS_PER_ALGO || 35);
-        const costCents = Math.round(chargeAlgo * rate);
+        const costCents = Math.round(chargeEth * rate);
         const consumer = await User.findOne({ walletAddress: userWallet }).select("_id").lean();
         const developer = await User.findOne({ walletAddress: creatorWallet }).select("_id").lean();
         const proxyApi = await ProxyApi.findOne({ legacyServiceId: service._id }).select("_id").lean();
@@ -682,9 +685,9 @@ async function x402CompleteFlow(req, res, auth) {
     ...aiResponse,
     sentinelReceipt: {
       paymentProtocol: "x402",
-      paymentTxId: txId,
+      txHash: txId,
       payerWallet,
-      chargeAlgo,
+      chargeEth,
       promptTokens: usage.promptTokens,
       completionTokens: usage.completionTokens,
       totalTokens: usage.totalTokens,
@@ -705,7 +708,7 @@ router.post("/", useRateLimit, async (req, res) => {
   }
 
   const { service } = auth;
-  const paymentPayload = parseXPaymentHeader(req.headers["x-payment"]);
+  const paymentPayload = decodeXPaymentHeader(req.headers["x-payment"]);
 
   if (service.x402Enabled) {
     if (paymentPayload) {
@@ -714,7 +717,7 @@ router.post("/", useRateLimit, async (req, res) => {
     return x402ChallengeFlow(req, res, auth);
   }
 
-  const txId = req.body?.txId;
+  const txId = req.body?.txHash;
   if (typeof txId === "string" && txId.trim()) {
     return completeFlow(req, res);
   }

@@ -2,13 +2,13 @@ import React from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext.jsx";
-import { usePeraLogin } from "../context/PeraLoginContext.jsx";
+import { useMetaMaskLogin } from "../context/MetaMaskLoginContext.jsx";
 import { useEffect, useState } from "react";
-import ContractStats from "../components/ContractStats.jsx";
+
 import HowItWorks from "../components/HowItWorks.jsx";
 import MegaNav from "../components/MegaNav.jsx";
 import InteractiveBackground from "../components/InteractiveBackground.jsx";
-import LiveTxFeed from "../components/LiveTxFeed.jsx";
+
 import FloatingAssistant from "../components/FloatingAssistant.jsx";
 
 const containerVariants = {
@@ -35,9 +35,9 @@ const itemVariants = {
 };
 
 const MARQUEE_ITEMS = [
-  { name: "Algorand L1", icon: "hub", color: "text-indigo-500" },
+  { name: "Base Sepolia", icon: "hub", color: "text-indigo-500" },
   { name: "0.001 ALGO / tx", icon: "toll", color: "text-emerald-500" },
-  { name: "Pera Wallet", icon: "account_balance_wallet", color: "text-violet-500" },
+  { name: "MetaMask", icon: "account_balance_wallet", color: "text-violet-500" },
   { name: "DeepSeek V3", icon: "psychology", color: "text-indigo-500" },
   { name: "Groq Inference", icon: "bolt", color: "text-amber-500" },
   { name: "x402 Protocol", icon: "lock", color: "text-rose-500" },
@@ -51,7 +51,7 @@ export default function Home() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
-  const { connectWithPera } = usePeraLogin();
+  const { connectWithMetaMask } = useMetaMaskLogin();
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [activeLegalTab, setActiveLegalTab] = useState("risk");
 
@@ -74,7 +74,7 @@ export default function Home() {
 
   function goToCreator() {
     if (isAuthenticated && user?.role === "creator") navigate("/creator");
-    else connectWithPera({ role: "creator", redirect: "/creator" });
+    else connectWithMetaMask({ role: "creator", redirect: "/creator" });
   }
 
   return (
@@ -139,7 +139,7 @@ export default function Home() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                   </span>
-                  <span className="text-emerald-600">Live on Algorand</span>
+                  <span className="text-emerald-600">Live on Base Sepolia</span>
                 </span>
               </motion.div>
 
@@ -229,7 +229,7 @@ export default function Home() {
             <p className="text-[10px] font-bold tracking-[0.15em] text-indigo-600 uppercase mb-2">For Developers</p>
             <h3 className="font-headline text-2xl font-bold text-slate-900">Marketplace</h3>
             <p className="text-sm text-slate-500 mt-3 leading-relaxed">
-              Browse AI APIs, pay per call with Pera Wallet, and integrate x402 payments on Algorand.
+              Browse AI APIs, pay per call with MetaMask, and integrate x402 payments on Algorand.
             </p>
             <div className="mt-6 flex flex-col items-start gap-2">
               <span className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 group-hover:text-indigo-700 transition-colors">
@@ -284,10 +284,10 @@ export default function Home() {
         <section id="live-proof" className="relative z-10 scroll-mt-20">
           <div className="max-w-6xl mx-auto px-6 grid gap-10 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_420px] items-start">
             <div className="w-full">
-              <ContractStats />
+              
             </div>
             <div className="lg:pt-20 w-full flex justify-center lg:justify-end">
-              <LiveTxFeed />
+              
             </div>
           </div>
         </section>

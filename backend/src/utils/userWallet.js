@@ -1,25 +1,37 @@
-import algosdk from "algosdk";
-import { normalizeAlgoAddress } from "../services/algorandService.js";
+import { ethers } from "ethers";
 import { AccessToken } from "../models/AccessToken.js";
 import { Transaction } from "../models/Transaction.js";
 import { ApiUsageLog } from "../models/ApiUsageLog.js";
 
 /**
- * Single canonical form for all Algorand addresses stored on users, balances, and tokens.
+ * Normalize an EVM address to checksummed form.
  */
-export function canonicalWalletAddress(raw) {
-  const s = String(raw ?? "").trim();
-  if (!s) {
-    throw new Error("Wallet address required");
+export function normalizeEvmAddress(addr) {
+  const s = String(addr ?? "").trim();
+  if (!s) return s;
+  try {
+    return ethers.getAddress(s);
+  } catch {
+    return s;
   }
-  if (!algosdk.isValidAddress(s)) {
-    throw new Error("Invalid Algorand address");
-  }
-  return normalizeAlgoAddress(s);
 }
 
 /**
- * Point all ledger rows that used a raw client-submitted address at the canonical key.
+ * Canonical checksummed EVM address — throws on invalid input.
+ * Drop-in replacement for canonicalWalletAddress (Algorand version).
+ */
+export function canonicalWalletAddress(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s) throw new Error("Wallet address required");
+  try {
+    return ethers.getAddress(s);
+  } catch {
+    throw new Error(`Invalid EVM address: ${s}`);
+  }
+}
+
+/**
+ * Migrate ledger rows from a raw address to its canonical checksummed form.
  */
 export async function migrateWalletAliasesToCanonical(canonical, rawSubmitted) {
   const raw = String(rawSubmitted ?? "").trim();
@@ -29,16 +41,20 @@ export async function migrateWalletAliasesToCanonical(canonical, rawSubmitted) {
   await ApiUsageLog.updateMany({ userWallet: raw }, { $set: { userWallet: canonical } });
 }
 
-/** Compare two wallet strings (canonical form when valid Algorand addresses). */
+/**
+ * Compare two EVM wallet addresses (checksummed, case-insensitive).
+ */
 export function sameWallet(a, b) {
   try {
     return canonicalWalletAddress(a) === canonicalWalletAddress(b);
   } catch {
-    return String(a ?? "").trim() === String(b ?? "").trim();
+    return String(a ?? "").trim().toLowerCase() === String(b ?? "").trim().toLowerCase();
   }
 }
 
-/** Mongo filter: services owned by this JWT wallet (canonical + legacy raw). */
+/**
+ * Mongo filter for services owned by a given wallet (canonical + lowercase fallback).
+ */
 export function creatorServicesOwnedBy(walletFromJwt) {
   let canonical;
   try {

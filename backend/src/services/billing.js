@@ -1,5 +1,5 @@
 /**
- * Token usage extraction and per-call ALGO charge for pay-per-token billing.
+ * Token usage extraction and per-call ETH charge for pay-per-token billing.
  */
 
 export function estimateTokensFromOpenAiMessages(messages) {
@@ -47,24 +47,28 @@ export function extractTokenUsage(provider, data) {
   return { promptTokens, completionTokens, totalTokens: total };
 }
 
-export function computeChargeAlgo(totalTokens, pricePerThousandTokens, minimumChargeAlgo) {
+/**
+ * Compute the ETH charge for an AI call based on token usage.
+ * Returns ETH as a float rounded to 18 significant decimal places.
+ */
+export function computeChargeEth(totalTokens, pricePerThousandTokens, minimumChargeEth) {
   const tokens = Number(totalTokens);
   const ppt = Number(pricePerThousandTokens);
-  const minC = Number(minimumChargeAlgo);
+  const minC = Number(minimumChargeEth);
   if (!Number.isFinite(tokens) || tokens < 0) return 0;
   if (!Number.isFinite(ppt) || ppt < 0) return 0;
   if (!Number.isFinite(minC) || minC < 0) return 0;
   const raw = (tokens / 1000) * ppt;
   const charge = Math.max(raw, minC);
-  return Math.round(charge * 1e6) / 1e6;
+  return Math.round(charge * 1e18) / 1e18;
 }
 
-/** Allow 1% deviation in microAlgos; at least 1 microAlgo slack. */
-export function microAlgosWithinTolerance(paidMicro, expectedMicro, tolerancePercent = 1) {
-  const paid = Number(paidMicro);
-  const exp = Number(expectedMicro);
-  if (!Number.isFinite(paid) || !Number.isFinite(exp)) return false;
-  const diff = Math.abs(paid - exp);
-  const allowed = Math.max(1, Math.ceil(exp * (tolerancePercent / 100)));
-  return diff <= allowed;
+/** Allow 1% deviation in wei; at least 1 wei slack. */
+export function weiWithinTolerance(paidWei, expectedWei, tolerancePercent = 1) {
+  const paid = BigInt(paidWei);
+  const expected = BigInt(expectedWei);
+  if (paid === expected) return true;
+  const slack = (expected * BigInt(Math.round(tolerancePercent * 100))) / 10000n;
+  const minAccepted = expected - (slack > 0n ? slack : 1n);
+  return paid >= minAccepted;
 }

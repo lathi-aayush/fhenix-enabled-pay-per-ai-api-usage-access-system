@@ -16,15 +16,11 @@
     "clipcraft:checklist": "node -e \"import('./src/studio/clipcraft/production/validationChecklist.js').then(m=>console.log(m.exportChecklistJson()))\""
   },
   "dependencies": {
-    "@algorandfoundation/xhd-wallet-api": "^2.0.0-canary.1",
     "@google-cloud/storage": "^7.19.0",
     "@google/generative-ai": "^0.24.1",
-    "@scure/bip39": "^2.2.0",
-    "@sentinalapi/sdk": "^1.0.0",
-    "@x402/avm": "^2.13.0",
-    "@x402/core": "^2.13.0",
-    "algosdk": "^3.5.2",
     "axios": "^1.7.9",
+    "ethers": "^6.13.0",
+    "viem": "^2.0.0",
     "bullmq": "^5.76.10",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
@@ -43,7 +39,7 @@
     "multer": "^2.1.1",
     "nodemon": "^3.1.14",
     "sanitize-html": "^2.17.4",
-    "sentinel-monorepo": "file:..",
+    "sentinal-fhenix": "file:..",
     "youtube-transcript": "^1.2.1"
   }
 }

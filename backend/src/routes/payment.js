@@ -1,19 +1,27 @@
+/**
+ * Payment routes — 2-step marketplace purchase flow on Base Sepolia.
+ *
+ * POST /api/payment/create  → returns {receiver, amountWei, amountEth, nonce}
+ * POST /api/payment/verify  → checks ETH tx on-chain, issues sk-sentinel-* API key
+ */
+
 import { Router } from "express";
 import { body, validationResult } from "express-validator";
-import algosdk from "algosdk";
+import { ethers } from "ethers";
 import crypto from "crypto";
 import { Service } from "../models/Service.js";
 import { Transaction } from "../models/Transaction.js";
 import { AccessToken } from "../models/AccessToken.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
-import {
-  algoToMicroAlgos,
-  decodeNote,
-  lookupTransactionByIDWithRetry,
-  normalizeAlgoAddress,
-  parsePaymentFromIndexer,
-} from "../services/algorandService.js";
 import { canonicalWalletAddress, sameWallet } from "../utils/userWallet.js";
+import {
+  getReceiptWithRetry,
+  getTransaction,
+  normalizeEvmAddress,
+  isValidEvmAddress,
+  weiWithinTolerance,
+  explorerTxUrl,
+} from "../services/evmService.js";
 
 const router = Router();
 
@@ -27,28 +35,31 @@ router.post(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
+
     const serviceId = String(req.body.serviceId || "").trim();
     const service = await Service.findById(serviceId);
     if (!service) return res.status(404).json({ error: "Service not found" });
+
     const receiver = String(service.creatorWallet || "").trim();
-    if (!receiver) {
-      return res.status(400).json({ error: "Service has no payout address" });
-    }
-    if (!algosdk.isValidAddress(receiver)) {
+    if (!receiver || !isValidEvmAddress(receiver)) {
       return res.status(400).json({
-        error: "Service creator wallet is not a valid Algorand address. Update the service with a valid TestNet address.",
+        error: "Service has no valid payout address. Creator must update their wallet to a Base Sepolia address.",
       });
     }
+
     if (sameWallet(receiver, req.user.walletAddress)) {
       return res.status(400).json({ error: "Cannot pay for your own service" });
     }
-    const minCharge = Number(service.minimumChargeAlgo);
+
+    const minCharge = Number(service.minimumChargeEth);
     if (!Number.isFinite(minCharge) || minCharge <= 0) {
       return res.status(400).json({ error: "Invalid service minimum charge" });
     }
-    const amountMicroAlgos = algoToMicroAlgos(minCharge);
+
+    const amountWei = ethers.parseEther(minCharge.toFixed(18)).toString();
     const paymentIntentId = crypto.randomUUID();
     const userWallet = canonicalWalletAddress(req.user.walletAddress);
+
     try {
       await Transaction.create({
         userWallet,
@@ -58,29 +69,21 @@ router.post(
         paymentIntentId,
       });
     } catch (e) {
-      console.error("Transaction.create", e);
-      const code = e?.code;
-      if (code === 11000) {
-        return res.status(409).json({
-          error: "Duplicate payment record. Try again in a moment.",
-          detail: e?.message,
-        });
+      if (e?.code === 11000) {
+        return res.status(409).json({ error: "Duplicate payment record. Try again in a moment." });
       }
-      return res.status(500).json({
-        error: "Could not create payment intent",
-        detail: process.env.NODE_ENV !== "production" ? e?.message : undefined,
-      });
+      return res.status(500).json({ error: "Could not create payment intent" });
     }
+
     res.json({
       paymentIntentId,
-      receiver,
-      amountMicroAlgos,
-      amountAlgo: minCharge,
-      note: `sentinal:${paymentIntentId}`,
-      algodServer:
-        process.env.ALGOD_SERVER ||
-        process.env.ALGORAND_NODE ||
-        "https://testnet-api.algonode.cloud",
+      receiver: normalizeEvmAddress(receiver),
+      amountWei,
+      amountEth: minCharge,
+      nonce: `sentinal:${paymentIntentId}`,
+      network: "Base Sepolia",
+      chainId: 84532,
+      rpcUrl: process.env.RPC_URL || "https://sepolia.base.org",
     });
   }
 );
@@ -89,17 +92,18 @@ router.post(
   "/verify",
   requireAuth,
   requireRole("user", "creator"),
-  body("txId").isString().trim().notEmpty(),
+  body("txHash").isString().trim().notEmpty(),
   body("paymentIntentId").isUUID(),
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const { txId, paymentIntentId } = req.body;
 
-    const existing = await Transaction.findOne({ txId });
-    if (existing && existing.status === "verified") {
+    const { txHash, paymentIntentId } = req.body;
+
+    const existing = await Transaction.findOne({ txId: txHash });
+    if (existing?.status === "verified") {
       return res.status(409).json({ error: "Transaction already used" });
     }
 
@@ -108,68 +112,61 @@ router.post(
     if (!pending || !sameWallet(pending.userWallet, userWallet)) {
       return res.status(404).json({ error: "Payment intent not found" });
     }
+
     if (pending.status === "verified") {
       const tokenDoc = await AccessToken.findOne({
         userWallet,
         serviceId: pending.serviceId,
       }).sort({ createdAt: -1 });
-      return res.json({
-        status: "verified",
-        apiKey: tokenDoc?.key ?? null,
-        transaction: pending,
-      });
+      return res.json({ status: "verified", apiKey: tokenDoc?.key ?? null, transaction: pending });
     }
 
-    let txInfo;
+    // Wait for on-chain confirmation
+    let receipt;
     try {
-      txInfo = await lookupTransactionByIDWithRetry(txId);
+      receipt = await getReceiptWithRetry(txHash.trim());
     } catch {
       return res.status(402).json({
-        error: "Transaction not found or not indexed yet. Wait a few seconds and try verify again.",
+        error: "Transaction not found or not confirmed yet. Wait a few seconds and try again.",
       });
     }
 
-    const parsed = parsePaymentFromIndexer(txInfo);
-    if (!parsed) {
-      return res.status(400).json({ error: "Invalid transaction type" });
+    if (receipt.status !== 1) {
+      return res.status(400).json({ error: "Transaction reverted on-chain" });
     }
 
-    const { sender, receiver, amount, note } = parsed;
+    const tx = await getTransaction(txHash.trim());
+    if (!tx) return res.status(400).json({ error: "Could not fetch transaction details" });
 
     const service = await Service.findById(pending.serviceId);
-    if (!service) return res.status(404).json({ error: "Service missing" });
+    if (!service) return res.status(404).json({ error: "Service not found" });
 
-    const expectedMicro = algoToMicroAlgos(Number(service.minimumChargeAlgo));
-    const senderN = normalizeAlgoAddress(sender);
-    const receiverN = normalizeAlgoAddress(receiver);
-    const userN = normalizeAlgoAddress(userWallet);
-    const creatorN = normalizeAlgoAddress(service.creatorWallet);
+    const expectedWei = ethers.parseEther(Number(service.minimumChargeEth).toFixed(18));
+    const senderNorm = normalizeEvmAddress(tx.from);
+    const receiverNorm = normalizeEvmAddress(tx.to);
+    const userNorm = normalizeEvmAddress(userWallet);
+    const creatorNorm = normalizeEvmAddress(service.creatorWallet);
 
-    if (senderN !== userN) {
-      return res.status(400).json({ error: "Sender mismatch" });
+    if (senderNorm !== userNorm) {
+      return res.status(400).json({ error: "Sender does not match your wallet" });
     }
-    if (receiverN !== creatorN) {
-      return res.status(400).json({ error: "Receiver mismatch" });
+    if (receiverNorm !== creatorNorm) {
+      return res.status(400).json({ error: "Receiver does not match service creator wallet" });
     }
-    if (amount !== expectedMicro) {
-      return res.status(400).json({ error: "Amount mismatch" });
-    }
-
-    const noteStr = decodeNote(note);
-    if (noteStr !== `sentinal:${paymentIntentId}`) {
-      return res.status(400).json({ error: "Note mismatch" });
+    if (!weiWithinTolerance(tx.value, expectedWei, 1)) {
+      return res.status(400).json({ error: "Payment amount does not match service price" });
     }
 
-    const dupTx = await Transaction.findOne({ txId, _id: { $ne: pending._id } });
+    const dupTx = await Transaction.findOne({ txId: txHash, _id: { $ne: pending._id } });
     if (dupTx) {
       return res.status(409).json({ error: "Transaction already recorded" });
     }
 
-    pending.txId = txId;
+    pending.txId = txHash.trim();
     pending.status = "verified";
     await pending.save();
 
-    service.totalRevenue = Number(service.totalRevenue) + Number(service.minimumChargeAlgo);
+    service.totalRevenue = Number(service.totalRevenue) + Number(service.minimumChargeEth);
     await service.save();
 
     const apiKey = `sk-sentinel-${crypto.randomBytes(32).toString("hex")}`;
@@ -185,6 +182,8 @@ router.post(
       status: "verified",
       apiKey,
       serviceId: service._id.toString(),
+      txHash: txHash.trim(),
+      explorerUrl: explorerTxUrl(txHash.trim()),
     });
   }
 );

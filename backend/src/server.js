@@ -76,12 +76,11 @@ app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
 app.get("/api/public/network", (_req, res) => {
   res.json({
-    algodServer:
-      process.env.ALGOD_SERVER ||
-      process.env.ALGORAND_NODE ||
-      "https://testnet-api.algonode.cloud",
-    network: process.env.ALGO_NETWORK?.trim() || "testnet",
+    rpcUrl: process.env.RPC_URL || "https://sepolia.base.org",
+    chainId: Number(process.env.CHAIN_ID || 84532),
+    network: "Base Sepolia",
     receiverWallet: getPublicReceiverWallet(),
+    explorer: "https://sepolia.basescan.org",
   });
 });
 

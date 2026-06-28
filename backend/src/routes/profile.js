@@ -15,7 +15,7 @@ import { getBalanceCents } from "../services/gatewayBalanceService.js";
 
 const router = Router();
 
-const RATE = () => Number(process.env.ALGO_USD_CENTS_PER_ALGO || 35);
+const RATE = () => Number(process.env.ETH_USD_RATE || 35);
 
 /**
  * GET /api/profile/summary
@@ -331,12 +331,12 @@ router.get("/burner", requireAuth, async (req, res) => {
       return res.json({ mnemonic: null });
     }
     
-    if (!user.burnerWalletEncrypted) {
+    if (!user.sessionKeyEncrypted) {
       return res.json({ mnemonic: null });
     }
     
     try {
-      const mnemonic = decryptSecret(user.burnerWalletEncrypted);
+      const mnemonic = decryptSecret(user.sessionKeyEncrypted);
       return res.json({ mnemonic });
     } catch (err) {
       return res.json({ mnemonic: null, error: "Failed to decrypt" });
@@ -367,7 +367,7 @@ router.post("/burner", requireAuth, async (req, res) => {
       return res.json({ success: true, skipped: true });
     }
     
-    user.burnerWalletEncrypted = encryptSecret(mnemonic.trim());
+    user.sessionKeyEncrypted = encryptSecret(mnemonic.trim());
     await user.save();
     
     return res.json({ success: true });

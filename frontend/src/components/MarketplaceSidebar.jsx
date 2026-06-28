@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import { usePeraLogin } from "../context/PeraLoginContext.jsx";
+import { useMetaMaskLogin } from "../context/MetaMaskLoginContext.jsx";
 
 import logo from "../assets/logo.png";
 
@@ -89,7 +89,7 @@ function MarketplaceNavLink({ item, isActive, user, onLockedClick }) {
 export default function MarketplaceSidebar() {
   const { pathname } = useLocation();
   const { user } = useAuth();
-  const { connectWithPera } = usePeraLogin();
+  const { connectWithMetaMask } = useMetaMaskLogin();
   const active = sidebarActiveId(pathname);
 
   const [openGroups, setOpenGroups] = useState(() =>
@@ -165,7 +165,7 @@ export default function MarketplaceSidebar() {
                       item={item}
                       isActive={active === item.id}
                       user={user}
-                      onLockedClick={(path) => connectWithPera({ redirect: path })}
+                      onLockedClick={(path) => connectWithMetaMask({ redirect: path })}
                     />
                   ))}
                 </div>
@@ -187,7 +187,7 @@ export default function MarketplaceSidebar() {
         ) : (
           <button
             type="button"
-            onClick={() => connectWithPera({ redirect: "/marketplace/browse" })}
+            onClick={() => connectWithMetaMask({ redirect: "/marketplace/browse" })}
             className="flex items-center justify-center gap-2 w-full py-2.5 rounded-full text-sm font-semibold text-white bg-primary hover:opacity-90 transition-opacity duration-200 cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">account_balance_wallet</span>

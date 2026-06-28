@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext.jsx";
-import { usePeraLogin } from "../context/PeraLoginContext.jsx";
+import { useMetaMaskLogin } from "../context/MetaMaskLoginContext.jsx";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client.js";
 import logo from "../assets/logo.png";
@@ -131,7 +131,7 @@ function StudioNavLink({ item, isActive, user, onLockedClick }) {
 
 export default function StudioLayout() {
   const { user, isAuthenticated } = useAuth();
-  const { connectWithPera } = usePeraLogin();
+  const { connectWithMetaMask } = useMetaMaskLogin();
   const { pathname } = useLocation();
   const active = sidebarActiveId(pathname);
   const isWorkflowBuilder =
@@ -139,8 +139,8 @@ export default function StudioLayout() {
     !pathname.includes("templates") &&
     !pathname.includes("history");
 
-  const [algodServer, setAlgodServer] = useState(
-    import.meta.env.VITE_ALGO_NODE_URL?.trim() || "https://testnet-api.algonode.cloud"
+  const [rpcUrl, setrpcUrl] = useState(
+    import.meta.env.VITE_RPC_URL?.trim() || "https://sepolia.base.org"
   );
   const [openGroups, setOpenGroups] = useState(() =>
     Object.fromEntries(NAV_GROUPS.map((g) => [g.id, g.defaultOpen ?? false]))
@@ -148,7 +148,7 @@ export default function StudioLayout() {
 
   useEffect(() => {
     api.get("/api/public/network").then(({ data }) => {
-      if (data?.algodServer) setAlgodServer(data.algodServer);
+      if (data?.rpcUrl) setrpcUrl(data.rpcUrl);
     }).catch(() => {});
   }, []);
 
@@ -198,7 +198,7 @@ export default function StudioLayout() {
   const isStudioHome = pathname === "/studio" || pathname === "/studio/";
 
   return (
-    <StudioOverageProvider algodServer={algodServer}>
+    <StudioOverageProvider rpcUrl={rpcUrl}>
     <div className="antialiased min-h-screen bg-[#f9f9f9]">
       <MegaNav />
 
@@ -265,7 +265,7 @@ export default function StudioLayout() {
                         item={item}
                         isActive={active === item.id}
                         user={user}
-                        onLockedClick={(path) => connectWithPera({ redirect: path })}
+                        onLockedClick={(path) => connectWithMetaMask({ redirect: path })}
                       />
                     ))}
                   </div>

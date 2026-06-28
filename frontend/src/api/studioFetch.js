@@ -42,7 +42,7 @@ export async function studioFetch(url, options = {}) {
       throw new Error("Payment required but response was not JSON");
     }
     const overage = payload.studioOverage;
-    if (!overage?.amountMicroAlgos) {
+    if (!overage?.amountWei) {
       const hint = payload.hint || payload.error || "Payment required";
       const credits =
         payload.creditsRemaining != null

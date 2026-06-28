@@ -2,9 +2,9 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
 import ProfileDropdown from "./ProfileDropdown.jsx";
-import UserLiveWalletBar from "./UserLiveWalletBar.jsx";
+
 import { useAuth } from "../context/AuthContext.jsx";
-import { usePeraLogin } from "../context/PeraLoginContext.jsx";
+import { useMetaMaskLogin } from "../context/MetaMaskLoginContext.jsx";
 import { goToHomeSection } from "../utils/scrollToSection.js";
 
 const ACCENT_STYLES = {
@@ -315,7 +315,7 @@ export default function MegaNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, user } = useAuth();
-  const { connectWithPera } = usePeraLogin();
+  const { connectWithMetaMask } = useMetaMaskLogin();
   const [openMenu, setOpenMenu] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -359,7 +359,7 @@ export default function MegaNav() {
         item.path.startsWith("/dashboard") || item.path.startsWith("/billing") || item.path.startsWith("/creator")
           ? "/marketplace/browse"
           : item.path;
-      connectWithPera({ role, redirect: guestSafe });
+      connectWithMetaMask({ role, redirect: guestSafe });
       return;
     }
 
@@ -371,7 +371,7 @@ export default function MegaNav() {
     if (isAuthenticated) {
       navigate("/dashboard/home");
     } else {
-      connectWithPera({ redirect: "/marketplace/browse" });
+      connectWithMetaMask({ redirect: "/marketplace/browse" });
     }
   };
 

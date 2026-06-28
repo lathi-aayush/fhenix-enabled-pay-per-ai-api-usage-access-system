@@ -1,4 +1,8 @@
 {
-  "appId": 763786783,
-  "contractAddress": "F3IGSPZCDJ6TUQSS22YSSGXNJP2JR47SQ5C5O64PVJCJ7CWTG6XNFTDLHM"
+  "address": "",
+  "chainId": 84532,
+  "minDepositWei": "1000000000000000",
+  "deployer": "",
+  "deployedAt": "",
+  "note": "Run `npm run deploy` to populate this file after setting DEPLOYER_PRIVATE_KEY and RPC_URL"
 }

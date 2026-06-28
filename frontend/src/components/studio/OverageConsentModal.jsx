@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { algoToInr, algoToUsd, RUN_TYPE_LABELS } from "../../constants/studioPlans.js";
+import { RUN_TYPE_LABELS } from "../../constants/studioPlans.js";
 import { buildX402PaymentHeader, resolveOveragePayTo } from "../../api/studioOverage.js";
-import { reconnectPera } from "../../wallet/pera.js";
+import { connectMetaMask } from "../../wallet/metamask.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 
-export default function OverageConsentModal({ open, overage, onCancel, onSuccess, algodServer }) {
+export default function OverageConsentModal({ open, overage, onCancel, onSuccess }) {
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -21,7 +21,7 @@ export default function OverageConsentModal({ open, overage, onCancel, onSuccess
     try {
       const payTo = await resolveOveragePayTo();
       if (!payTo) throw new Error("Payment wallet is not configured on the server.");
-      const from = user?.walletAddress || (await reconnectPera());
+      const from = user?.walletAddress || (await connectMetaMask());
       if (!from) throw new Error("Link Pera wallet in Profile first.");
 
       const xPayment = await buildX402PaymentHeader({
@@ -49,7 +49,7 @@ export default function OverageConsentModal({ open, overage, onCancel, onSuccess
           <p className="text-sm font-medium text-slate-800">{label}</p>
           <p className="text-2xl font-bold text-[#031634] font-mono">{amountAlgo} ALGO</p>
           <p className="text-xs text-slate-500">
-            ≈ ₹{algoToInr(overage.amountMicroAlgos)} · ≈ ${algoToUsd(overage.amountMicroAlgos)}
+            ≈ ₹{weiToInr(overage.amountMicroAlgos)} · ≈ ${weiToUsd(overage.amountMicroAlgos)}
           </p>
         </div>
         {error && (

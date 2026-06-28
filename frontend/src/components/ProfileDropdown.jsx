@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext.jsx";
-import { connectPera } from "../wallet/pera.js";
+import { connectMetaMask } from "../wallet/metamask.js";
 import { api } from "../api/client.js";
 
 export function shortenWalletAddress(addr) {
@@ -51,13 +51,17 @@ export default function ProfileDropdown() {
   const fetchOnChainBalance = async (address) => {
     setFetchingBalance(true);
     try {
-      const res = await axios.get(`https://testnet-api.algonode.cloud/v2/accounts/${address}`);
-      const microAlgos = res.data?.amount || 0;
-      const algos = (microAlgos / 1000000).toFixed(4);
-      setAlgoBalance(algos);
+      if (window.ethereum) {
+        const hex = await window.ethereum.request({
+          method: "eth_getBalance",
+          params: [address, "latest"],
+        });
+        const ethVal = (Number(BigInt(hex)) / 1e18).toFixed(4);
+        setAlgoBalance(ethVal);
+      }
     } catch (e) {
       console.warn("On-chain balance fetch failed", e);
-      setAlgoBalance("12.4500"); // Standard mock testnet balance fallback if offline
+      setAlgoBalance(null);
     } finally {
       setFetchingBalance(false);
     }
@@ -66,8 +70,8 @@ export default function ProfileDropdown() {
   const handleLinkWallet = async () => {
     setLinking(true);
     try {
-      toast.loading("Connecting Pera Wallet...", { id: "pera-link-dropdown" });
-      const address = await connectPera();
+      toast.loading("Connecting MetaMask...", { id: "pera-link-dropdown" });
+      const address = await connectMetaMask();
       toast.loading("Linking address to your profile...", { id: "pera-link-dropdown" });
       await linkWallet(address);
       toast.success("Wallet linked successfully!", { id: "pera-link-dropdown" });
@@ -185,10 +189,10 @@ export default function ProfileDropdown() {
             </div>
           </div>
 
-          {/* Algorand Wallet Connection State */}
+          
           <div className="flex flex-col gap-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              Algorand Secure Wallet
+              EVM Wallet (Base Sepolia)
             </span>
             
             {!user.walletAddress ? (
@@ -198,7 +202,7 @@ export default function ProfileDropdown() {
                 className="w-full py-2 bg-[#031634] hover:bg-[#021026] text-white rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
               >
                 <span className="material-symbols-outlined text-xs">account_balance_wallet</span>
-                {linking ? "Linking..." : "Link Pera Wallet"}
+                {linking ? "Linking..." : "Link MetaMask"}
               </button>
             ) : (
               <div className="bg-slate-50 dark:bg-slate-950 p-2.5 rounded border border-slate-100 dark:border-slate-850 flex justify-between items-center">

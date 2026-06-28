@@ -1,13 +1,12 @@
 import { User } from "../models/User.js";
 import { TxRecord } from "../models/TxRecord.js";
 import {
-  decodeNote,
-  indexerTransactionConfirmedRound,
-  lookupConfirmedTransactionOnIndexer,
-  normalizeAlgoAddress,
-  parsePaymentFromIndexer,
-} from "../services/algorandService.js";
-import { getPlanPriceMicro, isPaidTier, getPlanCredits } from "../constants/studioPlans.js";
+  getReceiptWithRetry,
+  getTransaction,
+  normalizeEvmAddress as normalizeAlgoAddress,
+  isValidEvmAddress,
+} from "../services/evmService.js";
+import { getPlanPriceWei, isPaidTier, getPlanCredits } from "../constants/studioPlans.js";
 import { resetMonthlyCredits } from "../services/studioCredits.js";
 import { sameWallet } from "../utils/userWallet.js";
 
@@ -61,14 +60,14 @@ export async function postSubscriptionUpgrade(req, res) {
     return res.status(500).json({ error: "Server misconfiguration: RECEIVER_WALLET not set" });
   }
 
-  const requiredMicro = getPlanPriceMicro(tierNorm);
+  const requiredMicro = getPlanPriceWei(tierNorm);
   if (requiredMicro == null) {
     return res.status(400).json({ error: "Unknown plan price" });
   }
 
   let txInfo;
   try {
-    txInfo = await lookupConfirmedTransactionOnIndexer(txIdTrim, {
+    txInfo = await getReceiptWithRetry(txIdTrim, {
       maxAttempts: 12,
       delayMs: 2000,
     });
@@ -79,12 +78,12 @@ export async function postSubscriptionUpgrade(req, res) {
     });
   }
 
-  const confirmedRound = indexerTransactionConfirmedRound(txInfo);
+  const confirmedRound = // indexerTransactionConfirmedRound removed(txInfo);
   if (!confirmedRound) {
     return res.status(400).json({ error: "Transaction is not confirmed on-chain" });
   }
 
-  const parsed = parsePaymentFromIndexer(txInfo);
+  const parsed = getTransaction(txInfo);
   if (!parsed) {
     return res.status(400).json({ error: "Transaction is not a payment" });
   }
@@ -107,7 +106,7 @@ export async function postSubscriptionUpgrade(req, res) {
     });
   }
 
-  const noteStr = decodeNote(note);
+  const noteStr = /* decodeNote removed */ (note);
   const expectedNote = expectedUpgradeNote(tierNorm, user._id.toString());
   if (noteStr !== expectedNote) {
     return res.status(400).json({ error: "Transaction note mismatch" });

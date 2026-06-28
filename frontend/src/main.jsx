@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
-import { PeraLoginProvider } from "./context/PeraLoginContext.jsx";
+import { MetaMaskLoginProvider } from "./context/MetaMaskLoginContext.jsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.jsx";
 import "./index.css";
 
@@ -21,10 +21,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <PeraLoginProvider>
+          <MetaMaskLoginProvider>
             <App />
             <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
-          </PeraLoginProvider>
+          </MetaMaskLoginProvider>
         </AuthProvider>
       </BrowserRouter>
       </QueryClientProvider>

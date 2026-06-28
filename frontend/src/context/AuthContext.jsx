@@ -1,17 +1,13 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { api, setAuthToken } from "../api/client.js";
 import { isTokenExpired, parseJwtPayload } from "../utils/jwt.js";
-import { ensureBurnerWallet, clearActiveBurnerUser } from "../wallet/burner.js";
-import { reconnectPera, signData } from "../wallet/pera.js";
-import { Buffer } from "buffer";
-
+import { ensureSessionKey, clearActiveSessionUser } from "../wallet/sessionKey.js";
+import { reconnectMetaMask, signMessage } from "../wallet/metamask.js";
 
 const AuthContext = createContext(null);
 
 const STORAGE_KEY = "sentinal_token";
 
-/** Always build the user object from the JWT so the shape is identical
- *  whether the user just logged in or refreshed the page. */
 function userFromToken(token) {
   if (!token) return null;
   const payload = parseJwtPayload(token);
@@ -30,10 +26,10 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem(STORAGE_KEY));
   const [user, setUser] = useState(() => userFromToken(localStorage.getItem(STORAGE_KEY)));
   const [loading, setLoading] = useState(true);
-  const [burnerReady, setBurnerReady] = useState(false);
+  const [sessionKeyReady, setSessionKeyReady] = useState(false);
 
   useEffect(() => {
-    reconnectPera().catch((err) => console.warn("Pera auto-reconnect failed:", err));
+    reconnectMetaMask().catch((err) => console.warn("MetaMask auto-reconnect failed:", err));
   }, []);
 
   const clearSession = useCallback(() => {
@@ -41,8 +37,8 @@ export function AuthProvider({ children }) {
     setToken(null);
     setUser(null);
     setAuthToken(null);
-    clearActiveBurnerUser();
-    setBurnerReady(false);
+    clearActiveSessionUser();
+    setSessionKeyReady(false);
   }, []);
 
   useEffect(() => {
@@ -63,7 +59,7 @@ export function AuthProvider({ children }) {
         const derived = userFromToken(token);
         if (derived) {
           setUser(derived);
-          setBurnerReady(false);
+          setSessionKeyReady(false);
           let profileOk = false;
           try {
             const { data } = await api.get("/api/profile/summary");
@@ -89,11 +85,11 @@ export function AuthProvider({ children }) {
           }
           if (profileOk) {
             try {
-              await ensureBurnerWallet(derived.id);
+              await ensureSessionKey(derived.id, token);
             } catch (err) {
-              console.warn("Burner init error:", err);
+              console.warn("Session key init error:", err);
             } finally {
-              setBurnerReady(true);
+              setSessionKeyReady(true);
             }
           }
         } else {
@@ -102,8 +98,8 @@ export function AuthProvider({ children }) {
       } else {
         setAuthToken(null);
         setUser(null);
-        clearActiveBurnerUser();
-        setBurnerReady(false);
+        clearActiveSessionUser();
+        setSessionKeyReady(false);
       }
       setLoading(false);
     }
@@ -117,13 +113,13 @@ export function AuthProvider({ children }) {
     setAuthToken(incoming);
     setToken(incoming);
     setUser(derived);
-    setBurnerReady(false);
+    setSessionKeyReady(false);
     try {
-      await ensureBurnerWallet(derived.id);
+      await ensureSessionKey(derived.id, incoming);
     } catch (err) {
-      console.warn("Burner init after login:", err);
+      console.warn("Session key init after login:", err);
     } finally {
-      setBurnerReady(true);
+      setSessionKeyReady(true);
     }
     return derived;
   }, []);
@@ -133,20 +129,18 @@ export function AuthProvider({ children }) {
     const challengeRes = await api.post("/api/auth/challenge", { walletAddress });
     const { nonce, message } = challengeRes.data;
 
-    // 2. Sign challenge message using Pera Wallet
-    const encodedMessage = new TextEncoder().encode(message);
-    const signed = await signData(encodedMessage, walletAddress);
-    const signatureBase64 = Buffer.from(signed[0]).toString("base64");
+    // 2. Sign with MetaMask personal_sign — returns hex signature (0x...)
+    const signature = await signMessage(message, walletAddress);
 
     // 3. Complete login with signature verification
     const { data } = await api.post("/api/auth/login", {
       walletAddress,
       nonce,
-      signature: signatureBase64,
+      signature,
       role,
     });
-    
-    const user = persistSession(data.token);
+
+    const user = await persistSession(data.token);
     return {
       user,
       isNewUser: Boolean(data.isNewUser),
@@ -155,47 +149,30 @@ export function AuthProvider({ children }) {
   }, [persistSession]);
 
   const register = useCallback(async (walletAddress, role, displayName) => {
-    // 1. Fetch challenge
     const challengeRes = await api.post("/api/auth/challenge", { walletAddress });
     const { nonce, message } = challengeRes.data;
-
-    // 2. Sign challenge
-    const encodedMessage = new TextEncoder().encode(message);
-    const signed = await signData(encodedMessage, walletAddress);
-    const signatureBase64 = Buffer.from(signed[0]).toString("base64");
-
-    // 3. Complete registration with verified signature
+    const signature = await signMessage(message, walletAddress);
     const { data } = await api.post("/api/auth/register", {
       walletAddress,
       nonce,
-      signature: signatureBase64,
+      signature,
       role,
       displayName,
     });
-    
     return persistSession(data.token);
   }, [persistSession]);
 
   const linkWallet = useCallback(async (walletAddress) => {
-    // 1. Fetch challenge
     const challengeRes = await api.post("/api/auth/challenge", { walletAddress });
     const { nonce, message } = challengeRes.data;
-
-    // 2. Sign challenge
-    const encodedMessage = new TextEncoder().encode(message);
-    const signed = await signData(encodedMessage, walletAddress);
-    const signatureBase64 = Buffer.from(signed[0]).toString("base64");
-
-    // 3. Complete link-wallet with verified signature
+    const signature = await signMessage(message, walletAddress);
     const { data } = await api.post("/api/auth/link-wallet", {
       walletAddress,
       nonce,
-      signature: signatureBase64,
+      signature,
     });
-    
     return persistSession(data.token);
   }, [persistSession]);
-
 
   const updateProfile = useCallback(async (displayName) => {
     const { data } = await api.put("/api/profile", { displayName });
@@ -223,10 +200,10 @@ export function AuthProvider({ children }) {
       updateProfile,
       becomeCreator,
       logout,
-      burnerReady,
+      sessionKeyReady,
       isAuthenticated: Boolean(token && user),
     }),
-    [token, user, loading, burnerReady, login, register, linkWallet, updateProfile, becomeCreator, logout]
+    [token, user, loading, sessionKeyReady, login, register, linkWallet, updateProfile, becomeCreator, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

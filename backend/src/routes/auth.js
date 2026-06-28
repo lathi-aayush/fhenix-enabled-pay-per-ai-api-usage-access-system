@@ -2,7 +2,7 @@ import { Router } from "express";
 import { body, validationResult } from "express-validator";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import algosdk from "algosdk";
+import { ethers } from "ethers";
 import { User } from "../models/User.js";
 import { LoginChallenge } from "../models/LoginChallenge.js";
 import { requireAuth } from "../middleware/auth.js";
@@ -42,7 +42,8 @@ function userPayload(user) {
 }
 
 /**
- * Cryptographically verifies a challenge signature using algosdk.verifyBytes
+ * Cryptographically verifies a MetaMask personal_sign challenge signature.
+ * Uses ethers.verifyMessage — recovers the signer address and compares to walletAddress.
  */
 async function verifyChallenge(walletAddress, nonce, signature) {
   if (!walletAddress || !nonce || !signature) {
@@ -62,9 +63,10 @@ async function verifyChallenge(walletAddress, nonce, signature) {
 
   let ok = false;
   try {
-    const messageBytes = new TextEncoder().encode(challenge.message);
-    const signatureBytes = Buffer.from(signature, "base64");
-    ok = algosdk.verifyBytes(messageBytes, signatureBytes, walletAddress);
+    // MetaMask signs the message with personal_sign (EIP-191 prefix applied automatically)
+    // signature is hex string (0x...) sent directly from MetaMask
+    const recovered = ethers.verifyMessage(challenge.message, signature);
+    ok = recovered.toLowerCase() === walletAddress.toLowerCase();
   } catch (err) {
     console.error("[auth] Signature verification error:", err.message);
     throw new Error("Invalid signature format or error during verification");

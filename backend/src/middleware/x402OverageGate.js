@@ -1,22 +1,22 @@
 import {
   OVERAGE_PRICES,
   RUN_TYPE_LABELS,
-  microToAlgo,
-  microToInr,
-  microToUsd,
+  weiToEth,
+  weiToInr,
+  weiToUsd,
 } from "../constants/studioPlans.js";
 import {
   buildPaymentRequirements,
-  parseXPaymentHeader,
+  send402Response,
+  decodeXPaymentHeader,
   verifyX402Payment,
-} from "../services/x402Middleware.js";
+} from "../services/fhenixX402Middleware.js";
 import { logStudioOverage, isOverageTxReplay } from "../services/studioCredits.js";
 
 function getSentinelWallet() {
   return (
-    process.env.SENTINEL_WALLET_ADDRESS?.trim() ||
+    process.env.TREASURY_WALLET_ADDRESS?.trim() ||
     process.env.RECEIVER_WALLET?.trim() ||
-    process.env.TREASURY_WALLET?.trim() ||
     ""
   );
 }
@@ -26,15 +26,15 @@ function getSentinelWallet() {
  * @param {keyof typeof OVERAGE_PRICES} overageTier
  */
 export function createX402Gate(overageTier) {
-  const amountMicro = OVERAGE_PRICES[overageTier];
-  if (!amountMicro) {
+  const amountWei = OVERAGE_PRICES[overageTier];
+  if (!amountWei) {
     throw new Error(`Unknown overage tier: ${overageTier}`);
   }
 
   return async function x402OverageGate(req, res, next) {
     const payTo = getSentinelWallet();
     if (!payTo) {
-      return res.status(500).json({ error: "SENTINEL_WALLET_ADDRESS / RECEIVER_WALLET not configured" });
+      return res.status(500).json({ error: "TREASURY_WALLET_ADDRESS / RECEIVER_WALLET not configured" });
     }
 
     const runType = req.x402RunType || req.studioRunType || "prompt_single";
@@ -42,25 +42,27 @@ export function createX402Gate(overageTier) {
       req.headers["x-payment"] || req.headers["X-Payment"] || req.body?.xPayment;
 
     if (xPayment) {
-      const payload = parseXPaymentHeader(xPayment);
-      if (!payload) {
+      const decoded = decodeXPaymentHeader(xPayment);
+      if (!decoded?.txHash) {
         return res.status(400).json({ error: "Invalid X-Payment header" });
       }
 
       const verified = await verifyX402Payment({
-        payload,
+        xPaymentHeader: typeof xPayment === "string" ? xPayment : undefined,
         expectedReceiver: payTo,
-        expectedMicroAlgos: amountMicro,
+        expectedWei: amountWei,
+        resource: `${req.protocol}://${req.get("host")}${req.originalUrl}`,
+        description: `Sentinel Studio overage — ${overageTier}`,
       });
 
       if (!verified.valid) {
         return res.status(402).json({
           error: verified.error || "Payment verification failed",
-          studioOverage: buildOveragePayload(runType, overageTier, amountMicro),
+          studioOverage: buildOveragePayload(runType, overageTier, amountWei),
         });
       }
 
-      if (await isOverageTxReplay(req.user.userId, verified.txId)) {
+      if (await isOverageTxReplay(req.user.userId, verified.txHash)) {
         return res.status(409).json({
           error: "Replay attack detected: transaction already used for Studio overage",
         });
@@ -69,8 +71,8 @@ export function createX402Gate(overageTier) {
       try {
         await logStudioOverage(req.user.userId, {
           runType,
-          algoAmount: amountMicro,
-          txId: verified.txId,
+          ethAmount: weiToEth(amountWei),
+          txId: verified.txHash,
         });
       } catch (e) {
         if (e.status === 409) {
@@ -80,14 +82,14 @@ export function createX402Gate(overageTier) {
       }
 
       req.overagePaid = true;
-      req.overageTxId = verified.txId;
+      req.overageTxId = verified.txHash;
       req.x402Required = false;
       return next();
     }
 
     const requirements = buildPaymentRequirements({
       payTo,
-      amountMicroAlgos: amountMicro,
+      amountWei,
       resource: `${req.protocol}://${req.get("host")}${req.originalUrl}`,
       description: `Sentinel Studio overage — ${overageTier}`,
     });
@@ -96,12 +98,11 @@ export function createX402Gate(overageTier) {
       x402Version: 1,
       error: "Payment Required",
       accepts: requirements.paymentRequirements,
-      studioOverage: buildOveragePayload(runType, overageTier, amountMicro),
+      studioOverage: buildOveragePayload(runType, overageTier, amountWei),
       creditsRemaining: req.creditsRemaining ?? 0,
       creditCost: req.studioCreditCost ?? null,
       creditPool: req.studioCreditPool ?? null,
-      hint:
-        "Studio Credits exhausted. Pay the overage in ALGO with Pera Wallet, or upgrade your plan for a larger monthly pool.",
+      hint: "Studio Credits exhausted. Pay the overage in ETH via MetaMask, or upgrade your plan for a larger monthly pool.",
     };
 
     return res
@@ -111,17 +112,17 @@ export function createX402Gate(overageTier) {
   };
 }
 
-function buildOveragePayload(runType, overageTier, amountMicro) {
+function buildOveragePayload(runType, overageTier, amountWei) {
   return {
     runType,
     runTypeLabel: RUN_TYPE_LABELS[runType] || runType,
     overageTier,
-    amountMicroAlgos: amountMicro,
-    amountAlgo: microToAlgo(amountMicro),
-    amountInr: Math.round(microToInr(amountMicro)),
-    amountUsd: Number(microToUsd(amountMicro).toFixed(2)),
-    facilitatorUrl: process.env.X402_FACILITATOR_URL || "https://facilitator.goplausible.xyz",
-    network: process.env.ALGO_NETWORK || "testnet",
+    amountWei: String(amountWei),
+    amountEth: weiToEth(amountWei),
+    amountInr: Math.round(weiToInr(amountWei)),
+    amountUsd: Number(weiToUsd(amountWei).toFixed(6)),
+    network: "Base Sepolia",
+    chainId: 84532,
   };
 }
 
@@ -130,7 +131,6 @@ export async function conditionalX402Gate(req, res, next) {
   if (!req.x402Required) {
     return next();
   }
-
   const tier = req.x402OverageTier || "lite";
   return createX402Gate(tier)(req, res, next);
 }

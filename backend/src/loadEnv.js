@@ -6,19 +6,18 @@ import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { probePlatformMnemonic, getPlatformTreasuryKey } from "./services/platformTreasuryKey.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const envPath = path.resolve(__dirname, "..", ".env");
 
 dotenv.config({ path: envPath });
 
-// Fallback if only treasury / sentinel wallet was configured earlier
-if (!process.env.RECEIVER_WALLET?.trim() && process.env.TREASURY_WALLET?.trim()) {
-  process.env.RECEIVER_WALLET = process.env.TREASURY_WALLET.trim();
+// Backward compat: TREASURY_WALLET_ADDRESS and RECEIVER_WALLET are interchangeable
+if (!process.env.RECEIVER_WALLET?.trim() && process.env.TREASURY_WALLET_ADDRESS?.trim()) {
+  process.env.RECEIVER_WALLET = process.env.TREASURY_WALLET_ADDRESS.trim();
 }
-if (!process.env.RECEIVER_WALLET?.trim() && process.env.SENTINEL_WALLET_ADDRESS?.trim()) {
-  process.env.RECEIVER_WALLET = process.env.SENTINEL_WALLET_ADDRESS.trim();
+if (!process.env.TREASURY_WALLET_ADDRESS?.trim() && process.env.RECEIVER_WALLET?.trim()) {
+  process.env.TREASURY_WALLET_ADDRESS = process.env.RECEIVER_WALLET.trim();
 }
 
 console.log("[env] .env path:", envPath);
@@ -38,7 +37,8 @@ if (process.env.REDIS_DISABLED === "1") {
   }
 }
 console.log("[env] RECEIVER_WALLET:", process.env.RECEIVER_WALLET ? "loaded" : "MISSING");
-console.log("[env] ALGO_INDEXER_URL:", process.env.ALGO_INDEXER_URL ? "loaded" : "MISSING");
+console.log("[env] RPC_URL:", process.env.RPC_URL || "https://sepolia.base.org (default)");
+console.log("[env] CHAIN_ID:", process.env.CHAIN_ID || "84532 (default)");
 console.log(
   "[env] GOOGLE_API_KEY:",
   process.env.GOOGLE_API_KEY?.trim() || process.env.GEMINI_API_KEY?.trim() ? "loaded" : "MISSING (Prompt Generator disabled)"
@@ -91,27 +91,9 @@ if (process.env.GOOGLE_CLOUD_PROJECT?.trim() && gcsBucket) {
   console.warn("[env] Veo video: set GCS_ASSETS_BUCKET for Veo output storage");
 }
 
-const platformProbe = probePlatformMnemonic();
-if (platformProbe.status === "missing") {
-  console.warn("[env] PLATFORM_MNEMONIC: not set (creator withdrawals disabled)");
-} else if (platformProbe.status === "ok") {
-  console.log(
-    `[env] PLATFORM_MNEMONIC: valid treasury (${platformProbe.mode})`,
-    platformProbe.addr.slice(0, 8) + "…"
-  );
-} else if (platformProbe.status === "bip39_pending") {
-  console.log(
-    `[env] PLATFORM_MNEMONIC: ${platformProbe.wordCount}-word Pera Universal phrase (BIP-39); deriving treasury on first withdraw…`
-  );
-  void getPlatformTreasuryKey()
-    .then((t) => {
-      console.log("[env] PLATFORM_MNEMONIC: treasury ready", t.addr.slice(0, 8) + "…", `(${t.mode})`);
-    })
-    .catch((err) => {
-      console.warn("[env] PLATFORM_MNEMONIC:", err.message);
-    });
+const contractAddress = process.env.CONTRACT_ADDRESS?.trim();
+if (contractAddress) {
+  console.log("[env] CONTRACT_ADDRESS:", contractAddress.slice(0, 8) + "…");
 } else {
-  console.warn(
-    `[env] PLATFORM_MNEMONIC: invalid (${platformProbe.wordCount} words; use 25-word Algorand or 24-word Pera Universal phrase)`
-  );
+  console.warn("[env] CONTRACT_ADDRESS: not set (will try contract/contract_info.json)");
 }

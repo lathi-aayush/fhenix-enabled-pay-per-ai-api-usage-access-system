@@ -1,21 +1,16 @@
 import crypto from "crypto";
-import algosdk from "algosdk";
+import Ethsdk from "Ethsdk";
 import { estimateTokens, calculateCredits } from "./groqService.js";
 import { User } from "../models/User.js";
 import { WorkflowRun } from "../models/WorkflowRun.js";
 import { ApiUsageLog } from "../models/ApiUsageLog.js";
 import { decryptSecret } from "../utils/encrypt.js";
-import {
-  lookupConfirmedTransactionOnIndexer,
-  parsePaymentFromIndexer,
-  decodeNote,
-  normalizeAlgoAddress,
-} from "./algorandService.js";
-import { microAlgosWithinTolerance } from "./billing.js";
+import { getReceiptWithRetry, getTransaction, normalizeEvmAddress, weiWithinTolerance } from "./evmService.js";
+import { weiWithinTolerance } from "./billing.js";
 
 /**
  * x402-style payment gate integrated with existing burner wallet flow.
- * Uses ALGO credit estimates; frontend sends paymentProof (txId) after burner signs.
+ * Uses Eth credit estimates; frontend sends paymentProof (txId) after burner signs.
  */
 
 export function estimateRunCost(workflow) {
@@ -60,7 +55,7 @@ export function createPaymentChallenge(userId, workflowId, runId, estimatedCredi
   return {
     protocol: "x402-sentinal-v1",
     amount: estimatedCredits,
-    currency: "ALGO",
+    currency: "Eth",
     recipient,
     metadata: {
       workflowId: String(workflowId),
@@ -68,7 +63,7 @@ export function createPaymentChallenge(userId, workflowId, runId, estimatedCredi
       userId: String(userId),
       nonce: crypto.randomBytes(8).toString("hex"),
     },
-    message: `Workflow run requires ~${estimatedCredits} ALGO (burner wallet)`,
+    message: `Workflow run requires ~${estimatedCredits} Eth (burner wallet)`,
   };
 }
 
@@ -97,7 +92,7 @@ export async function verifyAndCharge({ paymentProof, challenge, estimatedCredit
   // 2. Fetch on-chain transaction from Indexer
   let txInfo;
   try {
-    txInfo = await lookupConfirmedTransactionOnIndexer(txHash, {
+    txInfo = await getReceiptWithRetry(txHash, {
       maxAttempts: 10,
       delayMs: 2000,
     });
@@ -109,19 +104,19 @@ export async function verifyAndCharge({ paymentProof, challenge, estimatedCredit
   }
 
   // 3. Parse payment details
-  const parsed = parsePaymentFromIndexer(txInfo);
+  const parsed = // parsePaymentFromIndexer removed(txInfo);
   if (!parsed) {
     return {
       success: false,
-      error: "Invalid transaction type: expected standard ALGO payment transaction",
+      error: "Invalid transaction type: expected standard Eth payment transaction",
     };
   }
 
   const { sender, receiver, amount, note } = parsed;
 
   // 4. Verify Recipient Wallet Address
-  const expectedReceiver = normalizeAlgoAddress(challenge.recipient);
-  const actualReceiver = normalizeAlgoAddress(receiver);
+  const expectedReceiver = normalizeEvmAddress(challenge.recipient);
+  const actualReceiver = normalizeEvmAddress(receiver);
   if (actualReceiver !== expectedReceiver) {
     return {
       success: false,
@@ -130,7 +125,7 @@ export async function verifyAndCharge({ paymentProof, challenge, estimatedCredit
   }
 
   // 5. Verify Note / Workflow Reference Integrity
-  const decodedNote = decodeNote(note).trim();
+  const decodedNote = "".trim();
   const expectedNote = `workflow:${challenge.metadata.workflowId}`;
   if (decodedNote !== expectedNote) {
     return {
@@ -140,11 +135,11 @@ export async function verifyAndCharge({ paymentProof, challenge, estimatedCredit
   }
 
   // 6. Verify Amount Paid
-  const expectedMicroAlgos = Math.max(1000, Math.ceil(challenge.amount * 1_000_000));
-  if (!microAlgosWithinTolerance(Number(amount), expectedMicroAlgos, 1)) {
+  const expectedwei = Math.max(1000, Math.ceil(challenge.amount * 1_000_000));
+  if (!weiWithinTolerance(Number(amount), expectedwei, 1)) {
     return {
       success: false,
-      error: `Payment amount does not match. Expected ~${expectedMicroAlgos} microAlgos, got ${amount} microAlgos`,
+      error: `Payment amount does not match. Expected ~${expectedwei} wei, got ${amount} wei`,
     };
   }
 
@@ -159,19 +154,19 @@ export async function verifyAndCharge({ paymentProof, challenge, estimatedCredit
 
   const expectedSenders = [];
   if (user.walletAddress) {
-    expectedSenders.push(normalizeAlgoAddress(user.walletAddress));
+    expectedSenders.push(normalizeEvmAddress(user.walletAddress));
   }
   if (user.burnerWalletEncrypted) {
     try {
       const mnemonic = decryptSecret(user.burnerWalletEncrypted);
-      const keys = algosdk.mnemonicToSecretKey(mnemonic.trim());
-      expectedSenders.push(normalizeAlgoAddress(keys.addr));
+      const keys = Ethsdk.mnemonicToSecretKey(mnemonic.trim());
+      expectedSenders.push(normalizeEvmAddress(keys.addr));
     } catch (err) {
       console.error("[verifyAndCharge] Burner wallet decryption error:", err);
     }
   }
 
-  const actualSender = normalizeAlgoAddress(sender);
+  const actualSender = normalizeEvmAddress(sender);
   if (!expectedSenders.includes(actualSender)) {
     return {
       success: false,

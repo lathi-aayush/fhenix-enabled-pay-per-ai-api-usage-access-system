@@ -14,7 +14,7 @@ import { maskWebhookSecret, sendTestWebhook } from "../services/creatorWebhookDi
 import {
   computeCreatorWithdrawalBalances,
   listCreatorWithdrawals,
-  MIN_WITHDRAWAL_ALGO,
+  MIN_WITHDRAWAL_ETH,
   requestCreatorWithdrawal,
 } from "../services/creatorWithdrawalService.js";
 
@@ -537,7 +537,7 @@ router.get(
       totalWithdrawn: balances.totalWithdrawn,
       withdrawable: balances.withdrawable,
       pendingWithdrawals: balances.pendingWithdrawals,
-      minWithdrawalAlgo: MIN_WITHDRAWAL_ALGO,
+      minWithdrawalAlgo: MIN_WITHDRAWAL_ETH,
       creatorWallet: req.user.walletAddress,
       withdrawals: history,
     });

@@ -1,21 +1,22 @@
 import { useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import { usePeraLogin } from "../context/PeraLoginContext.jsx";
+import { useMetaMaskLogin } from "../context/MetaMaskLoginContext.jsx";
 
 /**
  * Run an action only when the user has a wallet session.
- * Guests are prompted to connect Pera first; on success the action runs immediately.
+ * Guests are prompted to connect MetaMask first; on success the action runs immediately.
+ * Replaces the Pera-based version.
  */
 export function useWalletAction() {
   const { isAuthenticated } = useAuth();
-  const { connectWithPera } = usePeraLogin();
+  const { connectWithMetaMask } = useMetaMaskLogin();
   const { pathname } = useLocation();
 
   const runWithWallet = useCallback(
     async (action, { role = "user", redirect } = {}) => {
       if (!isAuthenticated) {
-        const ok = await connectWithPera({
+        const ok = await connectWithMetaMask({
           role,
           redirect: redirect ?? pathname,
           navigate: false,
@@ -27,7 +28,7 @@ export function useWalletAction() {
       }
       return true;
     },
-    [isAuthenticated, connectWithPera, pathname]
+    [isAuthenticated, connectWithMetaMask, pathname]
   );
 
   return { runWithWallet, isAuthenticated };

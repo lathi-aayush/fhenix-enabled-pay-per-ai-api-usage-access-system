@@ -1,9 +1,8 @@
-/** Public payment destination — safe to expose to the frontend (Algorand address only). */
+/** Public treasury/receiver wallet address — safe to expose to frontend. */
 export function getPublicReceiverWallet() {
   return (
+    process.env.TREASURY_WALLET_ADDRESS?.trim() ||
     process.env.RECEIVER_WALLET?.trim() ||
-    process.env.SENTINEL_WALLET_ADDRESS?.trim() ||
-    process.env.TREASURY_WALLET?.trim() ||
     ""
   );
 }

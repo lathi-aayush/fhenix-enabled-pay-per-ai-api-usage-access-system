@@ -84,7 +84,7 @@ router.get("/agent-context", async (_req, res) => {
         per_1k_tokens_algo: Number(s.pricePerThousandTokens),
         minimum_charge_algo: Number(s.minimumChargeAlgo),
         billing_notes:
-          "Pay-per-use via Algorand Testnet. No subscription required. " +
+          "Pay-per-use via Base Sepolia. No subscription required. " +
           "Each call is charged based on actual token usage, floored to the minimum charge.",
       },
       usage: {
@@ -94,7 +94,7 @@ router.get("/agent-context", async (_req, res) => {
       how_to_use: {
         step_1_generate_key: `POST /api/access/generate  body: { "serviceId": "${s._id}" }  (requires Sentinel JWT)`,
         step_2_call_api: `POST /api/use  headers: { "Authorization": "Bearer <api_key>" }  body: { "messages": [{ "role": "user", "content": "<your prompt>" }] }`,
-        step_3_pay: "Respond to the returned paymentRef by sending the specified microAlgo amount on Algorand Testnet to the developerWallet address with the paymentRef in the transaction note.",
+        step_3_pay: "Respond to the returned paymentRef by sending the specified microAlgo amount on Base Sepolia to the developerWallet address with the paymentRef in the transaction note.",
         step_4_claim: `POST /api/use  headers: { "Authorization": "Bearer <api_key>" }  body: { "txId": "<algorand_txid>", "paymentRef": "<payment_ref_uuid>" }`,
       },
       how_to_use_x402: s.x402Enabled ? {
@@ -113,7 +113,7 @@ router.get("/agent-context", async (_req, res) => {
     sentinel_agent_context: true,
     version: "1.0",
     generated_at: new Date().toISOString(),
-    network: "algorand-testnet",
+    network: "base-sepolia",
     base_url: "http://localhost:5000",
     description:
       "This is the Sentinel AI API Marketplace — a pay-per-use AI API platform built on Algorand. " +

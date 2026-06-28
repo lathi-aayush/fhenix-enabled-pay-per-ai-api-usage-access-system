@@ -4,7 +4,7 @@ import { getPlanCredits } from "../constants/studioPlans.js";
 const overageEntrySchema = new mongoose.Schema(
   {
     runType: { type: String, required: true },
-    algoAmount: { type: Number, required: true },
+    ethAmount: { type: Number, required: true },
     txId: { type: String, required: true },
     timestamp: { type: Date, default: Date.now },
     settled: { type: Boolean, default: true },
@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema(
     displayName: { type: String, unique: true, sparse: true, trim: true },
     photoURL: { type: String, trim: true },
     role: { type: String, enum: ["user", "creator"], required: true, default: "user" },
-    burnerWalletEncrypted: { type: String, trim: true },
+    sessionKeyEncrypted: { type: String, trim: true },
     subscriptionTier: {
       type: String,
       enum: ["free", "creator", "pro", "enterprise"],
@@ -36,8 +36,6 @@ const userSchema = new mongoose.Schema(
     walletBalanceCents: { type: Number, default: 0, min: 0 },
     /** v2 gateway: master key for POST /proxy/:slug */
     sentinelApiKey: { type: String, unique: true, sparse: true },
-    /** Registered Algorand address (alias for walletAddress when set) */
-    algoAddress: { type: String, trim: true, sparse: true },
   },
   { timestamps: { createdAt: true, updatedAt: true } }
 );

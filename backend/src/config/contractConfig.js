@@ -5,13 +5,14 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
- * ALGO_APP_ID / ALGO_CONTRACT_ADDRESS from env, or contract/contract_info.json (repo root).
+ * Load SentinelPayment contract info from env or contract/contract_info.json.
  */
 export function getContractConfig() {
   const jsonPath =
     process.env.CONTRACT_INFO_PATH ||
     join(__dirname, "..", "..", "..", "contract", "contract_info.json");
-  let fromFile = { appId: 0, contractAddress: "" };
+
+  let fromFile = { address: "", chainId: 84532 };
   try {
     if (existsSync(jsonPath)) {
       fromFile = JSON.parse(readFileSync(jsonPath, "utf8"));
@@ -19,10 +20,9 @@ export function getContractConfig() {
   } catch (e) {
     console.error("[contractConfig] read contract_info.json:", e?.message || e);
   }
+
   return {
-    appId: Number(process.env.ALGO_APP_ID || fromFile.appId || 0) || 0,
-    contractAddress: String(
-      process.env.ALGO_CONTRACT_ADDRESS || fromFile.contractAddress || ""
-    ).trim(),
+    address: String(process.env.CONTRACT_ADDRESS || fromFile.address || "").trim(),
+    chainId: Number(process.env.CHAIN_ID || fromFile.chainId || 84532),
   };
 }
