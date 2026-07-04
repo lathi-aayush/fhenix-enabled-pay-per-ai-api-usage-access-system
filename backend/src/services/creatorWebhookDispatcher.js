@@ -118,7 +118,7 @@ async function recordDelivery(webhook, envelope, result) {
 
 /**
  * Fire registered creator webhooks for a successful API purchase.
- * Non-blocking â€” errors are logged, never thrown to callers.
+ * Non-blocking — errors are logged, never thrown to callers.
  */
 export function notifyCreatorPurchaseWebhooks({ creatorWallet, usageLog, service, x402Payment = false }) {
   void (async () => {
@@ -148,7 +148,7 @@ export function notifyCreatorPurchaseWebhooks({ creatorWallet, usageLog, service
           await recordDelivery(wh, envelope, result);
           if (!result.success) {
             console.error(
-              `[webhook] delivery failed webhook=${wh._id} status=${result.httpStatus ?? "â€”"} ${result.errorMessage ?? ""}`
+              `[webhook] delivery failed webhook=${wh._id} status=${result.httpStatus ?? "—"} ${result.errorMessage ?? ""}`
             );
           }
         })
@@ -167,7 +167,7 @@ export async function sendTestWebhook(webhook) {
     event: "webhook.test",
     createdAt: new Date().toISOString(),
     data: {
-      message: "SentinelAI webhook test â€” your endpoint is reachable.",
+      message: "SentinelAI webhook test — your endpoint is reachable.",
       creatorWallet: webhook.creatorWallet,
     },
   };
@@ -178,6 +178,6 @@ export async function sendTestWebhook(webhook) {
 }
 
 export function maskWebhookSecret(secret) {
-  if (!secret || secret.length < 8) return "â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢";
-  return `${secret.slice(0, 6)}â€¦${secret.slice(-4)}`;
+  if (!secret || secret.length < 8) return "••••••••";
+  return `${secret.slice(0, 6)}…${secret.slice(-4)}`;
 }

@@ -5,17 +5,18 @@
 
 import { createCofheClient, createCofheConfig } from "@cofhe/sdk/node";
 import { Encryptable } from "@cofhe/sdk";
-import { sepolia as cofheSepolia } from "@cofhe/sdk/chains";
 import { createPublicClient, createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { sepolia as viemSepolia } from "viem/chains";
 import { ethers } from "ethers";
 import { getContractConfig } from "../config/contractConfig.js";
-import { explorerTxUrl, isValidEvmAddress, normalizeEvmAddress } from "./evmService.js";
+import { getNetworkConfig } from "../config/chainConfig.js";
+import { explorerTxUrl } from "../config/chainConfig.js";
+import { isValidEvmAddress, normalizeEvmAddress } from "./evmService.js";
 
 const SENTINEL_ABI = [
   "function deductForCall(address user, tuple(uint256 ctHash, bytes signature) encAmount, address service)",
   "function hasBalance(address user) view returns (bool)",
+  "function owner() view returns (address)",
 ];
 
 let operatorPromise = null;
@@ -42,32 +43,63 @@ async function getOperatorContext() {
       throw new Error("CONTRACT_ADDRESS not configured");
     }
 
-    const rpc = process.env.RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com";
+    const net = getNetworkConfig();
     const normalizedPk = pk.startsWith("0x") ? pk : `0x${pk}`;
     const account = privateKeyToAccount(normalizedPk);
 
     const publicClient = createPublicClient({
-      chain: viemSepolia,
-      transport: http(rpc),
+      chain: net.viemChain,
+      transport: http(net.rpcUrl),
     });
     const walletClient = createWalletClient({
-      chain: viemSepolia,
-      transport: http(rpc),
+      chain: net.viemChain,
+      transport: http(net.rpcUrl),
       account,
     });
 
-    const config = createCofheConfig({ supportedChains: [cofheSepolia] });
+    const config = createCofheConfig({ supportedChains: [net.cofheChain] });
     const client = createCofheClient(config);
     await client.connect(publicClient, walletClient);
 
-    const provider = new ethers.JsonRpcProvider(rpc);
+    const provider = new ethers.JsonRpcProvider(net.rpcUrl);
     const signer = new ethers.Wallet(normalizedPk, provider);
     const contract = new ethers.Contract(address, SENTINEL_ABI, signer);
 
-    return { client, contract };
-  })();
+    const owner = await contract.owner();
+    if (owner.toLowerCase() !== account.address.toLowerCase()) {
+      throw new Error(
+        `OPERATOR_PRIVATE_KEY (${account.address}) is not SentinelPayment owner (${owner})`
+      );
+    }
+
+    return { client, contract, operatorAddress: account.address };
+  })().catch((err) => {
+    operatorPromise = null;
+    throw err;
+  });
 
   return operatorPromise;
+}
+
+/** Startup check — logs whether FHE deductions can run. */
+export async function getFheStatus() {
+  const { address, chainId } = getContractConfig();
+  const net = getNetworkConfig(chainId);
+  const base = {
+    configured: isFheConfigured(),
+    contractAddress: address || null,
+    chainId,
+    network: net.name,
+    operatorKeySet: Boolean(getOperatorKey()),
+  };
+  if (!base.configured) return { ...base, ready: false, reason: "missing_contract_or_operator_key" };
+
+  try {
+    const { operatorAddress } = await getOperatorContext();
+    return { ...base, ready: true, operatorAddress };
+  } catch (e) {
+    return { ...base, ready: false, reason: "operator_init_failed", error: e?.message || String(e) };
+  }
 }
 
 export async function hasFheBalance(userWallet) {

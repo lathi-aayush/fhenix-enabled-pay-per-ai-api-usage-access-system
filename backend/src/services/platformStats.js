@@ -5,6 +5,7 @@ import { GatewaySubscription } from "../models/GatewaySubscription.js";
 import { Service } from "../models/Service.js";
 import { User } from "../models/User.js";
 import { getContractConfig } from "../config/contractConfig.js";
+import { getNetworkConfig } from "../config/chainConfig.js";
 import {
   getBalanceEth,
   isValidEvmAddress,
@@ -111,10 +112,12 @@ export async function getPlatformStats() {
   const totalTokens = (usageRow?.totalTokens ?? 0) + (gatewayRow?.totalTokens ?? 0);
   const verifiedOnChain = usageRow?.verifiedOnChain ?? 0;
 
+  const net = getNetworkConfig(contractCfg.chainId);
+
   return {
-    network: "Sepolia",
-    chainId: 11155111,
-    explorer: "https://sepolia.etherscan.io",
+    network: net.name,
+    chainId: net.chainId,
+    explorer: net.explorerBase,
     homepage: {
       apisAvailable: activeServices + activeProxyApis,
       onChainTxns: Math.max(verifiedOnChain, totalApiCalls),

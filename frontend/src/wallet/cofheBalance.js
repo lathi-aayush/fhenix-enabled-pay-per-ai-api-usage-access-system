@@ -5,12 +5,14 @@
 
 import { createCofheConfig, createCofheClient } from "@cofhe/sdk/web";
 import { FheTypes } from "@cofhe/sdk";
-import { sepolia as cofheSepolia } from "@cofhe/sdk/chains";
+import { baseSepolia as cofheBaseSepolia, sepolia as cofheSepolia } from "@cofhe/sdk/chains";
 import { Ethers6Adapter } from "@cofhe/sdk/adapters";
 import { BrowserProvider, Contract } from "ethers";
 import { connectMetaMask } from "./metamask.js";
+import { getChainId } from "../config/chain.js";
+import { api } from "../api/client.js";
 
-const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS?.trim() || "";
+const ENV_CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS?.trim() || "";
 
 const SENTINEL_ABI = [
   "function deposit() payable",
@@ -19,14 +21,41 @@ const SENTINEL_ABI = [
 ];
 
 let cofheClientPromise = null;
+let resolvedContractAddress = ENV_CONTRACT_ADDRESS;
+
+function getCofheChain() {
+  const chainId = getChainId();
+  return chainId === 11155111 ? cofheSepolia : cofheBaseSepolia;
+}
 
 export function isCofheContractConfigured() {
-  return Boolean(CONTRACT_ADDRESS && CONTRACT_ADDRESS.startsWith("0x"));
+  return Boolean(resolvedContractAddress && resolvedContractAddress.startsWith("0x"));
+}
+
+/** Resolve contract address from env or backend stats API. */
+export async function resolveContractAddress() {
+  if (ENV_CONTRACT_ADDRESS?.startsWith("0x")) {
+    resolvedContractAddress = ENV_CONTRACT_ADDRESS;
+    return resolvedContractAddress;
+  }
+  try {
+    const { data } = await api.get("/api/contract/stats");
+    if (data?.contractAddress?.startsWith("0x")) {
+      resolvedContractAddress = data.contractAddress;
+      return resolvedContractAddress;
+    }
+  } catch {
+    // ponytail: stats fetch is best-effort; env is primary
+  }
+  return resolvedContractAddress;
 }
 
 async function getCofheClient() {
+  await resolveContractAddress();
   if (!isCofheContractConfigured()) {
-    throw new Error("VITE_CONTRACT_ADDRESS is not set. Deploy SentinelPayment and add it to frontend/.env");
+    throw new Error(
+      "Contract address not configured. Deploy SentinelPayment and set VITE_CONTRACT_ADDRESS or CONTRACT_ADDRESS in backend."
+    );
   }
 
   if (cofheClientPromise) return cofheClientPromise;
@@ -37,21 +66,25 @@ async function getCofheClient() {
     const signer = await provider.getSigner();
     const { publicClient, walletClient } = await Ethers6Adapter(provider, signer);
 
-    const config = createCofheConfig({ supportedChains: [cofheSepolia] });
+    const config = createCofheConfig({ supportedChains: [getCofheChain()] });
     const client = createCofheClient(config);
     await client.connect(publicClient, walletClient);
     return client;
-  })();
+  })().catch((err) => {
+    cofheClientPromise = null;
+    throw err;
+  });
 
   return cofheClientPromise;
 }
 
-function getContract(signer) {
-  return new Contract(CONTRACT_ADDRESS, SENTINEL_ABI, signer);
+function getContract(signerOrProvider) {
+  return new Contract(resolvedContractAddress, SENTINEL_ABI, signerOrProvider);
 }
 
 /** Deposit native ETH — balance stored as encrypted euint64 on-chain. */
 export async function depositToSentinel(amountWei) {
+  await resolveContractAddress();
   if (!isCofheContractConfigured()) {
     throw new Error("Contract address not configured");
   }
@@ -66,6 +99,7 @@ export async function depositToSentinel(amountWei) {
 
 /** Plaintext bool — safe to read without permit. */
 export async function checkHasFheBalance(userAddress) {
+  await resolveContractAddress();
   if (!isCofheContractConfigured() || !userAddress) return false;
   const provider = new BrowserProvider(window.ethereum);
   const contract = getContract(provider);
@@ -87,5 +121,14 @@ export async function getDecryptedBalanceWei() {
 }
 
 export function getContractAddress() {
-  return CONTRACT_ADDRESS;
+  return resolvedContractAddress;
+}
+
+export async function getFheWalletStatus() {
+  try {
+    const { data } = await api.get("/api/contract/stats");
+    return data?.fhe ?? null;
+  } catch {
+    return null;
+  }
 }

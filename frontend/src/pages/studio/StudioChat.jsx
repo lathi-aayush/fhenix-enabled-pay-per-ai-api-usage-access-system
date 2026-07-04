@@ -6,10 +6,12 @@ import { getSessionKeyWallet } from "../../wallet/sessionKey.js";
 import ReactMarkdown from "react-markdown";
 import { toast } from "react-hot-toast";
 
+import { getNetworkConfig } from "../config/chain.js";
+
 function buildXPaymentHeader({ txHash, accept }) {
   const payload = {
     txHash,
-    network: accept.network ?? "eip155:11155111",
+    network: accept.network ?? getNetworkConfig().x402Network,
     payTo: accept.payTo,
     amount: accept.maxAmountRequired ?? accept.amount,
   };
@@ -73,10 +75,17 @@ export default function StudioChat() {
 
       let challengeData;
       try {
-        await api.post(`/api/x402/use/${selectedServiceId}`, {
+        const { data } = await api.post(`/api/x402/use/${selectedServiceId}`, {
           messages: newMessages,
           stream: false,
         });
+        const receipt = data?.sentinelReceipt;
+        if (receipt?.paymentMethod === "fhe_balance" || receipt?.paymentProtocol === "cofhe") {
+          const assistantText = data?.choices?.[0]?.message?.content || "";
+          setMessages((prev) => [...prev, { role: "assistant", content: assistantText }]);
+          toast.success("Paid from FHE encrypted balance");
+          return;
+        }
         throw new Error("Expected 402 Payment Required, but request succeeded without payment.");
       } catch (err) {
         if (err.response?.status === 402) {

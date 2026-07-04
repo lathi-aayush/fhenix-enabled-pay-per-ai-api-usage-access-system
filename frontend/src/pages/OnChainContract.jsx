@@ -3,12 +3,14 @@ import toast from "react-hot-toast";
 import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useWalletAction } from "../hooks/useWalletAction.js";
+import { getNetworkConfig } from "../config/chain.js";
 import {
   checkHasFheBalance,
   depositToSentinel,
   getContractAddress,
   getDecryptedBalanceWei,
   isCofheContractConfigured,
+  resolveContractAddress,
 } from "../wallet/cofheBalance.js";
 import { getAddressUrl, getTxUrl } from "../utils/explorer.js";
 
@@ -31,13 +33,17 @@ export default function OnChainContract() {
   const [hasBalance, setHasBalance] = useState(false);
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [lastTxHash, setLastTxHash] = useState("");
+  const [fheStatus, setFheStatus] = useState(null);
 
+  const net = getNetworkConfig(stats?.chainId);
   const contractAddr = getContractAddress() || stats?.contractAddress || "";
 
   const loadStats = useCallback(async () => {
     try {
       const { data } = await api.get("/api/contract/stats");
       setStats(data);
+      setFheStatus(data?.fhe ?? null);
+      await resolveContractAddress();
     } catch {
       toast.error("Could not load contract stats");
     } finally {
@@ -119,14 +125,22 @@ export default function OnChainContract() {
         <h1 className="text-2xl font-bold text-[#031634]">FHE Smart Contract</h1>
         <p className="text-sm text-slate-600 mt-1">
           Prepaid balance on <code className="text-xs">SentinelPayment</code> — stored as encrypted{" "}
-          <code className="text-xs">euint64</code> on Sepolia. Only you can unseal your balance.
+          <code className="text-xs">euint64</code> on {net.name}. Only you can unseal your balance.
         </p>
       </div>
 
       {!configured && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           Contract not configured. Deploy <code>SentinelPayment.sol</code>, set{" "}
-          <code>CONTRACT_ADDRESS</code> in backend and <code>VITE_CONTRACT_ADDRESS</code> in frontend.
+          <code>CONTRACT_ADDRESS</code> in backend and optionally <code>VITE_CONTRACT_ADDRESS</code> in frontend.
+        </div>
+      )}
+
+      {configured && fheStatus && !fheStatus.ready && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          FHE deductions not active on the server ({fheStatus.reason || "not ready"}).
+          Set <code>OPERATOR_PRIVATE_KEY</code> to the contract deployer (owner) in backend <code>.env</code>.
+          {fheStatus.error ? ` — ${fheStatus.error}` : ""}
         </div>
       )}
 
@@ -135,7 +149,7 @@ export default function OnChainContract() {
         <dl className="grid gap-2 text-sm">
           <div className="flex justify-between gap-4">
             <dt className="text-slate-500">Network</dt>
-            <dd>{stats?.network || "Sepolia"} (chain {stats?.chainId || 11155111})</dd>
+            <dd>{stats?.network || net.name} (chain {stats?.chainId || net.chainId})</dd>
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-slate-500">Address</dt>

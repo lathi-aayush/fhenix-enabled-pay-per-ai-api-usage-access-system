@@ -1,3 +1,8 @@
+---
+description: 
+alwaysApply: true
+---
+
 # SentinelAI — Fhenix/CoFHE Edition (Base Sepolia)
 
 > Agent guide for AI-assisted development on this codebase.

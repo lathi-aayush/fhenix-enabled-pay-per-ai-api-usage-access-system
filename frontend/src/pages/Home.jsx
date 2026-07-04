@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import HowItWorks from "../components/HowItWorks.jsx";
 import MegaNav from "../components/MegaNav.jsx";
 import InteractiveBackground from "../components/InteractiveBackground.jsx";
+import FheComputeWidget from "../components/FheComputeWidget.jsx";
 
 import FloatingAssistant from "../components/FloatingAssistant.jsx";
 
@@ -41,6 +42,7 @@ const MARQUEE_ITEMS = [
   { name: "DeepSeek V3", icon: "psychology", color: "text-indigo-500" },
   { name: "Groq Inference", icon: "bolt", color: "text-amber-500" },
   { name: "x402 Protocol", icon: "lock", color: "text-rose-500" },
+  { name: "CoFHE / FHE", icon: "encrypted", color: "text-violet-500" },
   { name: "Stable Diffusion", icon: "image", color: "text-cyan-500" },
   { name: "n8n Workflows", icon: "account_tree", color: "text-emerald-500" },
   { name: "Per-Request Billing", icon: "toll", color: "text-slate-500" },
@@ -131,10 +133,10 @@ export default function Home() {
                 <span className="inline-flex items-center gap-1.5 py-1.5 px-4 rounded-full bg-white/80 backdrop-blur-sm border border-slate-200/80 shadow-sm text-[10px] font-bold tracking-[0.15em] uppercase text-slate-600">
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
                   <span className="text-indigo-600">Marketplace</span>
-                  <span className="text-slate-300">Â·</span>
+                  <span className="text-slate-300">·</span>
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   <span className="text-emerald-600">AI Studio</span>
-                  <span className="text-slate-300">Â·</span>
+                  <span className="text-slate-300">·</span>
                   <span className="flex h-1.5 w-1.5 relative">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
@@ -158,11 +160,11 @@ export default function Home() {
                 variants={itemVariants}
                 className="font-body text-[16px] text-slate-500 max-w-2xl leading-relaxed text-center"
               >
-                A <strong className="text-slate-700">decentralized API marketplace</strong> â€” pay per call, no subscription. An{" "}
+                A <strong className="text-slate-700">decentralized API marketplace</strong> — pay per call, no subscription. An{" "}
                 <strong className="text-slate-700">AI creative Studio</strong> for creators with pay-per-call micropayments. Both settled on Sepolia.
               </motion.p>
 
-              {/* 3 value pillars â€” centered row */}
+              {/* 3 value pillars — centered row */}
               <motion.div
                 variants={itemVariants}
                 className="flex flex-wrap items-center justify-center gap-6"
@@ -243,7 +245,7 @@ export default function Home() {
                 }}
                 className="text-xs font-semibold text-slate-500 hover:text-[#031634] transition-colors"
               >
-                Publish APIs and earn â†’
+                Publish APIs and earn →
               </button>
             </div>
           </motion.div>
@@ -276,6 +278,18 @@ export default function Home() {
             <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 group-hover:text-emerald-700 transition-colors">
               Open Studio <span className="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
             </span>
+          </motion.div>
+        </section>
+
+        <section id="fhe-demo" className="relative z-10 scroll-mt-24 py-16 sm:py-20">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="max-w-6xl mx-auto px-6"
+          >
+            <FheComputeWidget embedded />
           </motion.div>
         </section>
 
@@ -359,6 +373,11 @@ export default function Home() {
                 <li>
                   <Link to="/sdk-demo" className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium cursor-pointer">
                     Developer SDK
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/fhe-demo" className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium cursor-pointer">
+                    FHE Calculator
                   </Link>
                 </li>
                 <li>
@@ -456,7 +475,7 @@ export default function Home() {
             </div>
           </div>
           <p className="text-[10px] text-slate-400 font-semibold tracking-wider font-body uppercase mt-12 pt-8 border-t border-slate-100">
-            Â© 2026 Sentinal Infrastructure
+            © 2026 Sentinal Infrastructure
           </p>
         </div>
       </footer>

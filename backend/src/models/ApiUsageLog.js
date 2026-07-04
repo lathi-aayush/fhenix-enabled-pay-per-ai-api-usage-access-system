@@ -18,7 +18,7 @@ const apiUsageLogSchema = new mongoose.Schema(
     amountEth: { type: Number, required: true },
     aiProvider: { type: String },
     modelName: { type: String },
-    /** User â†’ developer on-chain pay tx (replay-protected when success) */
+    /** User → developer on-chain pay tx (replay-protected when success) */
     paymentTxId: { type: String },
     /** @deprecated Legacy field from platform-payout era; not written for new logs */
     payoutTxId: { type: String },

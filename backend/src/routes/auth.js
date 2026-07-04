@@ -43,7 +43,7 @@ function userPayload(user) {
 
 /**
  * Cryptographically verifies a MetaMask personal_sign challenge signature.
- * Uses ethers.verifyMessage â€” recovers the signer address and compares to walletAddress.
+ * Uses ethers.verifyMessage — recovers the signer address and compares to walletAddress.
  */
 async function verifyChallenge(walletAddress, nonce, signature) {
   if (!walletAddress || !nonce || !signature) {
@@ -144,7 +144,7 @@ router.post(
 
 /**
  * POST /api/auth/login
- * MetaMask login â€” verified via challenge signature
+ * MetaMask login — verified via challenge signature
  */
 router.post(
   "/login",
@@ -350,7 +350,7 @@ router.post("/become-creator", requireAuth, async (req, res) => {
     }
     if (!user.walletAddress?.trim()) {
       return res.status(400).json({
-        error: "Link your MetaMask wallet first (Profile or home â†’ Connect as Creator).",
+        error: "Link your MetaMask wallet first (Profile or home → Connect as Creator).",
         code: "WALLET_REQUIRED",
       });
     }

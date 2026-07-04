@@ -18,7 +18,7 @@ export default function GatewayAdmin() {
       .catch((err) => toast.error(err?.response?.data?.error || "Admin access denied"));
   }, []);
 
-  if (!dash) return <div className="p-8 text-slate-500">Loading admin control centerâ€¦</div>;
+  if (!dash) return <div className="p-8 text-slate-500">Loading admin control center…</div>;
 
   const s = dash.summary || {};
 
@@ -67,7 +67,7 @@ export default function GatewayAdmin() {
         <ul className="text-xs text-slate-600 space-y-1">
           {(audit?.checks ?? []).map((c) => (
             <li key={c.name}>
-              {c.ok ? "âœ“" : "âœ—"} {c.name}
+              {c.ok ? "✓" : "✗"} {c.name}
             </li>
           ))}
         </ul>

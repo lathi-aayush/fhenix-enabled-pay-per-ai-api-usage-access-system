@@ -103,7 +103,7 @@ export default function BloggingAgent() {
   const editorExtensions = useMemo(
     () => [
       StarterKit.configure({ link: { openOnClick: false } }),
-      Placeholder.configure({ placeholder: "Your draft will stream hereâ€¦" }),
+      Placeholder.configure({ placeholder: "Your draft will stream here…" }),
     ],
     []
   );
@@ -121,7 +121,7 @@ export default function BloggingAgent() {
 
   const wc = editor ? wordCountFromHtml(editor.getHTML()) : 0;
   const rt = readingTime(wc);
-  const quotaLabel = "Pay-per-Call Mode Â· Micropayments enabled";
+  const quotaLabel = "Pay-per-Call Mode · Micropayments enabled";
 
   const loadPost = useCallback(
     async (id) => {
@@ -328,7 +328,7 @@ export default function BloggingAgent() {
       toast.error(data.errors.map((e) => `${e.platform}: ${e.message}`).join("\n"));
     }
     if (data.post?.status === "failed") {
-      toast.error(data.post.publishError || "Publish failed â€” check your API key on Platforms");
+      toast.error(data.post.publishError || "Publish failed — check your API key on Platforms");
     } else if (data.scheduled) {
       toast.success(data.message || "Scheduled for external platforms");
       queryClient.invalidateQueries({ queryKey: ["studio-calendar-week"] });
@@ -364,11 +364,11 @@ export default function BloggingAgent() {
   const publishToExternalNow = async () => {
     if (!postId) return toast.error("Generate or save a post first");
     if (!externalSelected.length) {
-      return toast.error("Select Dev.to, Medium, LinkedIn, etc. Connect them under Studio â†’ Platforms first.");
+      return toast.error("Select Dev.to, Medium, LinkedIn, etc. Connect them under Studio → Platforms first.");
     }
     const missing = externalSelected.filter((p) => !connectedSet.has(p));
     if (missing.length) {
-      return toast.error(`Not connected: ${missing.join(", ")}. Go to Studio â†’ Platforms.`);
+      return toast.error(`Not connected: ${missing.join(", ")}. Go to Studio → Platforms.`);
     }
     if (!(await saveDraft())) return;
     try {
@@ -391,7 +391,7 @@ export default function BloggingAgent() {
       return toast.error("Choose a time at least 30 seconds in the future");
     }
     if (!externalSelected.length) {
-      return toast.error("Select platforms to schedule (Dev.to, Medium, â€¦)");
+      return toast.error("Select platforms to schedule (Dev.to, Medium, …)");
     }
     const missing = externalSelected.filter((p) => !connectedSet.has(p));
     if (missing.length) {
@@ -423,7 +423,7 @@ export default function BloggingAgent() {
       <header className="mb-6">
         <h1 className="font-headline text-2xl font-semibold text-primary">Blogging Agent</h1>
         <p className="text-sm text-on-surface-variant mt-1">
-          Generate posts, connect platforms under Studio â†’ Platforms, then publish or schedule to Dev.to, Medium, LinkedIn, and more.
+          Generate posts, connect platforms under Studio → Platforms, then publish or schedule to Dev.to, Medium, LinkedIn, and more.
         </p>
         {!isAuthenticated && (
           <GuestConnectBanner message="Connect MetaMask to generate, save, and publish blog posts." className="mt-4" />
@@ -439,7 +439,7 @@ export default function BloggingAgent() {
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
             >
-              <option value="">â€” Select â€”</option>
+              <option value="">— Select —</option>
               {projects.map((p) => (
                 <option key={p._id} value={p._id}>
                   {p.title}
@@ -478,7 +478,7 @@ export default function BloggingAgent() {
                   className="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-700"
                   onClick={() => setKeywords((x) => x.filter((y) => y !== k))}
                 >
-                  {k} Ã—
+                  {k} ×
                 </button>
               ))}
             </div>
@@ -547,7 +547,7 @@ export default function BloggingAgent() {
                           connectedSet.has(p.id) ? "text-emerald-600" : "text-amber-600"
                         }`}
                       >
-                        {connectedSet.has(p.id) ? "âœ“" : "connect"}
+                        {connectedSet.has(p.id) ? "✓" : "connect"}
                       </span>
                     )}
                   </span>
@@ -555,7 +555,7 @@ export default function BloggingAgent() {
               ))}
             </div>
             <Link to="/studio/platforms" className="text-[10px] text-secondary hover:underline mt-1 inline-block">
-              Manage platform API keys â†’
+              Manage platform API keys →
             </Link>
           </div>
           <div>
@@ -566,7 +566,7 @@ export default function BloggingAgent() {
               value={scheduledFor}
               onChange={(e) => setScheduledFor(e.target.value)}
             />
-            <p className="text-[10px] text-slate-500 mt-1">Used with â€œSchedule to platformsâ€ below</p>
+            <p className="text-[10px] text-slate-500 mt-1">Used with “Schedule to platforms” below</p>
           </div>
           <p className="text-[11px] text-slate-500">{quotaLabel}</p>
           <button
@@ -575,7 +575,7 @@ export default function BloggingAgent() {
             onClick={() => runWithWallet(() => runGenerate())}
             className="w-full py-2.5 rounded-md bg-[#031634] text-white text-sm font-semibold disabled:opacity-40"
           >
-            {streaming ? "Generatingâ€¦" : "Generate"}
+            {streaming ? "Generating…" : "Generate"}
           </button>
           <div className="flex flex-col gap-2">
             <button
@@ -583,7 +583,7 @@ export default function BloggingAgent() {
               onClick={() => runWithWallet(() => publishToExternalNow())}
               className="w-full py-2.5 text-sm font-semibold rounded-md bg-[#031634] text-white hover:opacity-90"
             >
-              Publish now (Dev.to / Medium / â€¦)
+              Publish now (Dev.to / Medium / …)
             </button>
             <button
               type="button"
@@ -603,10 +603,10 @@ export default function BloggingAgent() {
               Save draft
             </button>
             <Link to="/studio/published" className="text-center text-xs font-semibold text-secondary hover:underline">
-              View Published â†’
+              View Published →
             </Link>
             <Link to="/studio/calendar" className="text-center text-xs text-slate-500 hover:underline">
-              Calendar (scheduled) â†’
+              Calendar (scheduled) →
             </Link>
           </div>
         </aside>
@@ -648,7 +648,7 @@ export default function BloggingAgent() {
           <div className={`relative ${streaming ? "animate-pulse" : ""}`}>
             <EditorContent editor={editor} />
             {streaming && (
-              <span className="absolute bottom-4 right-4 text-xs text-secondary font-medium motion-safe:animate-pulse">Streamingâ€¦</span>
+              <span className="absolute bottom-4 right-4 text-xs text-secondary font-medium motion-safe:animate-pulse">Streaming…</span>
             )}
           </div>
           <div className="border-t border-slate-100 px-3 py-2 flex flex-wrap gap-3 text-xs text-slate-600 bg-slate-50">
@@ -699,7 +699,7 @@ export default function BloggingAgent() {
           <section>
             <h3 className="text-xs font-semibold uppercase text-slate-500 mb-2">SEO score</h3>
             <div className={`flex items-center justify-center w-20 h-20 rounded-full border-4 border-slate-200 mx-auto ${seoColor}`}>
-              <span className="text-xl font-bold">{seoScore ?? "â€”"}</span>
+              <span className="text-xl font-bold">{seoScore ?? "—"}</span>
             </div>
           </section>
           <section>
@@ -745,7 +745,7 @@ export default function BloggingAgent() {
                 transition={{ duration: 0.2 }}
                 className="text-xs text-slate-700 whitespace-pre-wrap"
               >
-                {socialSnippets[socialTab] || "â€”"}
+                {socialSnippets[socialTab] || "—"}
               </motion.p>
             </AnimatePresence>
             <button

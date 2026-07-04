@@ -1,11 +1,8 @@
 /**
- * metamask.js â€” MetaMask wallet integration for SentinelAI on Sepolia.
- * Replaces metamask.js (MetaMask / Sepolia).
- *
- * Uses window.ethereum directly â€” no external wallet library needed.
+ * metamask.js — MetaMask wallet integration for SentinelAI (Base Sepolia / Sepolia).
  */
 
-const SEPOLIA_CHAIN_ID = "0xaa36a7"; // 11155111 in hex
+import { getNetworkConfig } from "../config/chain.js";
 
 let _connectedAddress = null;
 
@@ -13,9 +10,6 @@ export function isMetaMaskInstalled() {
   return typeof window !== "undefined" && Boolean(window.ethereum);
 }
 
-/**
- * Normalize an EVM address to lowercase checksummed form.
- */
 export function normalizeAddress(raw) {
   if (!raw || typeof raw !== "string") return null;
   const s = raw.trim();
@@ -29,30 +23,19 @@ function getProvider() {
   return window.ethereum;
 }
 
-/**
- * Switch MetaMask to Sepolia network.
- */
-async function switchToSepolia() {
+async function switchToConfiguredNetwork() {
   const provider = getProvider();
+  const net = getNetworkConfig();
   try {
     await provider.request({
       method: "wallet_switchEthereumChain",
-      params: [{ chainId: SEPOLIA_CHAIN_ID }],
+      params: [{ chainId: net.chainIdHex }],
     });
   } catch (e) {
     if (e.code === 4902) {
-      // Chain not added â€” add it
       await provider.request({
         method: "wallet_addEthereumChain",
-        params: [
-          {
-            chainId: SEPOLIA_CHAIN_ID,
-            chainName: "Sepolia",
-            nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-            rpcUrls: ["https://ethereum-sepolia-rpc.publicnode.com"],
-            blockExplorerUrls: ["https://sepolia.etherscan.io"],
-          },
-        ],
+        params: [net.metamask],
       });
     } else {
       throw e;
@@ -61,26 +44,18 @@ async function switchToSepolia() {
 }
 
 export async function ensureSepoliaNetwork() {
-  await switchToSepolia();
+  await switchToConfiguredNetwork();
 }
 
-/**
- * Connect MetaMask and return the active address.
- * Equivalent of connectMetaMask().
- */
 export async function connectMetaMask() {
   const provider = getProvider();
-  await switchToSepolia();
+  await switchToConfiguredNetwork();
   const accounts = await provider.request({ method: "eth_requestAccounts" });
   if (!accounts?.length) throw new Error("No accounts returned from MetaMask");
   _connectedAddress = normalizeAddress(accounts[0]);
   return _connectedAddress;
 }
 
-/**
- * Silently restore an existing MetaMask connection (no popup).
- * Equivalent of reconnectMetaMask().
- */
 export async function reconnectMetaMask() {
   try {
     const provider = getProvider();
@@ -102,12 +77,6 @@ export function getConnectedAddress() {
   return _connectedAddress;
 }
 
-/**
- * Sign an arbitrary message using MetaMask personal_sign (EIP-191).
- * Used for wallet challenge auth â€” replaces MetaMask signData().
- *
- * Returns the hex signature string (0x...).
- */
 export async function signMessage(message, address) {
   const provider = getProvider();
   const signer = normalizeAddress(address) ?? _connectedAddress;
@@ -118,19 +87,10 @@ export async function signMessage(message, address) {
   });
 }
 
-/**
- * Send a native ETH payment via MetaMask.
- * Equivalent of signAndSendPayment() from metamask.js.
- *
- * @param {object} opts
- * @param {string} opts.from      Sender address
- * @param {string} opts.to        Receiver address
- * @param {string} opts.amountWei Amount in wei (string or BigInt)
- * @returns {Promise<{ txHash: string }>}
- */
 export async function sendEthPayment({ from, to, amountWei }) {
   const provider = getProvider();
-  await switchToSepolia();
+  const net = getNetworkConfig();
+  await switchToConfiguredNetwork();
 
   const sender = normalizeAddress(from) ?? _connectedAddress;
   if (!sender) throw new Error("No sender address. Connect MetaMask first.");
@@ -142,7 +102,7 @@ export async function sendEthPayment({ from, to, amountWei }) {
         from: sender,
         to: normalizeAddress(to),
         value: "0x" + BigInt(amountWei).toString(16),
-        chainId: SEPOLIA_CHAIN_ID,
+        chainId: net.chainIdHex,
       },
     ],
   });
@@ -150,10 +110,6 @@ export async function sendEthPayment({ from, to, amountWei }) {
   return { txHash };
 }
 
-/**
- * Get ETH balance for an address (uses MetaMask's connected RPC).
- * @returns {Promise<bigint>} balance in wei
- */
 export async function getBalance(address) {
   const provider = getProvider();
   const hex = await provider.request({

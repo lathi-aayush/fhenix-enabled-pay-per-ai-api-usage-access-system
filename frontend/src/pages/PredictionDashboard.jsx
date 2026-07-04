@@ -5,9 +5,9 @@ import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTokenEstimate } from "../hooks/useTokenEstimate.js";
 
-// â”€â”€ Inline bar chart (no external dep) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const CHART_H = 160; // px â€” must match the container height below
-const LABEL_H = 20;  // px â€” reserved for the month label
+// ── Inline bar chart (no external dep) ───────────────────────────────────────
+const CHART_H = 160; // px — must match the container height below
+const LABEL_H = 20;  // px — reserved for the month label
 const BAR_AREA = CHART_H - LABEL_H;
 
 function BarChart({
@@ -17,7 +17,7 @@ function BarChart({
   valueKey = "totalEth",
   secondaryKey = "totalINR",
   prefix = "ETH",
-  secondaryPrefix = "â‚¹",
+  secondaryPrefix = "₹",
 }) {
   const max = Math.max(...bars.map((b) => b[valueKey] ?? 0), 0.0001);
 
@@ -84,7 +84,7 @@ function BarChart({
   );
 }
 
-// â”€â”€ Confidence ring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Confidence ring ───────────────────────────────────────────────────────────
 function ConfidenceRing({ value }) {
   const r = 26;
   const circ = 2 * Math.PI * r;
@@ -104,7 +104,7 @@ function ConfidenceRing({ value }) {
   );
 }
 
-// â”€â”€ Trend badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Trend badge ───────────────────────────────────────────────────────────────
 function TrendBadge({ direction, pct }) {
   const map = {
     increasing: { icon: "trending_up", cls: "text-error bg-error-container" },
@@ -120,12 +120,12 @@ function TrendBadge({ direction, pct }) {
   );
 }
 
-// â”€â”€ Skeleton loader â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Skeleton loader ───────────────────────────────────────────────────────────
 function Skeleton({ className = "" }) {
   return <div className={`animate-pulse bg-surface-container-high rounded ${className}`} />;
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function PredictionDashboard() {
   const { user } = useAuth();
@@ -184,7 +184,7 @@ export default function PredictionDashboard() {
               <p className="text-xs font-medium text-primary mb-2">Live cost preview (illustrative 0.01 ETH / 1k tok)</p>
               <textarea
                 className="w-full border border-outline-variant rounded px-2 py-1.5 text-sm min-h-[72px]"
-                placeholder="Type sample prompt textâ€¦"
+                placeholder="Type sample prompt text…"
                 value={costPreviewText}
                 onChange={(e) => setCostPreviewText(e.target.value)}
               />
@@ -248,7 +248,7 @@ export default function PredictionDashboard() {
         </div>
 
         {loading ? (
-          /* â”€â”€ Skeleton â”€â”€ */
+          /* ── Skeleton ── */
           <div className="space-y-6">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24" />)}
@@ -261,7 +261,7 @@ export default function PredictionDashboard() {
 
         ) : usage && !usage.error ? (
           <>
-            {/* â”€â”€ Top KPI strip â”€â”€ */}
+            {/* ── Top KPI strip ── */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
               <div className="bg-white border border-surface-variant rounded-md p-5">
                 <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">Avg Historical</p>
@@ -290,7 +290,7 @@ export default function PredictionDashboard() {
               </div>
             </div>
 
-            {/* â”€â”€ Historical chart â”€â”€ */}
+            {/* ── Historical chart ── */}
             <div className="bg-white border border-surface-variant rounded-md p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -301,7 +301,7 @@ export default function PredictionDashboard() {
                   <div className="text-right">
                     <p className="text-xs text-on-surface-variant">Total ({historyData.total.txs} txns)</p>
                     <p className="font-mono text-sm font-semibold text-primary">{historyData.total.eth?.toFixed(4)} ETH</p>
-                    <p className="font-mono text-xs text-secondary">â‚¹{historyData.total.inr?.toFixed(2)}</p>
+                    <p className="font-mono text-xs text-secondary">₹{historyData.total.inr?.toFixed(2)}</p>
                   </div>
                 )}
               </div>
@@ -311,10 +311,10 @@ export default function PredictionDashboard() {
               }
             </div>
 
-            {/* â”€â”€ Forecast section â”€â”€ */}
+            {/* ── Forecast section ── */}
             <div className="mb-6">
               <h2 className="font-headline font-semibold text-primary text-base mb-3">
-                Forecast â€” Next {forecastMonths} month{forecastMonths > 1 ? "s" : ""}
+                Forecast — Next {forecastMonths} month{forecastMonths > 1 ? "s" : ""}
               </h2>
               <div className="bg-white border border-surface-variant rounded-md p-6">
                 {usage.forecast.length > 0 ? (
@@ -328,7 +328,7 @@ export default function PredictionDashboard() {
                         <div key={i} className="bg-surface-container-low border border-outline-variant/30 rounded p-4">
                           <p className="text-xs text-on-surface-variant font-semibold">{f.label}</p>
                           <p className="font-headline text-lg text-primary mt-1">{f.predictedEth} <span className="text-sm font-body font-normal text-on-surface-variant">ETH</span></p>
-                          <p className="text-xs font-mono text-secondary mt-0.5">${f.predictedUSD} Â· â‚¹{f.predictedINR}</p>
+                          <p className="text-xs font-mono text-secondary mt-0.5">${f.predictedUSD} · ₹{f.predictedINR}</p>
                         </div>
                       ))}
                     </div>
@@ -339,7 +339,7 @@ export default function PredictionDashboard() {
               </div>
             </div>
 
-            {/* â”€â”€ Wallet recommendation â”€â”€ */}
+            {/* ── Wallet recommendation ── */}
             <div className="bg-primary-container border border-primary/20 rounded-md p-6">
               <div className="flex items-start gap-4">
                 <div className="bg-secondary w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
@@ -359,7 +359,7 @@ export default function PredictionDashboard() {
                     </div>
                     <div>
                       <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">In INR</p>
-                      <p className="font-mono font-semibold text-primary">â‚¹{usage.recommendation.topupINR}</p>
+                      <p className="font-mono font-semibold text-primary">₹{usage.recommendation.topupINR}</p>
                     </div>
                     <div>
                       <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">Safety buffer</p>
@@ -372,7 +372,7 @@ export default function PredictionDashboard() {
           </>
 
         ) : (
-          /* â”€â”€ Not enough data state â”€â”€ */
+          /* ── Not enough data state ── */
           <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
             <div className="w-14 h-14 bg-surface-container rounded-full flex items-center justify-center">
               <span className="material-symbols-outlined text-on-surface-variant text-3xl">bar_chart</span>
@@ -397,7 +397,7 @@ export default function PredictionDashboard() {
                   </div>
                   <div>
                     <p className="text-[10px] text-on-surface-variant uppercase tracking-wide">Total INR</p>
-                    <p className="text-secondary font-semibold">â‚¹{historyData.total.inr?.toFixed(2)}</p>
+                    <p className="text-secondary font-semibold">₹{historyData.total.inr?.toFixed(2)}</p>
                   </div>
                   <div>
                     <p className="text-[10px] text-on-surface-variant uppercase tracking-wide">Transactions</p>

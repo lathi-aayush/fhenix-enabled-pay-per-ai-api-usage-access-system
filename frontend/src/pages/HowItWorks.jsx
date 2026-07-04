@@ -46,7 +46,7 @@ export default function HowItWorks() {
 
         <p className="text-[15px] text-slate-600 mb-8 leading-relaxed">
           SentinalAI is a decentralized, pay-per-usage AI gateway on Sepolia. Users and autonomous
-          agents access premium models without subscriptions, credit-card billing, or shared API keys â€”
+          agents access premium models without subscriptions, credit-card billing, or shared API keys —
           every call is priced transparently and settled on-chain.
         </p>
 
@@ -62,14 +62,14 @@ export default function HowItWorks() {
               <div className="relative flex flex-col md:flex-row items-center gap-6">
                 <div className="flex-1 space-y-3">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
-                    Pay-per-use Â· On-chain Â· Agent-ready
+                    Pay-per-use · On-chain · Agent-ready
                   </span>
                   <h3 className="text-xl font-semibold tracking-tight">
                     A marketplace and studio for machine-native AI
                   </h3>
                   <p className="text-[14px] text-slate-600 max-w-2xl leading-relaxed">
                     Creators publish AI services wrapped behind Sentinal&apos;s secure proxy. Users pay
-                    in ETH per call â€” peer-to-peer, directly to the creator&apos;s wallet. Sentinal
+                    in ETH per call — peer-to-peer, directly to the creator&apos;s wallet. Sentinal
                     Studio adds creative workflows (blogging, clips, chat) that consume those same
                     services natively, with micro-payments handled in the background.
                   </p>
@@ -97,14 +97,14 @@ export default function HowItWorks() {
                   <p className="text-[14px] text-slate-600 leading-relaxed">
                     High-quality AI today usually means $20/month plans across multiple providers.
                     Light usage overpays; heavy usage hits rate limits. Autonomous agents cannot hold
-                    credit cards or manage dozens of API keys â€” they need a payment layer built for
+                    credit cards or manage dozens of API keys — they need a payment layer built for
                     software, not humans.
                   </p>
                   <h3 className="text-xl font-semibold tracking-tight mt-6">
                     The solution: microtransactions + HTTP 402
                   </h3>
                   <p className="text-[14px] text-slate-600 leading-relaxed">
-                    Sepolia confirms payments in seconds with sub-cent fees â€” ideal for per-token
+                    Sepolia confirms payments in seconds with sub-cent fees — ideal for per-token
                     billing. Combined with the{" "}
                     <code className="bg-slate-200 px-1 py-0.5 rounded font-mono text-[12px]">
                       402 Payment Required
@@ -138,7 +138,7 @@ export default function HowItWorks() {
                 <h4 className="font-semibold text-slate-900 text-[15px]">Pay on-chain</h4>
                 <p className="text-[13px] text-slate-600 leading-relaxed">
                   Sign a micro-payment with MetaMask or a local burner wallet. ETH goes directly
-                  from user to creator â€” peer-to-peer.
+                  from user to creator — peer-to-peer.
                 </p>
               </div>
               <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-3">
@@ -148,7 +148,7 @@ export default function HowItWorks() {
                 <h4 className="font-semibold text-slate-900 text-[15px]">Receive the response</h4>
                 <p className="text-[13px] text-slate-600 leading-relaxed">
                   Sentinal verifies the transaction on the block explorer, logs usage, and returns
-                  the AI output â€” plus an optional proof-of-intelligence attestation on-chain.
+                  the AI output — plus an optional proof-of-intelligence attestation on-chain.
                 </p>
               </div>
             </div>
@@ -171,7 +171,7 @@ export default function HowItWorks() {
                 </div>
                 <p className="text-[14px] text-slate-600 leading-relaxed">
                   Each user gets a secure, non-custodial hot wallet in the browser. Fund it once with
-                  a small ETH balance; the app signs micro-payments automatically â€” no popup on every
+                  a small ETH balance; the app signs micro-payments automatically — no popup on every
                   API call. The mnemonic can be encrypted and synced to your profile for programmatic
                   clients.
                 </p>
@@ -203,8 +203,8 @@ export default function HowItWorks() {
                   <h4 className="font-semibold text-slate-900 text-[16px]">AI Studio</h4>
                 </div>
                 <p className="text-[14px] text-slate-600 leading-relaxed">
-                  A suite of creative tools â€” Blogging Agent, ClipCraft, Studio Chat, Workflow Studio,
-                  and more â€” that consume marketplace AI natively. Generate content, schedule
+                  A suite of creative tools — Blogging Agent, ClipCraft, Studio Chat, Workflow Studio,
+                  and more — that consume marketplace AI natively. Generate content, schedule
                   publishing, and run visual workflows while pay-per-use billing runs in the
                   background.
                 </p>
@@ -220,7 +220,7 @@ export default function HowItWorks() {
                 <p className="text-[14px] text-slate-600 leading-relaxed">
                   Creators wrap models from Groq, OpenAI, Anthropic, or Together behind Sentinal&apos;s
                   proxy. They set per-1K-token pricing and a minimum charge; provider keys stay
-                  AES-encrypted. Revenue lands in their MetaMask wallet on every verified call â€” no
+                  AES-encrypted. Revenue lands in their MetaMask wallet on every verified call — no
                   payout delays.
                 </p>
               </div>
@@ -238,7 +238,7 @@ export default function HowItWorks() {
               <div className="relative flex flex-col md:flex-row items-center gap-6">
                 <div className="flex-1 space-y-3">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/30 text-indigo-200">
-                    NPM Package Â· @sentinalapi/sdk
+                    NPM Package · @sentinalapi/sdk
                   </span>
                   <h3 className="text-xl font-semibold tracking-tight">
                     Integrate Pay-Per-Use AI in Minutes
@@ -253,7 +253,7 @@ export default function HowItWorks() {
                       href="/sdk-demo"
                       className="inline-flex items-center gap-1 text-sm font-semibold text-white hover:text-indigo-200 transition-colors"
                     >
-                      Explore Interactive SDK Demo â†’
+                      Explore Interactive SDK Demo →
                     </a>
                   </div>
                 </div>

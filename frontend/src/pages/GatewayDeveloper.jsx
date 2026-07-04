@@ -65,7 +65,7 @@ export default function GatewayDeveloper() {
     }
   }
 
-  if (loading) return <div className="p-8 text-slate-500">Loading developer studioâ€¦</div>;
+  if (loading) return <div className="p-8 text-slate-500">Loading developer studio…</div>;
 
   const e = dashboard?.earnings || {};
   const rev = dashboard?.period?.revenueEth || {};
@@ -73,7 +73,7 @@ export default function GatewayDeveloper() {
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">API Gateway â€” Developer Studio</h1>
+        <h1 className="text-2xl font-bold text-slate-900">API Gateway — Developer Studio</h1>
         <p className="text-slate-600 text-sm mt-1">Revenue, API health, payouts, and migration tools.</p>
       </div>
 
@@ -95,7 +95,7 @@ export default function GatewayDeveloper() {
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
         <h2 className="font-semibold text-slate-900">Your proxied APIs</h2>
         {(dashboard?.apis ?? []).length === 0 ? (
-          <p className="text-sm text-slate-500">No ProxyApi records â€” run migration from Services.</p>
+          <p className="text-sm text-slate-500">No ProxyApi records — run migration from Services.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -127,7 +127,7 @@ export default function GatewayDeveloper() {
                             : "text-emerald-600"
                         }
                       >
-                        {a.stats?.health ?? "â€”"} ({a.stats?.errorRatePct ?? 0}% err)
+                        {a.stats?.health ?? "—"} ({a.stats?.errorRatePct ?? 0}% err)
                       </span>
                     </td>
                   </tr>
@@ -175,7 +175,7 @@ export default function GatewayDeveloper() {
             <ul className="text-xs text-slate-600 space-y-1 max-h-32 overflow-y-auto">
               {dashboard.recentErrors.map((r) => (
                 <li key={r.requestId}>
-                  {r.apiName}: HTTP {r.httpStatus} â€” {new Date(r.timestamp).toLocaleString()}
+                  {r.apiName}: HTTP {r.httpStatus} — {new Date(r.timestamp).toLocaleString()}
                 </li>
               ))}
             </ul>
@@ -184,7 +184,7 @@ export default function GatewayDeveloper() {
       </div>
 
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-3">
-        <h2 className="font-semibold text-slate-900">Migrate Services â†’ ProxyApi</h2>
+        <h2 className="font-semibold text-slate-900">Migrate Services → ProxyApi</h2>
         <input
           className="border rounded-lg px-3 py-2 text-sm w-full max-w-md"
           placeholder="GATEWAY_MIGRATION_SECRET (optional)"

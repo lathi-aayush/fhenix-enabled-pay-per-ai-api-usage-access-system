@@ -330,7 +330,7 @@ router.post(
         model: service.modelName,
         hint:
           service.aiProvider === "gemini"
-            ? "Use a Google AI Studio key (AIzaâ€¦), disable HTTP referrer restrictions, and model gemini-2.0-flash."
+            ? "Use a Google AI Studio key (AIza…), disable HTTP referrer restrictions, and model gemini-2.0-flash."
             : "Check provider API key and model name.",
       });
     }

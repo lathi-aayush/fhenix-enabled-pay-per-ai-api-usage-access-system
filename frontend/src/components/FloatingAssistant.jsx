@@ -179,7 +179,7 @@ export default function FloatingAssistant() {
                   </div>
                   <div className="bg-white border border-slate-200/80 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
                     <p className="font-body text-[14px] text-slate-700 leading-relaxed">
-                      Hi! I answer common questions about Sentinal â€” the Marketplace, AI Studio, MetaMask, and
+                      Hi! I answer common questions about Sentinal — the Marketplace, AI Studio, MetaMask, and
                       pay-per-call billing. Pick a topic below or type your question.
                     </p>
                   </div>
@@ -239,7 +239,7 @@ export default function FloatingAssistant() {
                   ref={inputRef}
                   type="text"
                   className="flex-1 border border-slate-200 rounded-full px-4 py-2.5 font-body text-[13.5px] outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400/30 bg-slate-50/50 placeholder:text-slate-400"
-                  placeholder="Ask about Sentinal features, marketplace, or studioâ€¦"
+                  placeholder="Ask about Sentinal features, marketplace, or studio…"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                 />

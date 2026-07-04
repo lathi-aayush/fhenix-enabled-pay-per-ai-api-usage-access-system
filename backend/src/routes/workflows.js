@@ -53,12 +53,12 @@ function sanitizeWorkflowPayload(body) {
   return { name, description, nodes, edges: body.edges || [] };
 }
 
-const CREATIVE_TEMPLATE_NAME = "Creative: Prompt â†’ Image";
-const AGENTIC_TEMPLATE_NAME = "Agentic: Script â†’ Images â†’ Video â†’ Audio";
+const CREATIVE_TEMPLATE_NAME = "Creative: Prompt → Image";
+const AGENTIC_TEMPLATE_NAME = "Agentic: Script → Images → Video → Audio";
 
 const DEFAULT_TEMPLATES = [
   {
-    name: "Topic â†’ Blog â†’ Publish",
+    name: "Topic → Blog → Publish",
     category: "Writing",
     description: "Research a topic, generate a publish-ready post in Blogging Agent, optional auto-publish",
     tags: ["blog", "writing", "publish"],
@@ -110,7 +110,7 @@ const DEFAULT_TEMPLATES = [
     },
   },
   {
-    name: "YouTube â†’ Blog Post",
+    name: "YouTube → Blog Post",
     category: "Media",
     description: "Summarize a YouTube video and create a full blog article in Studio",
     tags: ["youtube", "blog", "media"],
@@ -201,10 +201,10 @@ const DEFAULT_TEMPLATES = [
     },
   },
   {
-    name: "Creative: Prompt â†’ Image",
+    name: "Creative: Prompt → Image",
     category: "Creative",
     description:
-      "Automated Studio pipeline â€” Input goal â†’ Advanced Prompt Generator (Gemini) â†’ Image Generator (16:9)",
+      "Automated Studio pipeline — Input goal → Advanced Prompt Generator (Gemini) → Image Generator (16:9)",
     tags: ["creative", "prompt", "image", "gemini", "studio"],
     estimatedCreditsPerRun: 0.012,
     isFeatured: true,
@@ -269,7 +269,7 @@ const DEFAULT_TEMPLATES = [
     name: AGENTIC_TEMPLATE_NAME,
     category: "Agentic",
     description:
-      "Agentic Pipeline as nodes â€” goal â†’ script â†’ 3 keyframes â†’ Veo video â†’ TTS voiceover (same agents as Studio Agentic Pipeline)",
+      "Agentic Pipeline as nodes — goal → script → 3 keyframes → Veo video → TTS voiceover (same agents as Studio Agentic Pipeline)",
     tags: ["agentic", "gemini", "veo", "imagen", "studio", "multimodal"],
     estimatedCreditsPerRun: 0.086,
     isFeatured: true,
@@ -291,25 +291,25 @@ const DEFAULT_TEMPLATES = [
           id: "ag_text",
           type: "agenticText",
           position: { x: 240, y: 240 },
-          data: { label: "Agentic Â· Text", estimatedCredits: 0.008, config: {} },
+          data: { label: "Agentic · Text", estimatedCredits: 0.008, config: {} },
         },
         {
           id: "ag_image",
           type: "agenticImage",
           position: { x: 440, y: 240 },
-          data: { label: "Agentic Â· Image", imageCount: 3, estimatedCredits: 0.018, config: {} },
+          data: { label: "Agentic · Image", imageCount: 3, estimatedCredits: 0.018, config: {} },
         },
         {
           id: "ag_video",
           type: "agenticVideo",
           position: { x: 640, y: 240 },
-          data: { label: "Agentic Â· Video", estimatedCredits: 0.05, config: {} },
+          data: { label: "Agentic · Video", estimatedCredits: 0.05, config: {} },
         },
         {
           id: "ag_audio",
           type: "agenticAudio",
           position: { x: 840, y: 240 },
-          data: { label: "Agentic Â· Audio", estimatedCredits: 0.01, config: {} },
+          data: { label: "Agentic · Audio", estimatedCredits: 0.01, config: {} },
         },
         {
           id: "ag_out",
@@ -336,7 +336,7 @@ const DEFAULT_TEMPLATES = [
     name: "Agentic: Wildlife Cinematic Clip",
     category: "Agentic",
     description:
-      "Short nature brief â†’ script â†’ 3 keyframes â†’ Veo motion clip. Great for â€œbird flyingâ€, landscapes, product B-roll.",
+      "Short nature brief → script → 3 keyframes → Veo motion clip. Great for “bird flying”, landscapes, product B-roll.",
     tags: ["agentic", "video", "nature", "veo", "keyframes"],
     estimatedCreditsPerRun: 0.076,
     isFeatured: true,
@@ -357,19 +357,19 @@ const DEFAULT_TEMPLATES = [
           id: "wc_text",
           type: "agenticText",
           position: { x: 260, y: 200 },
-          data: { label: "Agentic Â· Text", estimatedCredits: 0.008, config: {} },
+          data: { label: "Agentic · Text", estimatedCredits: 0.008, config: {} },
         },
         {
           id: "wc_image",
           type: "agenticImage",
           position: { x: 480, y: 200 },
-          data: { label: "Agentic Â· Image", imageCount: 3, estimatedCredits: 0.018, config: {} },
+          data: { label: "Agentic · Image", imageCount: 3, estimatedCredits: 0.018, config: {} },
         },
         {
           id: "wc_video",
           type: "agenticVideo",
           position: { x: 700, y: 200 },
-          data: { label: "Agentic Â· Video", estimatedCredits: 0.05, config: {} },
+          data: { label: "Agentic · Video", estimatedCredits: 0.05, config: {} },
         },
         {
           id: "wc_out",
@@ -389,7 +389,7 @@ const DEFAULT_TEMPLATES = [
   {
     name: "Agentic: Podcast Voiceover",
     category: "Agentic",
-    description: "Write a spoken script from your topic, then generate Gemini TTS narration â€” no video required.",
+    description: "Write a spoken script from your topic, then generate Gemini TTS narration — no video required.",
     tags: ["agentic", "audio", "podcast", "tts"],
     estimatedCreditsPerRun: 0.02,
     isFeatured: true,
@@ -402,7 +402,7 @@ const DEFAULT_TEMPLATES = [
           data: {
             label: "Episode topic",
             inputType: "text",
-            value: "Explain why consistent habits beat motivation for fitness beginners â€” 90 second intro",
+            value: "Explain why consistent habits beat motivation for fitness beginners — 90 second intro",
             config: {},
           },
         },
@@ -410,13 +410,13 @@ const DEFAULT_TEMPLATES = [
           id: "pv_text",
           type: "agenticText",
           position: { x: 320, y: 220 },
-          data: { label: "Agentic Â· Text", estimatedCredits: 0.008, config: {} },
+          data: { label: "Agentic · Text", estimatedCredits: 0.008, config: {} },
         },
         {
           id: "pv_audio",
           type: "agenticAudio",
           position: { x: 580, y: 220 },
-          data: { label: "Agentic Â· Audio", estimatedCredits: 0.01, config: {} },
+          data: { label: "Agentic · Audio", estimatedCredits: 0.01, config: {} },
         },
         {
           id: "pv_out",
@@ -435,7 +435,7 @@ const DEFAULT_TEMPLATES = [
   {
     name: "Agentic: Keyframes Only (Fast)",
     category: "Agentic",
-    description: "Script + 3 still keyframes in ~3â€“5 min â€” skip Veo video when you only need boards or mood frames.",
+    description: "Script + 3 still keyframes in ~3–5 min — skip Veo video when you only need boards or mood frames.",
     tags: ["agentic", "image", "fast", "storyboard"],
     estimatedCreditsPerRun: 0.028,
     nodeStructure: {
@@ -455,13 +455,13 @@ const DEFAULT_TEMPLATES = [
           id: "kf_text",
           type: "agenticText",
           position: { x: 340, y: 240 },
-          data: { label: "Agentic Â· Text", estimatedCredits: 0.008, config: {} },
+          data: { label: "Agentic · Text", estimatedCredits: 0.008, config: {} },
         },
         {
           id: "kf_image",
           type: "agenticImage",
           position: { x: 600, y: 240 },
-          data: { label: "Agentic Â· Image", imageCount: 3, estimatedCredits: 0.018, config: {} },
+          data: { label: "Agentic · Image", imageCount: 3, estimatedCredits: 0.018, config: {} },
         },
         {
           id: "kf_out",
@@ -481,7 +481,7 @@ const DEFAULT_TEMPLATES = [
     name: "Social: Thumbnail + Caption",
     category: "Creative",
     description:
-      "YouTube-style pack â€” Gemini prompt â†’ 16:9 thumbnail image â†’ Groq writes title + description + hashtags.",
+      "YouTube-style pack — Gemini prompt → 16:9 thumbnail image → Groq writes title + description + hashtags.",
     tags: ["youtube", "thumbnail", "social", "creative"],
     estimatedCreditsPerRun: 0.014,
     isFeatured: true,
@@ -548,9 +548,9 @@ const DEFAULT_TEMPLATES = [
     },
   },
   {
-    name: "Research â†’ Executive Report",
+    name: "Research → Executive Report",
     category: "Research",
-    description: "Two-pass Groq pipeline â€” gather facts, then produce an executive report with action items.",
+    description: "Two-pass Groq pipeline — gather facts, then produce an executive report with action items.",
     tags: ["research", "report", "groq"],
     estimatedCreditsPerRun: 0.012,
     isFeatured: true,
@@ -563,7 +563,7 @@ const DEFAULT_TEMPLATES = [
           data: {
             label: "Research question",
             inputType: "text",
-            value: "State of micro-payments for AI APIs in 2026 â€” market size, players, risks",
+            value: "State of micro-payments for AI APIs in 2026 — market size, players, risks",
             config: {},
           },
         },
@@ -614,7 +614,7 @@ const DEFAULT_TEMPLATES = [
     },
   },
   {
-    name: "YouTube â†’ Short-form Script + Frame",
+    name: "YouTube → Short-form Script + Frame",
     category: "Media",
     description: "Pull a YouTube URL, summarize it, write a 30s vertical script, generate one hero keyframe.",
     tags: ["youtube", "shorts", "agentic", "repurpose"],
@@ -670,7 +670,7 @@ const DEFAULT_TEMPLATES = [
     },
   },
   {
-    name: "Data Task â†’ Python (Sandbox)",
+    name: "Data Task → Python (Sandbox)",
     category: "Code",
     description: "Describe a data task; Gemma writes and runs Python in a sandbox, returns stdout.",
     tags: ["code", "python", "agentic", "automation"],
@@ -692,7 +692,7 @@ const DEFAULT_TEMPLATES = [
           id: "py_code",
           type: "agenticCode",
           position: { x: 420, y: 200 },
-          data: { label: "Agentic Â· Code", estimatedCredits: 0.006, config: {} },
+          data: { label: "Agentic · Code", estimatedCredits: 0.006, config: {} },
         },
         {
           id: "py_out",
@@ -708,7 +708,7 @@ const DEFAULT_TEMPLATES = [
     },
   },
   {
-    name: "Blog Outline â†’ SEO Post",
+    name: "Blog Outline → SEO Post",
     category: "Writing",
     description: "Gemini outlines from a keyword, Groq expands to full SEO article sections, saves via Blog Agent.",
     tags: ["blog", "seo", "writing", "gemini", "groq"],
@@ -778,7 +778,7 @@ const DEFAULT_TEMPLATES = [
     name: "Creative: Brand Identity Pack",
     category: "Creative",
     description:
-      "Brand brief â†’ Gemini prompt engineering â†’ 4 mood images â†’ tagline & voice guidelines via Groq.",
+      "Brand brief → Gemini prompt engineering → 4 mood images → tagline & voice guidelines via Groq.",
     tags: ["brand", "identity", "creative", "moodboard"],
     estimatedCreditsPerRun: 0.022,
     isFeatured: true,
@@ -792,7 +792,7 @@ const DEFAULT_TEMPLATES = [
             label: "Brand brief",
             inputType: "text",
             value:
-              "A pay-per-use AI API marketplace called Sentinel â€” trustworthy, developer-first, EVM-native. Navy + teal palette.",
+              "A pay-per-use AI API marketplace called Sentinel — trustworthy, developer-first, EVM-native. Navy + teal palette.",
             config: {},
           },
         },
@@ -848,7 +848,7 @@ const DEFAULT_TEMPLATES = [
   {
     name: "Creative: Instagram Carousel",
     category: "Creative",
-    description: "Topic â†’ 5 slide copy â†’ Gemini generates one visual per slide (1:1 square).",
+    description: "Topic → 5 slide copy → Gemini generates one visual per slide (1:1 square).",
     tags: ["instagram", "carousel", "social", "creative"],
     estimatedCreditsPerRun: 0.018,
     isFeatured: true,
@@ -918,7 +918,7 @@ const DEFAULT_TEMPLATES = [
     name: "Agentic: SaaS Explainer Video",
     category: "Agentic",
     description:
-      "Product brief â†’ script â†’ 3 UI mockup keyframes â†’ Veo motion â†’ professional voiceover. Perfect for landing pages.",
+      "Product brief → script → 3 UI mockup keyframes → Veo motion → professional voiceover. Perfect for landing pages.",
     tags: ["agentic", "saas", "explainer", "video", "voiceover"],
     estimatedCreditsPerRun: 0.086,
     isFeatured: true,
@@ -932,7 +932,7 @@ const DEFAULT_TEMPLATES = [
             label: "Product brief",
             inputType: "text",
             value:
-              "Explain Sentinel â€” a pay-per-use AI API gateway on Sepolia. Show: connect wallet, pick an API, pay per call, get on-chain receipt. 40 seconds, professional tone.",
+              "Explain Sentinel — a pay-per-use AI API gateway on Sepolia. Show: connect wallet, pick an API, pay per call, get on-chain receipt. 40 seconds, professional tone.",
             config: {},
           },
         },
@@ -940,25 +940,25 @@ const DEFAULT_TEMPLATES = [
           id: "sx_text",
           type: "agenticText",
           position: { x: 240, y: 240 },
-          data: { label: "Agentic Â· Text", estimatedCredits: 0.008, config: {} },
+          data: { label: "Agentic · Text", estimatedCredits: 0.008, config: {} },
         },
         {
           id: "sx_image",
           type: "agenticImage",
           position: { x: 440, y: 240 },
-          data: { label: "Agentic Â· Image", imageCount: 3, estimatedCredits: 0.018, config: {} },
+          data: { label: "Agentic · Image", imageCount: 3, estimatedCredits: 0.018, config: {} },
         },
         {
           id: "sx_video",
           type: "agenticVideo",
           position: { x: 640, y: 240 },
-          data: { label: "Agentic Â· Video", estimatedCredits: 0.05, config: {} },
+          data: { label: "Agentic · Video", estimatedCredits: 0.05, config: {} },
         },
         {
           id: "sx_audio",
           type: "agenticAudio",
           position: { x: 840, y: 240 },
-          data: { label: "Agentic Â· Audio", estimatedCredits: 0.01, config: {} },
+          data: { label: "Agentic · Audio", estimatedCredits: 0.01, config: {} },
         },
         {
           id: "sx_out",
@@ -979,7 +979,7 @@ const DEFAULT_TEMPLATES = [
   {
     name: "Creative: Product Demo Storyboard",
     category: "Creative",
-    description: "Feature list â†’ scene breakdown â†’ 6 storyboard frames for a product demo video.",
+    description: "Feature list → scene breakdown → 6 storyboard frames for a product demo video.",
     tags: ["storyboard", "product", "demo", "creative"],
     estimatedCreditsPerRun: 0.016,
     nodeStructure: {
@@ -1048,7 +1048,7 @@ const DEFAULT_TEMPLATES = [
   {
     name: "Marketing: Competitive Battlecard",
     category: "Research",
-    description: "Paste competitor weaknesses â†’ structured battlecard with talk tracks and objection handlers.",
+    description: "Paste competitor weaknesses → structured battlecard with talk tracks and objection handlers.",
     tags: ["sales", "competitive", "battlecard", "research"],
     estimatedCreditsPerRun: 0.008,
     isFeatured: true,
@@ -1098,7 +1098,7 @@ const DEFAULT_TEMPLATES = [
   {
     name: "Agentic: Lo-Fi Product Loop",
     category: "Agentic",
-    description: "Minimal brief â†’ 2 aesthetic keyframes â†’ short looping Veo clip for website backgrounds.",
+    description: "Minimal brief → 2 aesthetic keyframes → short looping Veo clip for website backgrounds.",
     tags: ["agentic", "loop", "website", "ambient"],
     estimatedCreditsPerRun: 0.068,
     nodeStructure: {
@@ -1119,19 +1119,19 @@ const DEFAULT_TEMPLATES = [
           id: "lf_text",
           type: "agenticText",
           position: { x: 300, y: 220 },
-          data: { label: "Agentic Â· Text", estimatedCredits: 0.008, config: {} },
+          data: { label: "Agentic · Text", estimatedCredits: 0.008, config: {} },
         },
         {
           id: "lf_image",
           type: "agenticImage",
           position: { x: 540, y: 220 },
-          data: { label: "Agentic Â· Image", imageCount: 2, estimatedCredits: 0.012, config: {} },
+          data: { label: "Agentic · Image", imageCount: 2, estimatedCredits: 0.012, config: {} },
         },
         {
           id: "lf_video",
           type: "agenticVideo",
           position: { x: 780, y: 220 },
-          data: { label: "Agentic Â· Video", estimatedCredits: 0.05, config: {} },
+          data: { label: "Agentic · Video", estimatedCredits: 0.05, config: {} },
         },
         {
           id: "lf_out",

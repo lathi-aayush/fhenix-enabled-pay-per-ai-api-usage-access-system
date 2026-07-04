@@ -26,10 +26,10 @@ const response = await client.chat(
 );
 
 console.log(SentinelClient.getAssistantText(response));
-// â†’ "Sepolia is an Ethereum test network..."
+// → "Sepolia is an Ethereum test network..."
 
 console.log(response.sentinelReceipt);
-// â†’ { paymentTxId: "ABCD...", chargeEth: 0.001, totalTokens: 38 }`,
+// → { paymentTxId: "ABCD...", chargeEth: 0.001, totalTokens: 38 }`,
   },
   browser: {
     label: "Browser + MetaMask",
@@ -61,18 +61,18 @@ console.log(explorerUrl);`,
 
 const client = new SentinelClient({ apiKey, network: "testnet" });
 
-// Phase 1 â€” get AI response + payment quote
+// Phase 1 — get AI response + payment quote
 const quote = await client.invoke([
   { role: "user", content: "Hello!" }
 ]);
 console.log(\`Pay \${quote.chargeEth} ETH to \${quote.developerWallet}\`);
 
-// Phase 2 â€” build, sign, submit the Sepolia payment
+// Phase 2 — build, sign, submit the Sepolia payment
 const txn = await buildPaymentTx({
   from: signer.address,
   to: quote.developerWallet,
   amountWeis: quote.expectedWei,
-  paymentRef: quote.paymentRef, // â† goes in txn note
+  paymentRef: quote.paymentRef, // ← goes in txn note
   rpcClient: client.rpcClient,
 });
 const signed = await signer.sign(txn);
@@ -81,7 +81,7 @@ const txId = await submitSignedPayment({
   rpcClient: client.rpcClient,
 });
 
-// Phase 3 â€” unlock AI response after on-chain verification
+// Phase 3 — unlock AI response after on-chain verification
 const response = await client.complete(quote.paymentRef, txId);
 console.log(SentinelClient.getAssistantText(response));`,
   },
@@ -89,7 +89,7 @@ console.log(SentinelClient.getAssistantText(response));`,
     label: "Next.js",
     lang: "TypeScript",
     icon: "web",
-    code: `// app/api/ask/route.ts â€” Next.js App Router server action
+    code: `// app/api/ask/route.ts — Next.js App Router server action
 import { MnemonicSigner, SentinelClient } from "@sentinalapi/sdk";
 import { NextResponse } from "next/server";
 
@@ -121,7 +121,7 @@ const ERRORS = [
   { name: "SentinelPaymentError", http: "402", desc: "Payment not verified" },
   { name: "SentinelSessionExpired", http: "410", desc: "Quote expired (>60s)" },
   { name: "SentinelUpstreamError", http: "502", desc: "AI provider failed" },
-  { name: "SentinelNetworkError", http: "â€”", desc: "Fetch / timeout failure" },
+  { name: "SentinelNetworkError", http: "—", desc: "Fetch / timeout failure" },
 ];
 
 const FLOW_STEPS = [
@@ -129,7 +129,7 @@ const FLOW_STEPS = [
     num: "01",
     icon: "send",
     title: "Invoke",
-    desc: "Send your prompt â†’ AI runs â†’ receive a payment quote with chargeEth and paymentRef",
+    desc: "Send your prompt → AI runs → receive a payment quote with chargeEth and paymentRef",
   },
   {
     num: "02",
@@ -184,7 +184,7 @@ export default function SdkDemo() {
     <div className="antialiased min-h-screen bg-white">
       <MegaNav />
 
-      {/* â”€â”€ Hero â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Hero ───────────────────────────────────── */}
       <section className="pt-28 pb-16 px-6 relative overflow-hidden">
         {/* Background blobs */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-br from-indigo-500/8 via-violet-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
@@ -194,7 +194,7 @@ export default function SdkDemo() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold mb-6">
             <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-            Developer SDK â€” v1.0.0 Â· TypeScript + ESM + CJS
+            Developer SDK — v1.0.0 · TypeScript + ESM + CJS
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-bold text-slate-900 tracking-tight leading-tight font-headline">
@@ -231,7 +231,7 @@ export default function SdkDemo() {
         </div>
       </section>
 
-      {/* â”€â”€ Install â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Install ─────────────────────────────────── */}
       <section className="px-6 pb-12">
         <div className="max-w-4xl mx-auto">
           <div className="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
@@ -262,7 +262,7 @@ export default function SdkDemo() {
         </div>
       </section>
 
-      {/* â”€â”€ How it works flow â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── How it works flow ───────────────────────── */}
       <section className="px-6 pb-16" ref={flowRef}>
         <div className="max-w-4xl mx-auto">
           <h2 className="text-xl font-bold text-slate-900 mb-8 text-center">
@@ -295,7 +295,7 @@ export default function SdkDemo() {
         </div>
       </section>
 
-      {/* â”€â”€ Code Examples â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Code Examples ───────────────────────────── */}
       <section className="px-6 pb-16">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-xl font-bold text-slate-900 mb-6">Code Examples</h2>
@@ -341,12 +341,12 @@ export default function SdkDemo() {
         </div>
       </section>
 
-      {/* â”€â”€ Error classes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Error classes ───────────────────────────── */}
       <section className="px-6 pb-16" ref={errorsRef}>
         <div className="max-w-4xl mx-auto">
           <h2 className="text-xl font-bold text-slate-900 mb-2">Typed Error Classes</h2>
           <p className="text-sm text-slate-500 mb-6">
-            Every failure throws a typed subclass â€” catch exactly what you need.
+            Every failure throws a typed subclass — catch exactly what you need.
           </p>
           <div className="overflow-hidden border border-slate-200 rounded-2xl">
             <table className="w-full text-sm">
@@ -382,7 +382,7 @@ export default function SdkDemo() {
         </div>
       </section>
 
-      {/* â”€â”€ Links grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Links grid ──────────────────────────────── */}
       <section className="px-6 pb-20">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-xl font-bold text-slate-900 mb-6">Documentation</h2>
@@ -411,7 +411,7 @@ export default function SdkDemo() {
         </div>
       </section>
 
-      {/* â”€â”€ CTA footer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── CTA footer ──────────────────────────────── */}
       <section className="px-6 pb-20">
         <div className="max-w-4xl mx-auto">
           <div className="relative bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-10 text-center overflow-hidden">

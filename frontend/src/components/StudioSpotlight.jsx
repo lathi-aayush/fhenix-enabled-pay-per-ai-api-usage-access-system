@@ -8,14 +8,14 @@ const TOOLS = [
     icon: "edit_note",
     color: "emerald",
     tagline: "Go from idea to polished post in seconds",
-    desc: "Type a topic, pick a tone, and SentinalAI drafts a full SEO-optimised article â€” intro, headers, body, and CTA â€” powered by your choice of LLM, billed per word generated.",
+    desc: "Type a topic, pick a tone, and SentinalAI drafts a full SEO-optimised article — intro, headers, body, and CTA — powered by your choice of LLM, billed per word generated.",
     badges: ["DeepSeek V3", "Markdown export", "SEO hints", "Tone control"],
     preview: {
       type: "blog",
       title: "10 Ways Blockchain Is Reshaping AI Monetization",
       excerpt:
-        "The intersection of decentralised infrastructure and artificial intelligence is creating a new economic model where developers earn directly for every inference call, without a middlemanâ€¦",
-      meta: "Draft Â· 847 words Â· 0.0032 ETH charged",
+        "The intersection of decentralised infrastructure and artificial intelligence is creating a new economic model where developers earn directly for every inference call, without a middleman…",
+      meta: "Draft · 847 words · 0.0032 ETH charged",
     },
   },
   {
@@ -24,12 +24,12 @@ const TOOLS = [
     icon: "movie_edit",
     color: "violet",
     tagline: "Cut, caption, and remix AI-generated video",
-    desc: "Upload raw footage or generate from a prompt. Add auto-captions, background music, and scene transitions. Each rendering job is priced transparently in ETH â€” no monthly seat fees.",
+    desc: "Upload raw footage or generate from a prompt. Add auto-captions, background music, and scene transitions. Each rendering job is priced transparently in ETH — no monthly seat fees.",
     badges: ["Auto-captions", "Scene detection", "Text overlays", "ETH billing"],
     preview: {
       type: "video",
-      title: "Product Demo â€” Sentinal API Walkthrough",
-      meta: "Rendering Â· 2m 14s Â· 0.0089 ETH charged",
+      title: "Product Demo — Sentinal API Walkthrough",
+      meta: "Rendering · 2m 14s · 0.0089 ETH charged",
       scenes: ["Intro", "API Call Demo", "Wallet Payment", "Outro"],
     },
   },
@@ -39,12 +39,12 @@ const TOOLS = [
     icon: "query_stats",
     color: "indigo",
     tagline: "Ask questions, get charts and insights instantly",
-    desc: "Upload a CSV or connect a data source and ask plain-English questions. The AI runs analysis, produces visualisations, and writes an executive summary â€” fully logged on-chain.",
+    desc: "Upload a CSV or connect a data source and ask plain-English questions. The AI runs analysis, produces visualisations, and writes an executive summary — fully logged on-chain.",
     badges: ["CSV / JSON", "Auto charts", "SQL queries", "On-chain log"],
     preview: {
       type: "analyst",
-      title: "API Usage Analysis â€” May 2025",
-      meta: "Analysis complete Â· 0.0018 ETH charged",
+      title: "API Usage Analysis — May 2025",
+      meta: "Analysis complete · 0.0018 ETH charged",
       stats: [
         { label: "Total calls", value: "14,892" },
         { label: "Revenue (ETH)", value: "124.77" },
@@ -216,7 +216,7 @@ export default function StudioSpotlight({ onEnter }) {
           </span>
         </h2>
         <p className="text-slate-500 text-base mt-4 max-w-xl mx-auto leading-relaxed">
-          The Studio gives creators a full AI-powered workspace â€” blog writing, video editing, and data analytics â€” all billed transparently per task in ETH.
+          The Studio gives creators a full AI-powered workspace — blog writing, video editing, and data analytics — all billed transparently per task in ETH.
         </p>
       </motion.div>
 
@@ -308,7 +308,7 @@ export default function StudioSpotlight({ onEnter }) {
             {/* ETH cost pill */}
             <div className="mt-auto flex items-center gap-2 bg-emerald-50/80 border border-emerald-200/50 rounded-xl px-3 py-2">
               <span className="material-symbols-outlined text-emerald-500 text-[16px]">toll</span>
-              <span className="text-[11px] font-semibold text-emerald-700">Transparent on-chain billing Â· no monthly fee</span>
+              <span className="text-[11px] font-semibold text-emerald-700">Transparent on-chain billing · no monthly fee</span>
             </div>
           </div>
         </motion.div>
@@ -324,7 +324,7 @@ export default function StudioSpotlight({ onEnter }) {
       >
         <div>
           <p className="font-headline font-bold text-white text-lg">Ready to create?</p>
-          <p className="text-slate-400 text-sm mt-0.5">Connect your MetaMask and start for free â€” you only pay when you generate.</p>
+          <p className="text-slate-400 text-sm mt-0.5">Connect your MetaMask and start for free — you only pay when you generate.</p>
         </div>
         <button
           type="button"

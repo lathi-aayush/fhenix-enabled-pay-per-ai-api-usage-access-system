@@ -32,7 +32,7 @@ export default function GatewayMarketplace() {
       <form onSubmit={search} className="flex flex-wrap gap-2">
         <input
           className="flex-1 min-w-[200px] border rounded-lg px-3 py-2 text-sm"
-          placeholder="Search APIsâ€¦"
+          placeholder="Search APIs…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
@@ -79,7 +79,7 @@ function ApiGrid({ title, apis, badge }) {
             </div>
             <p className="text-xs text-slate-500 mt-1 line-clamp-2">{a.description}</p>
             <p className="text-sm text-indigo-600 mt-3">
-              {a.priceEth} ETH Â· {a.pricingModel}
+              {a.priceEth} ETH · {a.pricingModel}
             </p>
             <p className="text-xs text-slate-400 mt-1 font-mono">{a.proxyUrl}</p>
             <p className="text-xs text-slate-400 capitalize">{a.category}</p>

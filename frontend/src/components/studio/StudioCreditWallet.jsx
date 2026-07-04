@@ -44,14 +44,14 @@ export default function StudioCreditWallet({ usage, compact = false }) {
       )}
       {remaining <= 0 && (
         <div className="rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900">
-          Credits exhausted â€” runs bill per-use in ETH via x402.
+          Credits exhausted — runs bill per-use in ETH via x402.
         </div>
       )}
       <Link
         to="/studio/plan"
         className="inline-block text-[11px] font-semibold text-[#031634] hover:underline"
       >
-        Get more credits â†’
+        Get more credits →
       </Link>
     </div>
   );
@@ -61,7 +61,7 @@ export function OveragePriceHint({ amountWeis }) {
   if (!amountWeis) return null;
   return (
     <span className="text-slate-500">
-      â‰ˆ â‚¹{weiToInr(amountWeis)} / ${weiToUsd(amountWeis)}
+      ≈ ₹{weiToInr(amountWeis)} / ${weiToUsd(amountWeis)}
     </span>
   );
 }

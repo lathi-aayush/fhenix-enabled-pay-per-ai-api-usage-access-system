@@ -32,11 +32,7 @@ import {
   decodeXPaymentHeader,
   verifyX402Payment,
 } from "../services/fhenixX402Middleware.js";
-import {
-  deductFheBalance,
-  hasFheBalance,
-  isFheConfigured,
-} from "../services/fheDeductionService.js";
+import { tryFheAiPayment } from "../services/fhePaymentFlow.js";
 
 const router = Router();
 
@@ -281,7 +277,7 @@ async function completeFlow(req, res) {
     });
   }
 
-  // â”€â”€ ON-CHAIN PAYMENT SECURED! DECRYPT KEY AND INITIATE AI RESOLUTION â”€â”€
+  // ── ON-CHAIN PAYMENT SECURED! DECRYPT KEY AND INITIATE AI RESOLUTION ──
 
   let providerKey;
   try {
@@ -478,7 +474,7 @@ async function x402ChallengeFlow(req, res, auth) {
       payTo: creatorWallet,
       amountWei: expectedWei,
       resource,
-      description: `SentinelAI: ${service.title} â€” pay-per-use via proxy API (${chargeEth} ETH)`,
+      description: `SentinelAI: ${service.title} — pay-per-use via proxy API (${chargeEth} ETH)`,
     })
   );
   return send402Response(res, paymentRequirements);
@@ -489,161 +485,16 @@ async function x402ChallengeFlow(req, res, auth) {
  * Returns true if response was sent, false to fall back to x402.
  */
 async function fheCompleteFlow(req, res, auth) {
-  if (!isFheConfigured()) return false;
-
-  const { token, service, key } = auth;
-  const userWallet = canonicalWalletAddress(token.userWallet);
-  const creatorWallet = normalizeEvmAddress(String(service.creatorWallet || "").trim());
-  if (!creatorWallet || !isValidEvmAddress(creatorWallet)) return false;
-
+  const { token, service } = auth;
   const aiBody = buildAiBody(req.body);
-  if (!aiBody) {
-    res.status(400).json({
-      error: "Provide either messages (array) or prompt (string) for the AI request",
-    });
-    return true;
-  }
-
-  const chargeEth = Number(service.minimumChargeEth);
-  const expectedWei = ethers.parseEther(String(chargeEth));
-  if (expectedWei <= 0n) return false;
-
-  const hasBalance = await hasFheBalance(userWallet);
-  if (!hasBalance) return false;
-
-  const deduct = await deductFheBalance({
-    userWallet,
-    amountWei: expectedWei,
-    serviceWallet: creatorWallet,
+  const result = await tryFheAiPayment({
+    userWallet: token.userWallet,
+    service,
+    aiBody,
+    accessTokenId: token._id,
   });
-  if (!deduct.ok) return false;
-
-  const alreadyUsed = await ApiUsageLog.findOne({
-    paymentTxId: deduct.txHash,
-    success: true,
-  });
-  if (alreadyUsed) {
-    res.status(409).json({
-      error: "This FHE deduction has already been used",
-    });
-    return true;
-  }
-
-  let providerKey;
-  try {
-    providerKey = decryptSecret(service.encryptedApiKey);
-  } catch (e) {
-    console.error("[use/fhe] decryptSecret", e);
-    res.status(500).json({ error: "Server configuration error" });
-    return true;
-  }
-
-  let aiResponse;
-  try {
-    aiResponse = await forwardChatCompletion({
-      provider: service.aiProvider,
-      apiKey: providerKey,
-      model: service.modelName,
-      body: aiBody,
-      customEndpointUrl: service.customEndpointUrl || "",
-    });
-    providerKey = null;
-  } catch (err) {
-    providerKey = null;
-    console.error("[use/fhe] AI provider error:", err?.message || err);
-    try {
-      await ApiUsageLog.create({
-        userWallet,
-        serviceId: service._id,
-        accessTokenId: token._id,
-        developerWallet: creatorWallet,
-        amountEth: chargeEth,
-        aiProvider: service.aiProvider,
-        modelName: service.modelName,
-        paymentTxId: deduct.txHash,
-        fheDeductTxHash: deduct.txHash,
-        success: false,
-        fhePayment: true,
-        errorDetail: String(err?.message || err).slice(0, 500),
-      });
-    } catch (logErr) {
-      console.error("[use/fhe] failed-call log error:", logErr);
-    }
-    const status = err.status && Number.isFinite(err.status) ? err.status : 502;
-    res.status(status).json({
-      error: "Upstream AI provider error",
-      detail: err.message || String(err),
-    });
-    return true;
-  }
-
-  let usage = extractTokenUsage(service.aiProvider, aiResponse);
-  if (!usage) {
-    const est = estimateTokensFromOpenAiMessages(aiBody.messages);
-    usage = { promptTokens: est, completionTokens: 0, totalTokens: est };
-  }
-
-  const actualChargeEth = computeChargeEth(
-    usage.totalTokens,
-    Number(service.pricePerThousandTokens),
-    chargeEth
-  );
-
-  try {
-    service.totalUses = (service.totalUses || 0) + 1;
-    service.totalRevenue = Number(service.totalRevenue || 0) + chargeEth;
-    await service.save();
-
-    const logDoc = await ApiUsageLog.create({
-      userWallet,
-      serviceId: service._id,
-      accessTokenId: token._id,
-      developerWallet: creatorWallet,
-      amountEth: chargeEth,
-      aiProvider: service.aiProvider,
-      modelName: service.modelName,
-      paymentTxId: deduct.txHash,
-      fheDeductTxHash: deduct.txHash,
-      success: true,
-      fhePayment: true,
-      promptTokens: usage.promptTokens,
-      completionTokens: usage.completionTokens,
-      totalTokens: usage.totalTokens,
-      chargeEth: actualChargeEth,
-      pricePerThousandTokens: Number(service.pricePerThousandTokens),
-    });
-
-    notifyCreatorPurchaseWebhooks({
-      creatorWallet,
-      usageLog: logDoc,
-      service,
-      x402Payment: false,
-    });
-  } catch (logErr) {
-    if (logErr?.code === 11000) {
-      res.status(409).json({ error: "This FHE deduction has already been used" });
-      return true;
-    }
-    console.error("[use/fhe] usage log error:", logErr);
-    res.status(500).json({ error: "Could not finalize usage log" });
-    return true;
-  }
-
-  res.json({
-    ...aiResponse,
-    sentinelReceipt: {
-      paymentMethod: "fhe_balance",
-      paymentProtocol: "cofhe",
-      txHash: deduct.txHash,
-      fheDeductTxHash: deduct.txHash,
-      explorerUrl: deduct.explorerUrl,
-      chargeEth,
-      promptTokens: usage.promptTokens,
-      completionTokens: usage.completionTokens,
-      totalTokens: usage.totalTokens,
-      pricePerThousandTokens: Number(service.pricePerThousandTokens),
-    },
-  });
+  if (!result.handled) return false;
+  res.status(result.status).json(result.body);
   return true;
 }
 
@@ -677,7 +528,7 @@ async function x402CompleteFlow(req, res, auth) {
     expectedReceiver: creatorWallet,
     expectedWei,
     resource,
-    description: `SentinelAI: ${service.title} â€” pay-per-use via proxy API (${chargeEth} ETH)`,
+    description: `SentinelAI: ${service.title} — pay-per-use via proxy API (${chargeEth} ETH)`,
   });
 
   if (!verification.valid) {

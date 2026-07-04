@@ -1,5 +1,5 @@
 /**
- * proxyX402Use.js â€” EVM/Sepolia x402 payment for /api/use proxy calls.
+ * proxyX402Use.js — EVM/Sepolia x402 payment for /api/use proxy calls.
  * Replaces the Sepolia version (burner wallet + viem).
  *
  * Uses the session key wallet to sign and submit ETH transfers for x402 calls.
@@ -8,15 +8,12 @@
 import { api } from "./client.js";
 import { getSessionKeyWallet } from "../wallet/sessionKey.js";
 import { getTxUrl } from "../utils/explorer.js";
+import { getNetworkConfig } from "../config/chain.js";
 
-/**
- * Encode the X-Payment header for Sepolia.
- * Format: base64(JSON({ txHash, network, amount, payTo }))
- */
 function buildXPaymentHeader({ txHash, accept }) {
   const payload = {
     txHash,
-    network: accept.network ?? "eip155:11155111",
+    network: accept.network ?? getNetworkConfig().x402Network,
     payTo: accept.payTo,
     amount: accept.maxAmountRequired ?? accept.amount,
   };
@@ -35,10 +32,20 @@ function buildXPaymentHeader({ txHash, accept }) {
 export async function callProxyX402Use({ apiKey, serviceId, body }) {
   const headers = { Authorization: `Bearer ${apiKey}` };
 
-  // Step 1: Trigger 402 challenge
+  // Step 1: try FHE prepaid balance or get x402 challenge
   let challengeData;
   try {
-    await api.post("/api/use", body, { headers });
+    const { data } = await api.post("/api/use", body, { headers });
+    const receipt = data?.sentinelReceipt;
+    if (receipt?.paymentMethod === "fhe_balance" || receipt?.paymentProtocol === "cofhe") {
+      const { sentinelReceipt: _sr, ...aiResponse } = data || {};
+      return {
+        aiResponse,
+        txHash: receipt.txHash,
+        receipt,
+        explorerUrl: getTxUrl(receipt.txHash),
+      };
+    }
     throw new Error("Expected HTTP 402 Payment Required");
   } catch (e) {
     if (e?.response?.status !== 402) {

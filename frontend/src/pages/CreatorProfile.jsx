@@ -31,7 +31,7 @@ export default function CreatorProfile() {
   }, [walletAddress]);
 
   if (loading) {
-    return <p className="text-on-surface-variant">Loading creator profileâ€¦</p>;
+    return <p className="text-on-surface-variant">Loading creator profile…</p>;
   }
 
   if (!profile) {
@@ -39,7 +39,7 @@ export default function CreatorProfile() {
       <div className="pt-4 pb-8 w-full">
         <p className="text-on-surface-variant mb-4">Creator profile not found.</p>
         <Link to="/marketplace/browse" className="text-sm text-secondary hover:underline">
-          â† Back to Marketplace
+          ← Back to Marketplace
         </Link>
       </div>
     );
@@ -50,7 +50,7 @@ export default function CreatorProfile() {
   return (
     <div className="pt-4 pb-8 w-full">
       <Link to="/marketplace/browse" className="text-sm text-secondary hover:underline">
-        â† Marketplace
+        ← Marketplace
       </Link>
 
       <header className="mt-6 bg-white border border-surface-variant rounded-md p-6 editorial-shadow">

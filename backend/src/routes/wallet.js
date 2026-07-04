@@ -1,8 +1,8 @@
 /**
  * Wallet/contract top-up routes for Sepolia SentinelPayment contract.
  *
- * POST /api/wallet/topup/create  â†’ returns deposit params for the contract
- * POST /api/wallet/topup/verify  â†’ confirms ETH deposit on-chain
+ * POST /api/wallet/topup/create  → returns deposit params for the contract
+ * POST /api/wallet/topup/verify  → confirms ETH deposit on-chain
  */
 
 import { Router } from "express";
@@ -12,7 +12,9 @@ import { ethers } from "ethers";
 import { TopUpIntent } from "../models/TopUpIntent.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { getContractConfig } from "../config/contractConfig.js";
+import { getNetworkConfig } from "../config/chainConfig.js";
 import { canonicalWalletAddress } from "../utils/userWallet.js";
+import { hasFheBalance, getFheStatus } from "../services/fheDeductionService.js";
 import {
   getReceiptWithRetry,
   normalizeEvmAddress,
@@ -36,8 +38,8 @@ router.post(
         });
       }
 
-      // 0.001 ETH default minimum deposit
       const minWei = BigInt(process.env.MIN_DEPOSIT_WEI || "1000000000000000");
+      const net = getNetworkConfig();
 
       const userWallet = canonicalWalletAddress(req.user.walletAddress);
       const paymentIntentId = crypto.randomUUID();
@@ -54,9 +56,9 @@ router.post(
         contractAddress: normalizeEvmAddress(contractAddress),
         amountWei: minWei.toString(),
         amountEth: ethers.formatEther(minWei),
-        network: "Sepolia",
-        chainId: 11155111,
-        rpcUrl: process.env.RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com",
+        network: net.name,
+        chainId: net.chainId,
+        rpcUrl: net.rpcUrl,
         hint: "Call SentinelPayment.deposit({ value: amountWei }) to top up your encrypted balance.",
       });
     } catch (e) {
@@ -122,6 +124,27 @@ router.post(
     } catch (e) {
       console.error("[wallet/topup/verify]", e?.message || e);
       return res.status(500).json({ error: "Verification failed" });
+    }
+  }
+);
+
+router.get(
+  "/fhe/status",
+  requireAuth,
+  requireRole("user", "creator"),
+  async (req, res) => {
+    try {
+      const userWallet = canonicalWalletAddress(req.user.walletAddress);
+      const fhe = await getFheStatus();
+      const hasBalance = fhe.ready ? await hasFheBalance(userWallet) : false;
+      return res.json({
+        ...fhe,
+        userWallet,
+        hasEncryptedBalance: hasBalance,
+      });
+    } catch (e) {
+      console.error("[wallet/fhe/status]", e?.message || e);
+      return res.status(500).json({ error: "Could not load FHE status" });
     }
   }
 );

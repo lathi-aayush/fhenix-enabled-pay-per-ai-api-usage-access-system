@@ -12,10 +12,10 @@
  */
 
 import { ethers } from "ethers";
+import { getNetworkConfig } from "../config/chainConfig.js";
 import { getReceiptWithRetry, getTransaction, normalizeEvmAddress, weiWithinTolerance } from "./evmService.js";
 
-// EIP-155 CAIP-2 network identifier for Sepolia
-export const X402_NETWORK = "eip155:11155111";
+export const X402_NETWORK = getNetworkConfig().x402Network;
 
 // Native ETH asset identifier (address(0) convention)
 export const X402_ETH_ASSET = "0x0000000000000000000000000000000000000000";

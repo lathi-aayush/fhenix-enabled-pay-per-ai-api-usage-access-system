@@ -42,10 +42,10 @@ export default function PromptGenerator() {
           <div>
             <h1 className="font-headline text-2xl font-semibold text-primary">Advanced Prompt Generator</h1>
             <p className="text-sm text-on-surface-variant mt-1 max-w-2xl">
-              Craft, analyze, and refine high-quality prompts with Gemini â€” pay-per-call.
+              Craft, analyze, and refine high-quality prompts with Gemini — pay-per-call.
             </p>
             <p className="text-[11px] text-slate-500 mt-1">
-              Pay-per-Call Mode Â· Micropayments enabled
+              Pay-per-Call Mode · Micropayments enabled
             </p>
           </div>
         </div>
@@ -124,7 +124,7 @@ export default function PromptGenerator() {
               workflowLoading={pg.workflowLoading}
               error={pg.error}
               onRetry={handleRetry}
-              emptyHint="Fill in a goal and click Generate prompt â€” or pick a quick template."
+              emptyHint="Fill in a goal and click Generate prompt — or pick a quick template."
               handlers={{
                 onCopy: () => pg.copyToClipboard(),
                 onRegenerate: handleRegenerate,
@@ -141,7 +141,7 @@ export default function PromptGenerator() {
           {(pg.workflowLoading || pg.workflowResult?.image?.dataUrl) && (
             <div className="mt-6 bg-white border border-surface-variant rounded-md p-4">
               <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
-                <h2 className="text-sm font-semibold text-primary">Workflow Â· Generated image</h2>
+                <h2 className="text-sm font-semibold text-primary">Workflow · Generated image</h2>
                 <Link
                   to="/studio/creative-workflow"
                   className="text-[11px] font-semibold text-[#031634] underline"
@@ -150,7 +150,7 @@ export default function PromptGenerator() {
                 </Link>
               </div>
               {pg.workflowLoading ? (
-                <p className="text-sm animate-pulse text-on-surface-variant">Rendering image from promptâ€¦</p>
+                <p className="text-sm animate-pulse text-on-surface-variant">Rendering image from prompt…</p>
               ) : (
                 <img
                   src={pg.workflowResult.image.dataUrl}

@@ -40,7 +40,7 @@ export async function postSubscriptionUpgrade(req, res) {
   }
   if (!user.walletAddress) {
     return res.status(400).json({
-      error: "Link your MetaMask wallet to this account before upgrading (Profile â†’ Link wallet).",
+      error: "Link your MetaMask wallet to this account before upgrading (Profile → Link wallet).",
     });
   }
 
@@ -115,7 +115,7 @@ export async function postSubscriptionUpgrade(req, res) {
   await user.save();
 
   console.info(
-    `[studio upgrade] user=${user._id} ${previousTier}â†’${tierNorm} credits=${getPlanCredits(tierNorm)} resetAt=${usageResetAt.toISOString()}`
+    `[studio upgrade] user=${user._id} ${previousTier}→${tierNorm} credits=${getPlanCredits(tierNorm)} resetAt=${usageResetAt.toISOString()}`
   );
 
   await TxRecord.create({

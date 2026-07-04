@@ -1,19 +1,14 @@
 /**
- * evmService.js — EVM/Sepolia equivalent of evmService.js
- *
- * Provides RPC interaction, tx receipt polling, address normalization,
- * and balance queries for Sepolia (chainId 11155111).
+ * evmService.js — EVM RPC, receipts, and address helpers.
  */
 
 import { ethers } from "ethers";
+import { getNetworkConfig } from "../config/chainConfig.js";
 
 let _provider = null;
 
 function getRpcUrl() {
-  return (
-    process.env.RPC_URL?.trim() ||
-    "https://ethereum-sepolia-rpc.publicnode.com"
-  );
+  return getNetworkConfig().rpcUrl;
 }
 
 export function getProvider() {
@@ -157,20 +152,17 @@ export function weiWithinTolerance(paidWei, expectedWei, tolerancePercent = 1) {
   return paid >= minAccepted;
 }
 
-/**
- * Etherscan transaction URL for Sepolia.
- */
 export function explorerTxUrl(txHash) {
   if (!txHash) return null;
-  return `https://sepolia.etherscan.io/tx/${txHash}`;
+  return `${getNetworkConfig().explorerBase}/tx/${txHash}`;
 }
 
 export function explorerAddressUrl(address) {
   if (!address) return null;
-  return `https://sepolia.etherscan.io/address/${address}`;
+  return `${getNetworkConfig().explorerBase}/address/${address}`;
 }
 
 export function explorerTokenUrl(address) {
   if (!address) return null;
-  return `https://sepolia.etherscan.io/token/${address}`;
+  return `${getNetworkConfig().explorerBase}/token/${address}`;
 }

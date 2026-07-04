@@ -36,6 +36,8 @@ import { getClipCraftRuntime } from "./studio/clipcraft/production/ClipCraftRunt
 import { registerClipCraftGracefulShutdown } from "./studio/clipcraft/production/gracefulShutdown.js";
 import { buildCorsOrigins, isCorsOriginAllowed } from "./config/corsOrigins.js";
 import { getPublicReceiverWallet } from "./config/paymentConfig.js";
+import { getNetworkConfig } from "./config/chainConfig.js";
+import { getFheStatus } from "./services/fheDeductionService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -75,12 +77,13 @@ app.use(express.json({ limit: "1mb" }));
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
 app.get("/api/public/network", (_req, res) => {
+  const net = getNetworkConfig();
   res.json({
-    rpcUrl: process.env.RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com",
-    chainId: Number(process.env.CHAIN_ID || 11155111),
-    network: "Sepolia",
+    rpcUrl: net.rpcUrl,
+    chainId: net.chainId,
+    network: net.name,
     receiverWallet: getPublicReceiverWallet(),
-    explorer: "https://sepolia.etherscan.io",
+    explorer: net.explorerBase,
   });
 });
 
@@ -218,8 +221,20 @@ connectDb()
       console.warn("[clipcraft] runtime skip:", e.message);
     }
 
-    const server = app.listen(port, () => {
+    const server = app.listen(port, async () => {
       console.log(`API listening on ${port}`);
+      const net = getNetworkConfig();
+      console.log(`[network] ${net.name} (chainId ${net.chainId})`);
+      try {
+        const fhe = await getFheStatus();
+        console.log(
+          `[fhe] ${fhe.ready ? "ready" : "disabled"} — contract ${fhe.contractAddress || "none"}${
+            fhe.ready ? `, operator ${fhe.operatorAddress}` : ` (${fhe.reason})`
+          }`
+        );
+      } catch (e) {
+        console.warn("[fhe] status check failed:", e?.message || e);
+      }
     });
 
     registerClipCraftGracefulShutdown(server, clipcraftRuntime, {

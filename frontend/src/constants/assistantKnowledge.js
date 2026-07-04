@@ -1,4 +1,4 @@
-/** MetaMask tutorial â€” same URL as HowItWorks Step 2 */
+/** MetaMask tutorial — same URL as HowItWorks Step 2 */
 export const METAMASK_TUTORIAL_VIDEO_URL =
   "https://youtu.be/m720vHR8g1U?si=-n0sLN5b0sqMuLBk&t=57";
 
@@ -45,7 +45,7 @@ export const SENSITIVE_DENYLIST = [
   "role permission",
 ];
 
-/** Tier 1 chip ids â€” order preserved for UI */
+/** Tier 1 chip ids — order preserved for UI */
 export const TOP_SUGGESTION_IDS = [
   "what-is-sentinal",
   "features",
@@ -61,7 +61,7 @@ export const ASSISTANT_FAQ = [
     question: "What is Sentinal?",
     aliases: ["what is sentinal", "what is sentinel", "about sentinal", "tell me about sentinal"],
     answer:
-      "Sentinal is a decentralized pay-per-use AI platform built on Sepolia. Browse AI APIs in the Marketplace or create content with AI Studio â€” every call is billed in ETH with on-chain transparency.",
+      "Sentinal is a decentralized pay-per-use AI platform built on Sepolia. Browse AI APIs in the Marketplace or create content with AI Studio — every call is billed in ETH with on-chain transparency.",
     action: { type: "route", target: "/docs/how-it-works", label: "Learn how it works" },
   },
   {
@@ -85,7 +85,7 @@ export const ASSISTANT_FAQ = [
     question: "How does pay-per-call work?",
     aliases: ["pay per call", "pay-per-call", "micro payment", "micro eth", "billing model", "how does billing work"],
     answer:
-      "Each API call is metered by our backend. Micro-ETH is deducted from your wallet and settled on Sepolia â€” no subscriptions, no credit cards, no middleman.",
+      "Each API call is metered by our backend. Micro-ETH is deducted from your wallet and settled on Sepolia — no subscriptions, no credit cards, no middleman.",
     action: { type: "route", target: "/docs/how-it-works", label: "See payment flow" },
   },
   {
@@ -93,7 +93,7 @@ export const ASSISTANT_FAQ = [
     question: "What is AI Studio?",
     aliases: ["ai studio", "what is studio", "studio features", "content creator tools"],
     answer:
-      "AI Studio is Sentinal's creator workspace â€” draft blogs, generate prompts, run workflows, edit clips, and schedule publishing across platforms.",
+      "AI Studio is Sentinal's creator workspace — draft blogs, generate prompts, run workflows, edit clips, and schedule publishing across platforms.",
     action: { type: "route", target: "/studio", label: "Open AI Studio" },
   },
   {
@@ -181,7 +181,7 @@ export const ASSISTANT_FAQ = [
     question: "What are workflows?",
     aliases: ["workflow builder", "agentic pipeline", "automation", "workflows", "workflow studio"],
     answer:
-      "Workflow Studio lets you build multi-step AI pipelines â€” connect prompts, image gen, and logic nodes in a visual canvas.",
+      "Workflow Studio lets you build multi-step AI pipelines — connect prompts, image gen, and logic nodes in a visual canvas.",
     action: { type: "route", target: "/studio/workflows", label: "Open Workflow Studio" },
   },
   {
@@ -218,7 +218,7 @@ function normalize(text) {
     .replace(/\s+/g, " ");
 }
 
-/** Detect pasted secrets â€” never echo or FAQ-match these */
+/** Detect pasted secrets — never echo or FAQ-match these */
 export function looksLikeSecret(text) {
   const raw = text.trim();
   if (!raw) return false;

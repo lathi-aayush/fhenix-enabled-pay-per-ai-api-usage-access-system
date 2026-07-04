@@ -131,7 +131,7 @@ export function useWorkflowExecutor(workflowId) {
             if (evt.saveWarning) {
               toast.error(evt.saveWarning, { duration: 7000 });
             } else {
-              toast.success("Workflow complete â€” results are ready", { duration: 5000 });
+              toast.success("Workflow complete — results are ready", { duration: 5000 });
             }
           } else {
             toast.error(`Workflow ${evt.status}`);
@@ -152,7 +152,7 @@ export function useWorkflowExecutor(workflowId) {
           }
         } else if (finalRun.data.status === "completed" && !heardCompleteEvent) {
           playCompletionSound();
-          toast.success("Workflow complete â€” results are ready", { duration: 5000 });
+          toast.success("Workflow complete — results are ready", { duration: 5000 });
         }
       }
     } catch (e) {

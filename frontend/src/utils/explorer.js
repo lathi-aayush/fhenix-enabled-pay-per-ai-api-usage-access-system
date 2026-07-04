@@ -1,14 +1,12 @@
 /**
- * Etherscan explorer URLs for Sepolia.
- * Replaces explorer.js (Sepolia).
+ * Explorer URLs — driven by VITE_CHAIN_ID (Base Sepolia or Sepolia).
  */
 
-const ETHERSCAN_BASE = "https://sepolia.etherscan.io";
+import { getNetworkConfig } from "../config/chain.js";
 
-/** Link to a transaction on Sepolia Etherscan. */
 export function getTxUrl(txHash) {
   if (!txHash) return null;
-  return `${ETHERSCAN_BASE}/tx/${txHash}`;
+  return `${getNetworkConfig().explorerBase}/tx/${txHash}`;
 }
 
 /** @deprecated use getTxUrl */
@@ -22,7 +20,7 @@ export function explorerTxUrl(txHash) {
 
 export function getAddressUrl(address) {
   if (!address) return null;
-  return `${ETHERSCAN_BASE}/address/${address}`;
+  return `${getNetworkConfig().explorerBase}/address/${address}`;
 }
 
 export function explorerAddressUrl(address) {
@@ -31,7 +29,7 @@ export function explorerAddressUrl(address) {
 
 export function getTokenUrl(tokenAddress) {
   if (!tokenAddress) return null;
-  return `${ETHERSCAN_BASE}/token/${tokenAddress}`;
+  return `${getNetworkConfig().explorerBase}/token/${tokenAddress}`;
 }
 
 export function explorerTokenUrl(address) {

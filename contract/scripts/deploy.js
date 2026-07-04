@@ -20,14 +20,17 @@ async function main() {
 
   const address = await contract.getAddress();
   const network = await ethers.provider.getNetwork();
+  const chainId = Number(network.chainId);
+  const explorerBase =
+    chainId === 84532 ? "https://sepolia.basescan.org" : "https://sepolia.etherscan.io";
 
   console.log("SentinelPayment deployed to:", address);
-  console.log("Chain ID:", network.chainId.toString());
-  console.log("Explorer:", `https://sepolia.etherscan.io/address/${address}`);
+  console.log("Chain ID:", chainId);
+  console.log("Explorer:", `${explorerBase}/address/${address}`);
 
   const info = {
     address,
-    chainId: Number(network.chainId),
+    chainId,
     minDepositWei: minDepositWei.toString(),
     deployer: deployer.address,
     deployedAt: new Date().toISOString(),

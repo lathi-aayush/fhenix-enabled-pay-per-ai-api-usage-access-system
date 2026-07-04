@@ -114,7 +114,7 @@ export default function CreatorDashboard() {
   }
 
   async function removeService(svc) {
-    if (!window.confirm(`Delete â€œ${svc.title}â€? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete “${svc.title}”? This cannot be undone.`)) return;
     try {
       await api.delete(`/api/services/${svc._id}`);
       toast.success("Service deleted");
@@ -162,7 +162,7 @@ export default function CreatorDashboard() {
       if (data.success) {
         toast.success(`Test delivered (HTTP ${data.httpStatus})`);
       } else {
-        toast.error(data.errorMessage || `Test failed (HTTP ${data.httpStatus ?? "â€”"})`);
+        toast.error(data.errorMessage || `Test failed (HTTP ${data.httpStatus ?? "—"})`);
       }
       await load();
     } catch (err) {
@@ -218,7 +218,7 @@ export default function CreatorDashboard() {
         withdrawals: [data.withdrawal, ...(prev?.withdrawals ?? [])],
       }));
       setWithdrawAmount("");
-      toast.success(`Withdrawal sent â€” ${data.withdrawal.txId?.slice(0, 10)}â€¦`);
+      toast.success(`Withdrawal sent — ${data.withdrawal.txId?.slice(0, 10)}…`);
     } catch (err) {
       toast.error(err?.response?.data?.error || "Withdrawal failed");
       try {
@@ -308,7 +308,7 @@ export default function CreatorDashboard() {
         {loading ? (
           <div className="flex items-center gap-2 text-slate-400 py-10 justify-center">
             <span className="inline-block h-5 w-5 border-2 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin" />
-            <span className="text-sm font-semibold">Loading dashboardâ€¦</span>
+            <span className="text-sm font-semibold">Loading dashboard…</span>
           </div>
         ) : (
           <AnimatePresence mode="wait">
@@ -425,7 +425,7 @@ export default function CreatorDashboard() {
                               </p>
                               <div className="h-px bg-slate-200/50 my-1.5" />
                               <p className="text-[10px] text-slate-500 font-semibold">
-                                calls: <span className="text-slate-800 font-mono font-bold">{s.logCalls ?? 0}</span> Â· earned: <span className="text-emerald-600 font-mono font-bold">{(s.logEarnedEth ?? 0).toFixed(4)} ETH</span>
+                                calls: <span className="text-slate-800 font-mono font-bold">{s.logCalls ?? 0}</span> · earned: <span className="text-emerald-600 font-mono font-bold">{(s.logEarnedEth ?? 0).toFixed(4)} ETH</span>
                               </p>
                               <p className="text-[9px] text-slate-400">
                                 served: <span className="font-mono">{(s.logTokensServed ?? 0).toLocaleString()}</span> tokens
@@ -488,7 +488,7 @@ export default function CreatorDashboard() {
                         >
                           <div className="flex flex-wrap items-center gap-2 justify-between">
                             <span className="text-sm font-semibold text-slate-800">
-                              {row.serviceTitle} <span className="text-slate-300">Â·</span> <span className="font-mono text-xs text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-200/40">{row.userWallet?.slice(0, 12)}â€¦</span>
+                              {row.serviceTitle} <span className="text-slate-300">·</span> <span className="font-mono text-xs text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-200/40">{row.userWallet?.slice(0, 12)}…</span>
                             </span>
                             <span
                               className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
@@ -497,7 +497,7 @@ export default function CreatorDashboard() {
                                   : "bg-emerald-50 border-emerald-200 text-emerald-700"
                               }`}
                             >
-                              {row.success === false ? "Paid on-chain Â· AI failed" : "Completed"}
+                              {row.success === false ? "Paid on-chain · AI failed" : "Completed"}
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-4 text-xs text-slate-400 pt-2 border-t border-slate-100/50">
@@ -505,7 +505,7 @@ export default function CreatorDashboard() {
                               charge: {Number(row.chargeEth ?? row.amountEth).toFixed(6)} ETH
                             </span>
                             <span>
-                              tokens in/out: <span className="font-semibold text-slate-600">{row.promptTokens ?? "â€”"}</span>/<span className="font-semibold text-slate-600">{row.completionTokens ?? "â€”"}</span> (Î£ <span className="font-semibold text-slate-600">{row.totalTokens ?? "â€”"}</span>)
+                              tokens in/out: <span className="font-semibold text-slate-600">{row.promptTokens ?? "—"}</span>/<span className="font-semibold text-slate-600">{row.completionTokens ?? "—"}</span> (Σ <span className="font-semibold text-slate-600">{row.totalTokens ?? "—"}</span>)
                             </span>
                             <span>{row.createdAt ? new Date(row.createdAt).toLocaleString() : ""}</span>
                             {(row.paymentTxId || row.payoutTxId) && (
@@ -539,7 +539,7 @@ export default function CreatorDashboard() {
 
                   {newSecret && (
                     <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 shadow-sm">
-                      <p className="font-bold text-amber-900 text-sm mb-1">Save your signing secret â€” shown once!</p>
+                      <p className="font-bold text-amber-900 text-sm mb-1">Save your signing secret — shown once!</p>
                       <p className="font-mono text-xs break-all text-amber-950 bg-white/60 p-2.5 rounded-lg border border-amber-200/50 select-all font-bold">{newSecret}</p>
                       <div className="flex gap-2 mt-3">
                         <button
@@ -609,7 +609,7 @@ export default function CreatorDashboard() {
                                 <p className="text-xs text-slate-600 font-medium mt-2">{wh.description}</p>
                               )}
                               <p className="text-[10px] text-slate-400 mt-1.5 font-semibold">
-                                Secret Preview: <span className="font-mono text-slate-500">{wh.secretPreview}</span> Â· events: <span className="font-mono text-slate-500">{(wh.events ?? []).join(", ")}</span>
+                                Secret Preview: <span className="font-mono text-slate-500">{wh.secretPreview}</span> · events: <span className="font-mono text-slate-500">{(wh.events ?? []).join(", ")}</span>
                               </p>
                             </div>
                             <span
@@ -647,7 +647,7 @@ export default function CreatorDashboard() {
                           </div>
                           {wh.lastDeliveryAt && (
                             <p className="text-[10px] text-slate-400 font-semibold mt-1">
-                              Last delivery: <span className="text-slate-600">{new Date(wh.lastDeliveryAt).toLocaleString()}</span> Â· status:{" "}
+                              Last delivery: <span className="text-slate-600">{new Date(wh.lastDeliveryAt).toLocaleString()}</span> · status:{" "}
                               <span className={wh.lastDeliveryStatus === "success" ? "text-emerald-600 font-bold" : "text-rose-600 font-bold"}>
                                 {wh.lastDeliveryStatus === "success" ? "success" : "failed"}
                               </span>
@@ -706,7 +706,7 @@ export default function CreatorDashboard() {
                     <h2 className="font-headline text-lg font-bold text-slate-900 mb-1">Request withdrawal</h2>
                     <p className="text-xs text-slate-500 mb-4">
                       Payouts are sent from the Sentinal TestNet treasury to:{" "}
-                      <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200/40">{user?.walletAddress?.slice(0, 12)}â€¦</span>
+                      <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200/40">{user?.walletAddress?.slice(0, 12)}…</span>
                     </p>
                     <form onSubmit={submitWithdrawal} className="flex flex-col sm:flex-row gap-3 sm:items-end">
                       <div className="flex-1 space-y-1.5">
@@ -731,7 +731,7 @@ export default function CreatorDashboard() {
                         {withdrawing && (
                           <span className="inline-block h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         )}
-                        {withdrawing ? "Submitting on-chainâ€¦" : "Withdraw"}
+                        {withdrawing ? "Submitting on-chain…" : "Withdraw"}
                       </button>
                     </form>
                   </div>
@@ -756,7 +756,7 @@ export default function CreatorDashboard() {
                           {(withdrawalData?.withdrawals ?? []).map((row) => (
                             <tr key={row.id} className="hover:bg-slate-50/30 transition-colors">
                               <td className="px-5 py-3.5 text-slate-500 font-medium">
-                                {row.createdAt ? new Date(row.createdAt).toLocaleString() : "â€”"}
+                                {row.createdAt ? new Date(row.createdAt).toLocaleString() : "—"}
                               </td>
                               <td className="px-5 py-3.5 font-mono font-bold text-slate-800">{Number(row.amountEth).toFixed(6)} ETH</td>
                               <td className="px-5 py-3.5">
@@ -784,12 +784,12 @@ export default function CreatorDashboard() {
                                     rel="noreferrer"
                                     className="font-mono text-xs text-indigo-600 hover:text-indigo-700 underline font-bold"
                                   >
-                                    {row.txId.slice(0, 12)}â€¦
+                                    {row.txId.slice(0, 12)}…
                                   </a>
                                 ) : row.errorDetail ? (
                                   <span className="text-xs text-rose-600 font-medium">{row.errorDetail}</span>
                                 ) : (
-                                  "â€”"
+                                  "—"
                                 )}
                               </td>
                             </tr>

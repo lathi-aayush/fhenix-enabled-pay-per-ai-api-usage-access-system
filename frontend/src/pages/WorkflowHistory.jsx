@@ -37,7 +37,7 @@ export default function WorkflowHistory() {
       <div className="flex-1">
         <header className="mb-6">
           <Link to="/studio/workflows" className="text-xs text-secondary hover:underline">
-            â† Workflows
+            ← Workflows
           </Link>
           <h1 className="font-headline text-2xl font-semibold text-primary mt-2">Run history</h1>
           {!isAuthenticated && (
@@ -60,7 +60,7 @@ export default function WorkflowHistory() {
               {isLoading ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-slate-500 animate-pulse">
-                    Loadingâ€¦
+                    Loading…
                   </td>
                 </tr>
               ) : (
@@ -77,7 +77,7 @@ export default function WorkflowHistory() {
                       </span>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs">{(r.totalCreditsDeducted ?? 0).toFixed(4)}</td>
-                    <td className="px-4 py-3 text-xs">{r.runtimeMs ? `${r.runtimeMs}ms` : "â€”"}</td>
+                    <td className="px-4 py-3 text-xs">{r.runtimeMs ? `${r.runtimeMs}ms` : "—"}</td>
                     <td className="px-4 py-3 text-xs text-slate-500">
                       {new Date(r.createdAt).toLocaleString()}
                     </td>

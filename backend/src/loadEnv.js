@@ -12,6 +12,18 @@ const envPath = path.resolve(__dirname, "..", ".env");
 
 dotenv.config({ path: envPath });
 
+// ponytail: local dev — use contract deployer as FHE operator when not set in backend/.env
+if (!process.env.OPERATOR_PRIVATE_KEY?.trim() && !process.env.TREASURY_PRIVATE_KEY?.trim()) {
+  const contractEnvPath = path.resolve(__dirname, "..", "..", "contract", ".env");
+  if (fs.existsSync(contractEnvPath)) {
+    const contractEnv = dotenv.parse(fs.readFileSync(contractEnvPath));
+    const deployerKey = contractEnv.DEPLOYER_PRIVATE_KEY?.trim();
+    if (deployerKey) {
+      process.env.OPERATOR_PRIVATE_KEY = deployerKey;
+    }
+  }
+}
+
 // Backward compat: TREASURY_WALLET_ADDRESS and RECEIVER_WALLET are interchangeable
 if (!process.env.RECEIVER_WALLET?.trim() && process.env.TREASURY_WALLET_ADDRESS?.trim()) {
   process.env.RECEIVER_WALLET = process.env.TREASURY_WALLET_ADDRESS.trim();
@@ -96,4 +108,14 @@ if (contractAddress) {
   console.log("[env] CONTRACT_ADDRESS:", contractAddress.slice(0, 8) + "…");
 } else {
   console.warn("[env] CONTRACT_ADDRESS: not set (will try contract/contract_info.json)");
+}
+
+const operatorKey = (process.env.OPERATOR_PRIVATE_KEY || process.env.TREASURY_PRIVATE_KEY || "").trim();
+if (operatorKey) {
+  const source = process.env.OPERATOR_PRIVATE_KEY?.trim() ? "OPERATOR_PRIVATE_KEY" : "TREASURY_PRIVATE_KEY";
+  console.log(`[env] ${source}: loaded (FHE deductForCall enabled)`);
+} else {
+  console.warn(
+    "[env] OPERATOR_PRIVATE_KEY: MISSING — FHE prepaid balance deductions disabled. Set to contract deployer key."
+  );
 }

@@ -1,5 +1,5 @@
 /**
- * MetaMaskLoginContext â€” replaces MetaMaskLoginContext.jsx
+ * MetaMaskLoginContext — replaces MetaMaskLoginContext.jsx
  *
  * Provides connectWithMetaMask() for login/registration flows.
  * Wraps MetaMask connection + backend JWT auth in a single context.
@@ -163,7 +163,7 @@ function RegistrationForm({ walletAddress, role, redirect, onComplete, onClose }
     <form onSubmit={handleSubmit}>
       <input
         type="text"
-        placeholder="Display name (3â€“30 chars)"
+        placeholder="Display name (3–30 chars)"
         value={name}
         onChange={(e) => { setName(e.target.value); setError(""); }}
         style={{
@@ -185,7 +185,7 @@ function RegistrationForm({ walletAddress, role, redirect, onComplete, onClose }
             border: "none", cursor: busy ? "not-allowed" : "pointer", fontSize: 14,
           }}
         >
-          {busy ? "Creatingâ€¦" : "Continue"}
+          {busy ? "Creating…" : "Continue"}
         </button>
         <button
           type="button"

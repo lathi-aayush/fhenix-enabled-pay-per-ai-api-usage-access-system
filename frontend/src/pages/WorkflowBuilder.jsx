@@ -150,7 +150,7 @@ function BuilderInner() {
     return (
       <div className="pt-8 px-4 text-sm text-slate-500 flex items-center gap-2">
         <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span>
-        Loading workflowâ€¦
+        Loading workflow…
       </div>
     );
   }
@@ -159,7 +159,7 @@ function BuilderInner() {
     <div className="workflow-canvas pt-4 px-4 sm:px-6 pb-6 flex flex-col min-h-[calc(100vh-3.5rem)]">
       <nav className="flex items-center gap-3 text-xs text-slate-500 mb-3">
         <Link to="/studio/workflows" className="hover:text-primary font-semibold">
-          â† Workflows
+          ← Workflows
         </Link>
         <span className="text-slate-300">|</span>
         <Link to="/studio/workflows/templates" className="hover:text-primary">
@@ -386,7 +386,7 @@ function BuilderInner() {
                 >
                   <option value="draft">Draft only</option>
                   <option value="studio">Publish to Studio (see Published)</option>
-                  <option value="publish">Post to Dev.to / Medium / â€¦</option>
+                  <option value="publish">Post to Dev.to / Medium / …</option>
                 </select>
                 {(selectedNode.data?.publishMode === "publish" ||
                   selectedNode.data?.publishMode === "studio") && (

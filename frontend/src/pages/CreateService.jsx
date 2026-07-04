@@ -100,7 +100,7 @@ export default function CreateService() {
         x402Enabled,
         customEndpointUrl: aiProvider === "custom" ? customEndpointUrl.trim() : undefined,
       });
-      toast.success("Service published â€” your key is encrypted on the server");
+      toast.success("Service published — your key is encrypted on the server");
       navigate("/creator");
     } catch (err) {
       const d = err?.response?.data;
@@ -263,7 +263,7 @@ export default function CreateService() {
             </div>
           </div>
 
-          {/* Base URL â€” only for self-hosted / non-listed upstream APIs */}
+          {/* Base URL — only for self-hosted / non-listed upstream APIs */}
           <AnimatePresence>
             {PROVIDERS.find((p) => p.id === aiProvider)?.needsBaseUrl && (
               <motion.div
@@ -282,7 +282,7 @@ export default function CreateService() {
                     <div>
                       <p className="text-xs font-bold text-violet-900">Only needed for self-hosted APIs</p>
                       <p className="text-[11px] text-violet-700 mt-1 leading-relaxed">
-                        Groq, OpenAI, Gemini, OpenRouter, and other listed providers use a built-in URL â€” no base URL.
+                        Groq, OpenAI, Gemini, OpenRouter, and other listed providers use a built-in URL — no base URL.
                         Use this only for vLLM, Ollama, RunPod, or your own OpenAI-compatible server.
                       </p>
                       <div className="flex flex-wrap gap-1.5 mt-2.5">
@@ -563,7 +563,7 @@ export default function CreateService() {
                 className="w-full bg-slate-50/50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-xs font-medium focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all min-h-[88px] placeholder:text-slate-400 leading-relaxed"
                 value={samplePromptText}
                 onChange={(e) => setSamplePromptText(e.target.value)}
-                placeholder="Type text as if a user were calling your API â€” estimate updates as you type."
+                placeholder="Type text as if a user were calling your API — estimate updates as you type."
               />
               <span className="material-symbols-outlined absolute left-3.5 top-3.5 text-slate-400 text-[16px]">
                 spellcheck
@@ -626,7 +626,7 @@ export default function CreateService() {
               {submitting && (
                 <span className="inline-block h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               )}
-              {submitting ? "Publishing serviceâ€¦" : "Publish service"}
+              {submitting ? "Publishing service…" : "Publish service"}
             </button>
           </div>
         </form>

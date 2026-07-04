@@ -80,7 +80,7 @@ export default function StudioPlan() {
           All features (cinematic Veo video generation, text-to-speech, infinite projects, and platform publishing) are fully unlocked.
         </p>
         <p className="text-xs text-slate-500 mt-2 font-semibold text-[#031634]">
-          Status: Pay-per-Call Mode Active Â· Micropayments Enabled
+          Status: Pay-per-Call Mode Active · Micropayments Enabled
         </p>
         {!isAuthenticated && (
           <GuestConnectBanner message="Connect MetaMask to view usage details." className="mt-4" />
@@ -110,7 +110,7 @@ export default function StudioPlan() {
               <div className="mt-4 pt-4 border-t border-slate-100">
                 <p className="text-2xl font-bold font-mono text-[#031634]">{rate.price} ETH</p>
                 <p className="text-[10px] text-slate-500 mt-0.5">
-                  â‰ˆ â‚¹{ethDisplayToInr(rate.price)} Â· â‰ˆ ${ethDisplayToUsd(rate.price)} per execution
+                  ≈ ₹{ethDisplayToInr(rate.price)} · ≈ ${ethDisplayToUsd(rate.price)} per execution
                 </p>
               </div>
             </motion.div>

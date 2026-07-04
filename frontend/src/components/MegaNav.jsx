@@ -21,7 +21,7 @@ const ACCENT_STYLES = {
   },
 };
 
-/* â”€â”€â”€ Dropdown data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Dropdown data ─────────────────────────────────────────────── */
 const menus = {
   Product: {
     layout: "cards",
@@ -45,7 +45,7 @@ const menus = {
         ],
       },
     ],
-    cta: { label: "Compare products â†’", scroll: "products" },
+    cta: { label: "Compare products →", scroll: "products" },
   },
   Protocol: {
     sections: [
@@ -68,7 +68,7 @@ const menus = {
         ],
       },
     ],
-    cta: { label: "See how payments work â†’", path: "/docs/how-it-works" },
+    cta: { label: "See how payments work →", path: "/docs/how-it-works" },
   },
   Developers: {
     sections: [
@@ -87,7 +87,7 @@ const menus = {
         ],
       },
     ],
-    cta: { label: "Explore API Docs â†’", path: "/docs/x402" },
+    cta: { label: "Explore API Docs →", path: "/docs/x402" },
   },
   "Use Cases": {
     sections: [
@@ -114,13 +114,13 @@ const menus = {
         ],
       },
     ],
-    cta: { label: "Get Started as Creator â†’", path: "/creator", auth: true },
+    cta: { label: "Get Started as Creator →", path: "/creator", auth: true },
   },
 };
 
 const DESKTOP_MENU_ORDER = ["Product", "Protocol", "Developers", "Use Cases"];
 
-/* â”€â”€â”€ Product 2-card panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Product 2-card panel ───────────────────────────────────────── */
 function ProductCardPanel({ data, open, onNavigate, onMouseEnter, onMouseLeave, isAuthenticated }) {
   const items = data.sections[0]?.items ?? [];
   const { cta } = data;
@@ -188,7 +188,7 @@ function ProductCardPanel({ data, open, onNavigate, onMouseEnter, onMouseLeave, 
   );
 }
 
-/* â”€â”€â”€ Standard dropdown panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Standard dropdown panel ────────────────────────────────────── */
 function DropdownPanel({ data, open, onNavigate, onMouseEnter, onMouseLeave, isAuthenticated, panelWidth = "w-[620px]" }) {
   const { sections, cta } = data;
 
@@ -311,7 +311,7 @@ function NavDropdown({ menuKey, data, openMenu, keepOpen, scheduleClose, onNavig
   );
 }
 
-/* â”€â”€â”€ Main MegaNav â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Main MegaNav ───────────────────────────────────────────────── */
 export default function MegaNav() {
   const navigate = useNavigate();
   const location = useLocation();

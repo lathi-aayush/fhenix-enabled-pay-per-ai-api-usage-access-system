@@ -206,8 +206,8 @@ export default function UserDashboard() {
                   </span>
                 </div>
                 <p className="text-on-surface-variant text-xs">
-                  {row.aiProvider} Â· {row.modelName || "model"} Â·{" "}
-                  {Number(row.pricePerUnitEth ?? 0).toFixed(6)} ETH Â· {row.callCount ?? 0} calls
+                  {row.aiProvider} · {row.modelName || "model"} ·{" "}
+                  {Number(row.pricePerUnitEth ?? 0).toFixed(6)} ETH · {row.callCount ?? 0} calls
                 </p>
                 <p className="font-mono text-xs break-all mt-2 text-primary">{row.proxyUrl}</p>
                 {row.legacyServiceId && (
@@ -215,7 +215,7 @@ export default function UserDashboard() {
                     to={`/marketplace/services/${row.legacyServiceId}`}
                     className="text-xs text-secondary hover:underline mt-1 w-fit"
                   >
-                    View marketplace listing â†’
+                    View marketplace listing →
                   </Link>
                 )}
               </div>
@@ -228,10 +228,10 @@ export default function UserDashboard() {
         <h2 className="font-semibold text-primary mb-1">Proxy API keys</h2>
         <p className="text-sm text-on-surface-variant mb-4">
           Keys you generated to call marketplace services
-          {user?.walletAddress ? "" : " â€” connect a wallet to generate keys"}.
+          {user?.walletAddress ? "" : " — connect a wallet to generate keys"}.
         </p>
         {loading ? (
-          <p className="text-sm text-on-surface-variant">Loading keysâ€¦</p>
+          <p className="text-sm text-on-surface-variant">Loading keys…</p>
         ) : keys.length === 0 ? (
           <p className="text-sm text-on-surface-variant">
             No proxy keys yet. Open a service in the marketplace and generate one.
@@ -245,8 +245,8 @@ export default function UserDashboard() {
               >
                 <p className="font-semibold">{row.service?.title ?? "Service"}</p>
                 <p className="text-on-surface-variant text-xs">
-                  {row.service?.aiProvider} Â· {row.service?.modelName} Â·{" "}
-                  {Number(row.service?.pricePerThousandTokens ?? 0).toFixed(6)} ETH/1k tok Â· min{" "}
+                  {row.service?.aiProvider} · {row.service?.modelName} ·{" "}
+                  {Number(row.service?.pricePerThousandTokens ?? 0).toFixed(6)} ETH/1k tok · min{" "}
                   {Number(row.service?.minimumChargeEth ?? 0).toFixed(6)} ETH
                 </p>
                 <p className="font-mono text-xs break-all mt-2">{row.key}</p>
@@ -322,8 +322,8 @@ export default function UserDashboard() {
               : onChainBalance != null
                 ? `${onChainBalance.toFixed(4)} ETH`
                 : loading
-                  ? "â€¦"
-                  : "â€”"}
+                  ? "…"
+                  : "—"}
           </p>
           {gatewayPrepaidCents > 0 && (
             <p className="text-xs text-on-surface-variant font-mono mt-0.5">
@@ -336,7 +336,7 @@ export default function UserDashboard() {
           <p className="text-2xl font-headline font-semibold text-primary mt-1">{consumerCalls}</p>
           {gw.totals?.legacyCalls > 0 && (
             <p className="text-xs text-on-surface-variant mt-0.5">
-              {gw.totals.gatewayCalls} gateway Â· {gw.totals.legacyCalls} legacy
+              {gw.totals.gatewayCalls} gateway · {gw.totals.legacyCalls} legacy
             </p>
           )}
           {isCreator && (creatorSummary.totalUses ?? creatorStats?.totalUses) > 0 && (
@@ -375,7 +375,7 @@ export default function UserDashboard() {
       </section>
 
       {loading ? (
-        <p className="text-on-surface-variant">Loadingâ€¦</p>
+        <p className="text-on-surface-variant">Loading…</p>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           <section id="usage" className="bg-white border border-surface-variant rounded-md p-5">
@@ -388,7 +388,7 @@ export default function UserDashboard() {
               <li className="flex justify-between">
                 <span>On-chain wallet</span>
                 <span className="font-mono">
-                  {onChainBalance != null ? `${onChainBalance.toFixed(4)} ETH` : "â€”"}
+                  {onChainBalance != null ? `${onChainBalance.toFixed(4)} ETH` : "—"}
                 </span>
               </li>
               {isCreator && (
@@ -435,7 +435,7 @@ export default function UserDashboard() {
                   }
                 >
                   {gw.lowBalance || (onChainBalance != null && onChainBalance < 0.5)
-                    ? "âš  Low balance"
+                    ? "⚠ Low balance"
                     : "OK"}
                 </span>
               </li>
@@ -451,7 +451,7 @@ export default function UserDashboard() {
                   <div key={sub.id} className="bg-white border border-surface-variant rounded-md p-4 text-sm">
                     <p className="font-semibold">{sub.apiName || "API"}</p>
                     <p className="text-on-surface-variant text-xs mt-1">
-                      {sub.pricingModel} Â· {sub.pricePerUnitEth?.toFixed(6) || "?"} ETH/unit
+                      {sub.pricingModel} · {sub.pricePerUnitEth?.toFixed(6) || "?"} ETH/unit
                     </p>
                     {sub.proxyUrl && (
                       <p className="font-mono text-xs break-all mt-2 text-primary">{sub.proxyUrl}</p>
@@ -491,7 +491,7 @@ export default function UserDashboard() {
                       className="bg-white border border-surface-variant rounded-md px-4 py-3 flex flex-wrap justify-between gap-2 items-center"
                     >
                       <span className="text-on-surface-variant">
-                        {row.apiName || row.serviceTitle || "â€”"}
+                        {row.apiName || row.serviceTitle || "—"}
                         {row.source && (
                           <span className={`ml-1 text-[9px] px-1 py-0.5 rounded ${
                             row.source === "gateway" ? "bg-blue-50 text-blue-700" : "bg-amber-50 text-amber-700"
@@ -516,7 +516,7 @@ export default function UserDashboard() {
                             ? `${Number(row.amountEth).toFixed(6)} ETH`
                             : `${row.costCents || 0}Â¢`
                         }
-                        {(row.tokensTotal || row.totalTokens) != null ? ` Â· ${row.tokensTotal || row.totalTokens} tok` : ""}
+                        {(row.tokensTotal || row.totalTokens) != null ? ` · ${row.tokensTotal || row.totalTokens} tok` : ""}
                       </span>
                       {row.responseTimeMs && (
                         <span className="text-xs text-on-surface-variant">{row.responseTimeMs}ms</span>
@@ -615,7 +615,7 @@ export default function UserDashboard() {
           {agentJson
             ? JSON.stringify(agentJson, null, 2)
             : loading
-              ? "Loading agent contextâ€¦"
+              ? "Loading agent context…"
               : "No active services found."}
         </pre>
 

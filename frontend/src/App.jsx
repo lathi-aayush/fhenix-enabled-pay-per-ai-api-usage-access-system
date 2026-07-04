@@ -50,6 +50,7 @@ import MigrationDocs from "./pages/MigrationDocs.jsx";
 import FaqDocs from "./pages/FaqDocs.jsx";
 import PricingDocs from "./pages/PricingDocs.jsx";
 import SdkDemo from "./pages/SdkDemo.jsx";
+import FheComputeDemo from "./pages/FheComputeDemo.jsx";
 import SecureCalculator from "./pages/SecureCalculator.jsx";
 const WorkflowStudioHub = lazy(() => import("./pages/WorkflowStudioHub.jsx"));
 const StudioChat = lazy(() => import("./pages/studio/StudioChat.jsx"));
@@ -210,6 +211,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/sdk-demo" element={<SdkDemo />} />
+      <Route path="/fhe-demo" element={<FheComputeDemo />} />
       <Route path="/calculator" element={<SecureCalculator />} />
       <Route
         path="/profile"

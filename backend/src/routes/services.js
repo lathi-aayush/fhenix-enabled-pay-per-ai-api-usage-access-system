@@ -98,9 +98,9 @@ router.get("/agent-context", async (_req, res) => {
         step_4_claim: `POST /api/use  headers: { "Authorization": "Bearer <api_key>" }  body: { "txId": "<evm_tx_hash>", "paymentRef": "<payment_ref_uuid>" }`,
       },
       how_to_use_x402: s.x402Enabled ? {
-        description: "This service supports x402 â€” a single-round-trip HTTP payment standard. No API key or manual wallet signing needed.",
+        description: "This service supports x402 — a single-round-trip HTTP payment standard. No API key or manual wallet signing needed.",
         endpoint: `/api/x402/use/${s._id}`,
-        step_1: "Send a POST request without any payment headers â€” server returns HTTP 402 with payment details.",
+        step_1: "Send a POST request without any payment headers — server returns HTTP 402 with payment details.",
         step_2: "Your x402-compatible client (e.g. @x402/fetch) auto-pays with your burner wallet and retries.",
         step_3: "Server verifies on-chain and returns 200 + AI response.",
         client_package: "npm install @x402/fetch viem",
@@ -116,7 +116,7 @@ router.get("/agent-context", async (_req, res) => {
     network: "sepolia",
     base_url: "http://localhost:5000",
     description:
-      "This is the Sentinel AI API Marketplace â€” a pay-per-use AI API platform built on Sepolia. " +
+      "This is the Sentinel AI API Marketplace — a pay-per-use AI API platform built on Sepolia. " +
       "Users pay micro-transactions in ETH for each AI call. No subscriptions, no lock-in. " +
       "Use this JSON to identify which service best fits a given task and budget.",
     instructions_for_ai_agent:

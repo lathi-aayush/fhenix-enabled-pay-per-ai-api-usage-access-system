@@ -45,7 +45,7 @@ export default function Published() {
         </button>
       </header>
 
-      {isLoading && <p className="text-sm animate-pulse">Loadingâ€¦</p>}
+      {isLoading && <p className="text-sm animate-pulse">Loading…</p>}
 
       <ul className="space-y-3">
         {posts.map((p) => (
@@ -57,8 +57,8 @@ export default function Published() {
               <div>
                 <div className="font-semibold text-primary text-base">{p.title || "Untitled"}</div>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  {p.wordCount || 0} words Â· {p.readingTime || 1} min read
-                  {p.projectId?.title ? ` Â· ${p.projectId.title}` : ""}
+                  {p.wordCount || 0} words · {p.readingTime || 1} min read
+                  {p.projectId?.title ? ` · ${p.projectId.title}` : ""}
                 </p>
               </div>
               <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${statusBadge(p.status)}`}>
@@ -78,7 +78,7 @@ export default function Published() {
                         to={`/studio/blogging-agent?post=${p._id}`}
                         className="text-secondary font-semibold hover:underline"
                       >
-                        Edit post â†’
+                        Edit post →
                       </Link>
                     ) : pp.url && !pp.url.includes(".example") ? (
                       <a
@@ -90,7 +90,7 @@ export default function Published() {
                         {pp.url}
                       </a>
                     ) : (
-                      <span>Pendingâ€¦</span>
+                      <span>Pending…</span>
                     )}
                     {pp.publishedAt && (
                       <span className="text-slate-400">
@@ -133,7 +133,7 @@ export default function Published() {
             to="/studio/blogging-agent"
             className="inline-block mt-4 text-sm font-semibold text-secondary hover:underline"
           >
-            Go to Blogging Agent â†’
+            Go to Blogging Agent →
           </Link>
         </div>
       )}

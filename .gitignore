@@ -12,6 +12,7 @@ build/
 .npmrc
 backend/uploads/
 backend/outputs/
+.mongo-data/
 # GCP service account keys — never commit
 sentinal-ai-*.json
 **/service-account*.json

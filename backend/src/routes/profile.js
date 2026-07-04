@@ -56,7 +56,7 @@ router.get("/summary", requireAuth, async (req, res) => {
 
     const walletAddress = user.walletAddress;
 
-    // â€”â€”â€” Gateway summary (always available, even without wallet) â€”â€”â€”
+    // ——— Gateway summary (always available, even without wallet) ———
     try {
       const balanceCents = await getBalanceCents(userId);
 
@@ -126,7 +126,7 @@ router.get("/summary", requireAuth, async (req, res) => {
       console.warn("[profile-summary] gateway data failed:", e?.message);
     }
 
-    // â€”â€”â€” Gateway developer earnings (for creators) â€”â€”â€”
+    // ——— Gateway developer earnings (for creators) ———
     if (user.role === "creator") {
       try {
         const [devEarningsAgg, proxyApis] = await Promise.all([
@@ -166,7 +166,7 @@ router.get("/summary", requireAuth, async (req, res) => {
       }
     }
 
-    // â€”â€”â€” Legacy stats (only if wallet connected) â€”â€”â€”
+    // ——— Legacy stats (only if wallet connected) ———
     if (walletAddress) {
       try {
         if (user.role === "creator") {

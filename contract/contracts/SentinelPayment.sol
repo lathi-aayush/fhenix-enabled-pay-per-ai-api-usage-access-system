@@ -11,7 +11,7 @@ import { InEuint64 } from "@fhenixprotocol/cofhe-contracts/ICofhe.sol";
  * The backend operator deducts encrypted amounts per AI API call via deductForCall().
  * Users can only see their own balance by sealing it with a permit.
  *
- * Deployed on Sepolia (chainId 11155111).
+ * Deployed on Ethereum Sepolia (chainId 11155111).
  */
 contract SentinelPayment {
     address public owner;

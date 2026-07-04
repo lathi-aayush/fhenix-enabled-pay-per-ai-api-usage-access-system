@@ -3,15 +3,12 @@
  *
  * POST /api/x402/use/:serviceId
  *
- * Client sends X-Payment header with a Sepolia ETH tx hash.
- * Server verifies the payment on-chain, then forwards to the AI provider.
+ * Tries FHE encrypted prepaid balance first, then HTTP 402 x402 ETH payment.
  */
 
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { Service } from "../models/Service.js";
-import { ApiUsageLog } from "../models/ApiUsageLog.js";
-import { AccessToken } from "../models/AccessToken.js";
 import { canonicalWalletAddress } from "../utils/userWallet.js";
 import {
   buildPaymentRequirements,
@@ -19,8 +16,11 @@ import {
   verifyX402Payment,
 } from "../services/fhenixX402Middleware.js";
 import { forwardChatCompletion } from "../services/aiProxy.js";
-import { ethToWei, explorerTxUrl, normalizeEvmAddress, isValidEvmAddress } from "../services/evmService.js";
+import { ethToWei, explorerTxUrl, isValidEvmAddress } from "../services/evmService.js";
 import { computeChargeEth } from "../services/billing.js";
+import { ApiUsageLog } from "../models/ApiUsageLog.js";
+import { tryFheAiPayment, buildAiBodyFromRequest } from "../services/fhePaymentFlow.js";
+import { getNetworkConfig } from "../config/chainConfig.js";
 
 const router = Router();
 
@@ -44,11 +44,22 @@ router.post("/use/:serviceId", requireAuth, async (req, res) => {
     const amountWei = ethToWei(minChargeEth.toFixed(18));
     const resource = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
     const description = `AI call to ${service.name} (SentinelAI)`;
-
     const xPaymentHeader = req.headers["x-payment"];
+    const aiBody = buildAiBodyFromRequest(req.body);
+
+    if (!xPaymentHeader && aiBody) {
+      const fhe = await tryFheAiPayment({
+        userWallet: req.user.walletAddress,
+        service,
+        aiBody,
+        accessTokenId: null,
+      });
+      if (fhe.handled) {
+        return res.status(fhe.status).json(fhe.body);
+      }
+    }
 
     if (!xPaymentHeader) {
-      // Step 1: Return 402 challenge
       const requirements = buildPaymentRequirements({
         payTo: creatorWallet,
         amountWei,
@@ -58,7 +69,6 @@ router.post("/use/:serviceId", requireAuth, async (req, res) => {
       return send402Response(res, requirements);
     }
 
-    // Step 2: Verify payment
     const verification = await verifyX402Payment({
       xPaymentHeader,
       expectedReceiver: creatorWallet,
@@ -71,18 +81,15 @@ router.post("/use/:serviceId", requireAuth, async (req, res) => {
       return res.status(402).json({ error: verification.error });
     }
 
-    // Forward to AI provider
     const userWallet = canonicalWalletAddress(req.user.walletAddress);
-    const aiBody = req.body;
 
     let aiResult;
     try {
-      aiResult = await forwardChatCompletion(service, aiBody, res, { stream: !!aiBody.stream });
+      aiResult = await forwardChatCompletion(service, req.body, res, { stream: !!req.body.stream });
     } catch (e) {
       return res.status(502).json({ error: "AI provider error", detail: e?.message });
     }
 
-    // Log usage
     const chargeEth = computeChargeEth(
       aiResult?.usage?.total_tokens ?? 0,
       service.pricePerThousandTokens,
@@ -100,7 +107,8 @@ router.post("/use/:serviceId", requireAuth, async (req, res) => {
       paymentMethod: "x402",
     }).catch(() => {});
 
-    if (!aiBody.stream) {
+    if (!req.body.stream) {
+      const net = getNetworkConfig();
       return res.json({
         ...aiResult,
         sentinelReceipt: {
@@ -108,7 +116,7 @@ router.post("/use/:serviceId", requireAuth, async (req, res) => {
           chargeEth,
           explorerUrl: explorerTxUrl(verification.txHash),
           payer: verification.senderAddress,
-          network: "Sepolia",
+          network: net.name,
         },
       });
     }
