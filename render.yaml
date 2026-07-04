@@ -1,11 +1,11 @@
 # Render Blueprint — monorepo: build frontend + run Express API (serves SPA from frontend/dist)
+# Root Directory in Render dashboard must be "." (repo root) OR "backend" (backend/package.json build builds ../frontend).
 services:
   - type: web
     name: sentinal-api
     runtime: node
-    # Must run from monorepo root so frontend/dist is created before API start
     rootDir: .
-    buildCommand: npm run build
+    buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV

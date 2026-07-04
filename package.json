@@ -2,6 +2,9 @@
   "name": "sentinal-fhenix",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "npm install --prefix frontend && npm run build --prefix frontend && npm install --prefix backend",
     "postbuild": "node -e \"const fs=require('fs');const p='frontend/dist/index.html';if(!fs.existsSync(p))throw new Error('frontend/dist missing');const d=fs.readdirSync('frontend/dist/assets').filter(f=>f.endsWith('.js'));if(!d.length)throw new Error('frontend/dist/assets has no JS');console.log('[build] SPA ok:',d[0]);\"",
