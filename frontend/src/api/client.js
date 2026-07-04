@@ -1,7 +1,7 @@
 import axios from "axios";
 
 /** Node API on Render (not the static site at sentinalai.dev). */
-export const PRODUCTION_API = "https://sentinal-z3ue.onrender.com";
+export const PRODUCTION_API = "https://fhenix-enabled-pay-per-ai-api-usage.onrender.com";
 
 function normalizeBase(url) {
   return String(url).trim().replace(/\/$/, "");
@@ -38,14 +38,15 @@ function resolveProductionApiUrl(raw) {
 
 /**
  * API base URL.
- * - Dev: "" → browser calls /api on localhost:5173; Vite proxies to backend (no CORS).
+ * - Dev: "" → Vite proxies /api to local backend; if VITE_API_URL is set, call that host directly.
  * - Prod: VITE_API_URL or PRODUCTION_API (Render backend).
  */
 export function getApiBase() {
+  const remote = import.meta.env.VITE_API_URL?.trim();
   if (import.meta.env.DEV) {
-    return "";
+    return remote ? resolveProductionApiUrl(remote) : "";
   }
-  return resolveProductionApiUrl(import.meta.env.VITE_API_URL?.trim());
+  return resolveProductionApiUrl(remote);
 }
 
 const base = getApiBase();

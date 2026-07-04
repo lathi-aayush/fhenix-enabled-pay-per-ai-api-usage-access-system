@@ -17,8 +17,6 @@ function manualChunks(id) {
   if (id.includes(nm("react-router"))) return "router";
   if (id.includes(nm("react-dom")) || id.includes(nm("react/")) || id.includes(nm("scheduler"))) return "react";
   if (id.includes(nm("@tanstack"))) return "query";
-  if (id.includes(nm("viem")) || id.includes(nm("wagmi"))) return "evm";
-  if (id.includes(nm("@cofhe"))) return "cofhe";
 
   return "vendor";
 }
