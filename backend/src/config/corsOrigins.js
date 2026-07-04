@@ -32,6 +32,8 @@ export function buildCorsOrigins(env = process.env) {
     "https://sentinal-j4ox.onrender.com",
     "https://sentinal-z3ue.onrender.com",
     "https://pay-per-usage-ai-api-access-system-using-zrgu.onrender.com",
+    "https://fhenix-enabled-pay-per-ai-api-usage.onrender.com",
+    "https://fhenix-enabled-pay-per-ai-api-usage-cmm3.onrender.com",
   ];
 
   return [...new Set([...fromEnv, ...defaults])];
