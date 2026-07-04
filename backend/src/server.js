@@ -74,7 +74,19 @@ app.use(
 );
 app.use(express.json({ limit: "1mb" }));
 
-app.get("/api/health", (_req, res) => res.json({ ok: true }));
+let dbReady = false;
+let dbError = null;
+
+app.get("/api/health", (_req, res) => {
+  if (!dbReady) {
+    return res.status(dbError ? 503 : 200).json({
+      ok: false,
+      db: dbError ? "error" : "connecting",
+      detail: dbError || undefined,
+    });
+  }
+  return res.json({ ok: true, db: "connected" });
+});
 
 app.get("/api/public/network", (_req, res) => {
   const net = getNetworkConfig();
@@ -186,8 +198,52 @@ app.use((err, _req, res, _next) => {
 
 const port = Number(process.env.PORT) || 5000;
 
+function agentLog(hypothesisId, location, message, data = {}) {
+  // #region agent log
+  fetch("http://127.0.0.1:7788/ingest/4b0d5b8c-41a2-4139-98e0-1384e9a720fa", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "655066" },
+    body: JSON.stringify({
+      sessionId: "655066",
+      runId: process.env.RENDER ? "render" : "local",
+      hypothesisId,
+      location,
+      message,
+      data,
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
+}
+
+agentLog("H3", "server.js:boot", "binding http port before mongo", {
+  port,
+  render: Boolean(process.env.RENDER),
+  nodeEnv: process.env.NODE_ENV || null,
+  hasMongoUri: Boolean(process.env.MONGO_URI || process.env.MONGODB_URI),
+});
+
+const server = app.listen(port, () => {
+  console.log(`API listening on ${port}`);
+  agentLog("H3", "server.js:listen", "http port bound", { port });
+});
+
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(
+      `Port ${port} is already in use. Close the other app using it or set PORT in backend/.env (e.g. PORT=5001) and match your Vite proxy target.`
+    );
+  } else {
+    console.error(err);
+  }
+  process.exit(1);
+});
+
 connectDb()
   .then(async () => {
+    dbReady = true;
+    dbError = null;
+    agentLog("H1", "server.js:connectDb", "mongo ready — starting workers", { port });
     await initRedisAvailability();
     try {
       startPublishingWorker();
@@ -221,39 +277,31 @@ connectDb()
       console.warn("[clipcraft] runtime skip:", e.message);
     }
 
-    const server = app.listen(port, async () => {
-      console.log(`API listening on ${port}`);
-      const net = getNetworkConfig();
-      console.log(`[network] ${net.name} (chainId ${net.chainId})`);
-      try {
-        const fhe = await getFheStatus();
-        console.log(
-          `[fhe] ${fhe.ready ? "ready" : "disabled"} — contract ${fhe.contractAddress || "none"}${
-            fhe.ready ? `, operator ${fhe.operatorAddress}` : ` (${fhe.reason})`
-          }`
-        );
-      } catch (e) {
-        console.warn("[fhe] status check failed:", e?.message || e);
-      }
-    });
+    const net = getNetworkConfig();
+    console.log(`[network] ${net.name} (chainId ${net.chainId})`);
+    try {
+      const fhe = await getFheStatus();
+      console.log(
+        `[fhe] ${fhe.ready ? "ready" : "disabled"} — contract ${fhe.contractAddress || "none"}${
+          fhe.ready ? `, operator ${fhe.operatorAddress}` : ` (${fhe.reason})`
+        }`
+      );
+    } catch (e) {
+      console.warn("[fhe] status check failed:", e?.message || e);
+    }
 
     registerClipCraftGracefulShutdown(server, clipcraftRuntime, {
       timeoutMs: Number(process.env.CLIPCRAFT_SHUTDOWN_TIMEOUT_MS) || 30_000,
     });
-    server.on("error", (err) => {
-      if (err.code === "EADDRINUSE") {
-        console.error(
-          `Port ${port} is already in use. Close the other app using it or set PORT in backend/.env (e.g. PORT=5001) and match your Vite proxy target.`
-        );
-      } else {
-        console.error(err);
-      }
-      process.exit(1);
-    });
   })
   .catch((e) => {
-    console.error(e);
-    process.exit(1);
+    dbError = e?.message || String(e);
+    console.error("[db] startup failed:", dbError);
+    agentLog("H1", "server.js:connectDb", "mongo startup failed — http still up", {
+      message: dbError,
+      code: e?.code,
+      codeName: e?.codeName,
+    });
   });
 
 // Trigger nodemon reload for PORT change
