@@ -12,7 +12,7 @@ export function getContractConfig() {
     process.env.CONTRACT_INFO_PATH ||
     join(__dirname, "..", "..", "..", "contract", "contract_info.json");
 
-  let fromFile = { address: "", chainId: 84532 };
+  let fromFile = { address: "", chainId: 11155111 };
   try {
     if (existsSync(jsonPath)) {
       fromFile = JSON.parse(readFileSync(jsonPath, "utf8"));
@@ -23,6 +23,6 @@ export function getContractConfig() {
 
   return {
     address: String(process.env.CONTRACT_ADDRESS || fromFile.address || "").trim(),
-    chainId: Number(process.env.CHAIN_ID || fromFile.chainId || 84532),
+    chainId: Number(process.env.CHAIN_ID || fromFile.chainId || 11155111),
   };
 }

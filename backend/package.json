@@ -16,14 +16,14 @@
     "clipcraft:checklist": "node -e \"import('./src/studio/clipcraft/production/validationChecklist.js').then(m=>console.log(m.exportChecklistJson()))\""
   },
   "dependencies": {
+    "@cofhe/sdk": "^0.5.2",
     "@google-cloud/storage": "^7.19.0",
     "@google/generative-ai": "^0.24.1",
     "axios": "^1.7.9",
-    "ethers": "^6.13.0",
-    "viem": "^2.0.0",
     "bullmq": "^5.76.10",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
+    "ethers": "^6.13.0",
     "eventsource-parser": "^3.1.0",
     "express": "^4.21.2",
     "express-async-errors": "^3.1.1",
@@ -40,6 +40,7 @@
     "nodemon": "^3.1.14",
     "sanitize-html": "^2.17.4",
     "sentinal-fhenix": "file:..",
+    "viem": "^2.0.0",
     "youtube-transcript": "^1.2.1"
   }
 }

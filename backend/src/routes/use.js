@@ -32,6 +32,11 @@ import {
   decodeXPaymentHeader,
   verifyX402Payment,
 } from "../services/fhenixX402Middleware.js";
+import {
+  deductFheBalance,
+  hasFheBalance,
+  isFheConfigured,
+} from "../services/fheDeductionService.js";
 
 const router = Router();
 
@@ -151,7 +156,7 @@ async function invokeFlow(req, res) {
   const ppt = Number(service.pricePerThousandTokens);
   const minC = Number(service.minimumChargeEth);
   const chargeEth = computeChargeEth(estimatedTotalTokens, ppt, minC);
-  const expectedWei = ethers.parseEther(String(chargeEth);
+  const expectedWei = ethers.parseEther(String(chargeEth));
 
   if (expectedWei <= 0) {
     return res.status(500).json({ error: "Invalid computed charge for this call" });
@@ -184,7 +189,7 @@ async function invokeFlow(req, res) {
     awaitingPayment: true,
     paymentRef,
     chargeEth,
-    expectedWei,
+    expectedWei: expectedWei.toString(),
     promptTokens,
     completionTokens: estimatedCompletionTokens,
     totalTokens: estimatedTotalTokens,
@@ -195,7 +200,7 @@ async function invokeFlow(req, res) {
 }
 
 async function completeFlow(req, res) {
-  const txId = String(req.body?.txHash || "").trim();
+  const txId = String(req.body?.txHash || req.body?.txId || "").trim();
   const paymentRef = String(req.body?.paymentRef || "").trim();
   if (!txId) {
     return res.status(400).json({ error: "txId is required" });
@@ -211,7 +216,7 @@ async function completeFlow(req, res) {
   const { token, service } = auth;
 
   const usedOk = await ApiUsageLog.findOne({
-    txHash: txId,
+    paymentTxId: txId,
     success: true,
   });
   if (usedOk) {
@@ -245,7 +250,7 @@ async function completeFlow(req, res) {
       error:
         "Payment not visible on the block explorer yet or not confirmed. Wait a moment and try again.",
       detail:
-        "Base Sepolia RPC can lag behind the network; your transaction may still be valid.",
+        "Sepolia RPC can lag behind the network; your transaction may still be valid.",
     });
   }
 
@@ -351,7 +356,7 @@ async function completeFlow(req, res) {
       amountEth: chargeEth,
       aiProvider: service.aiProvider,
       modelName: service.modelName,
-      txHash: txId,
+      paymentTxId: txId,
       paymentRef,
       success: true,
       promptTokens: usage.promptTokens,
@@ -462,7 +467,7 @@ async function x402ChallengeFlow(req, res, auth) {
   }
 
   const chargeEth = Number(service.minimumChargeEth);
-  const expectedWei = ethers.parseEther(String(chargeEth);
+  const expectedWei = ethers.parseEther(String(chargeEth));
   if (expectedWei <= 0) {
     return res.status(500).json({ error: "Invalid minimum charge for this service" });
   }
@@ -477,6 +482,169 @@ async function x402ChallengeFlow(req, res, auth) {
     })
   );
   return send402Response(res, paymentRequirements);
+}
+
+/**
+ * Pay from FHE encrypted prepaid balance (no x402 ETH transfer).
+ * Returns true if response was sent, false to fall back to x402.
+ */
+async function fheCompleteFlow(req, res, auth) {
+  if (!isFheConfigured()) return false;
+
+  const { token, service, key } = auth;
+  const userWallet = canonicalWalletAddress(token.userWallet);
+  const creatorWallet = normalizeEvmAddress(String(service.creatorWallet || "").trim());
+  if (!creatorWallet || !isValidEvmAddress(creatorWallet)) return false;
+
+  const aiBody = buildAiBody(req.body);
+  if (!aiBody) {
+    res.status(400).json({
+      error: "Provide either messages (array) or prompt (string) for the AI request",
+    });
+    return true;
+  }
+
+  const chargeEth = Number(service.minimumChargeEth);
+  const expectedWei = ethers.parseEther(String(chargeEth));
+  if (expectedWei <= 0n) return false;
+
+  const hasBalance = await hasFheBalance(userWallet);
+  if (!hasBalance) return false;
+
+  const deduct = await deductFheBalance({
+    userWallet,
+    amountWei: expectedWei,
+    serviceWallet: creatorWallet,
+  });
+  if (!deduct.ok) return false;
+
+  const alreadyUsed = await ApiUsageLog.findOne({
+    paymentTxId: deduct.txHash,
+    success: true,
+  });
+  if (alreadyUsed) {
+    res.status(409).json({
+      error: "This FHE deduction has already been used",
+    });
+    return true;
+  }
+
+  let providerKey;
+  try {
+    providerKey = decryptSecret(service.encryptedApiKey);
+  } catch (e) {
+    console.error("[use/fhe] decryptSecret", e);
+    res.status(500).json({ error: "Server configuration error" });
+    return true;
+  }
+
+  let aiResponse;
+  try {
+    aiResponse = await forwardChatCompletion({
+      provider: service.aiProvider,
+      apiKey: providerKey,
+      model: service.modelName,
+      body: aiBody,
+      customEndpointUrl: service.customEndpointUrl || "",
+    });
+    providerKey = null;
+  } catch (err) {
+    providerKey = null;
+    console.error("[use/fhe] AI provider error:", err?.message || err);
+    try {
+      await ApiUsageLog.create({
+        userWallet,
+        serviceId: service._id,
+        accessTokenId: token._id,
+        developerWallet: creatorWallet,
+        amountEth: chargeEth,
+        aiProvider: service.aiProvider,
+        modelName: service.modelName,
+        paymentTxId: deduct.txHash,
+        fheDeductTxHash: deduct.txHash,
+        success: false,
+        fhePayment: true,
+        errorDetail: String(err?.message || err).slice(0, 500),
+      });
+    } catch (logErr) {
+      console.error("[use/fhe] failed-call log error:", logErr);
+    }
+    const status = err.status && Number.isFinite(err.status) ? err.status : 502;
+    res.status(status).json({
+      error: "Upstream AI provider error",
+      detail: err.message || String(err),
+    });
+    return true;
+  }
+
+  let usage = extractTokenUsage(service.aiProvider, aiResponse);
+  if (!usage) {
+    const est = estimateTokensFromOpenAiMessages(aiBody.messages);
+    usage = { promptTokens: est, completionTokens: 0, totalTokens: est };
+  }
+
+  const actualChargeEth = computeChargeEth(
+    usage.totalTokens,
+    Number(service.pricePerThousandTokens),
+    chargeEth
+  );
+
+  try {
+    service.totalUses = (service.totalUses || 0) + 1;
+    service.totalRevenue = Number(service.totalRevenue || 0) + chargeEth;
+    await service.save();
+
+    const logDoc = await ApiUsageLog.create({
+      userWallet,
+      serviceId: service._id,
+      accessTokenId: token._id,
+      developerWallet: creatorWallet,
+      amountEth: chargeEth,
+      aiProvider: service.aiProvider,
+      modelName: service.modelName,
+      paymentTxId: deduct.txHash,
+      fheDeductTxHash: deduct.txHash,
+      success: true,
+      fhePayment: true,
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.completionTokens,
+      totalTokens: usage.totalTokens,
+      chargeEth: actualChargeEth,
+      pricePerThousandTokens: Number(service.pricePerThousandTokens),
+    });
+
+    notifyCreatorPurchaseWebhooks({
+      creatorWallet,
+      usageLog: logDoc,
+      service,
+      x402Payment: false,
+    });
+  } catch (logErr) {
+    if (logErr?.code === 11000) {
+      res.status(409).json({ error: "This FHE deduction has already been used" });
+      return true;
+    }
+    console.error("[use/fhe] usage log error:", logErr);
+    res.status(500).json({ error: "Could not finalize usage log" });
+    return true;
+  }
+
+  res.json({
+    ...aiResponse,
+    sentinelReceipt: {
+      paymentMethod: "fhe_balance",
+      paymentProtocol: "cofhe",
+      txHash: deduct.txHash,
+      fheDeductTxHash: deduct.txHash,
+      explorerUrl: deduct.explorerUrl,
+      chargeEth,
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.completionTokens,
+      totalTokens: usage.totalTokens,
+      pricePerThousandTokens: Number(service.pricePerThousandTokens),
+    },
+  });
+  return true;
 }
 
 async function x402CompleteFlow(req, res, auth) {
@@ -500,7 +668,7 @@ async function x402CompleteFlow(req, res, auth) {
   }
 
   const chargeEth = Number(service.minimumChargeEth);
-  const expectedWei = ethers.parseEther(String(chargeEth);
+  const expectedWei = ethers.parseEther(String(chargeEth));
 
   const resource = `${req.protocol}://${req.get("host")}/api/use`;
   const verification = await verifyX402Payment({
@@ -519,9 +687,9 @@ async function x402CompleteFlow(req, res, auth) {
     });
   }
 
-  const { txId, senderAddress: payerWallet } = verification;
+  const { txHash, senderAddress: payerWallet } = verification;
 
-  const alreadyUsed = await ApiUsageLog.findOne({ txHash: txId, success: true });
+  const alreadyUsed = await ApiUsageLog.findOne({ paymentTxId: txHash, success: true });
   if (alreadyUsed) {
     return res.status(409).json({
       error: "This transaction has already been used",
@@ -559,7 +727,7 @@ async function x402CompleteFlow(req, res, auth) {
         amountEth: chargeEth,
         aiProvider: service.aiProvider,
         modelName: service.modelName,
-        txHash: txId,
+        paymentTxId: txHash,
         success: false,
         x402Payment: true,
         errorDetail: String(err?.message || err).slice(0, 500),
@@ -599,7 +767,7 @@ async function x402CompleteFlow(req, res, auth) {
       amountEth: chargeEth,
       aiProvider: service.aiProvider,
       modelName: service.modelName,
-      txHash: txId,
+      paymentTxId: txHash,
       success: true,
       x402Payment: true,
       promptTokens: usage.promptTokens,
@@ -644,7 +812,7 @@ async function x402CompleteFlow(req, res, auth) {
         const developer = await User.findOne({ walletAddress: creatorWallet }).select("_id").lean();
         const proxyApi = await ProxyApi.findOne({ legacyServiceId: service._id }).select("_id").lean();
         await UsageRecord.create({
-          requestId: `x402-proxy-${txId}`,
+          requestId: `x402-proxy-${txHash}`,
           consumerId: consumer?._id || null,
           developerId: developer?._id || null,
           apiId: proxyApi?._id || service._id,
@@ -683,7 +851,7 @@ async function x402CompleteFlow(req, res, auth) {
     ...aiResponse,
     sentinelReceipt: {
       paymentProtocol: "x402",
-      txHash: txId,
+      txHash,
       payerWallet,
       chargeEth,
       promptTokens: usage.promptTokens,
@@ -712,10 +880,14 @@ router.post("/", useRateLimit, async (req, res) => {
     if (paymentPayload) {
       return x402CompleteFlow(req, res, auth);
     }
+    if (buildAiBody(req.body)) {
+      const fheHandled = await fheCompleteFlow(req, res, auth);
+      if (fheHandled) return;
+    }
     return x402ChallengeFlow(req, res, auth);
   }
 
-  const txId = req.body?.txHash;
+  const txId = req.body?.txHash || req.body?.txId;
   if (typeof txId === "string" && txId.trim()) {
     return completeFlow(req, res);
   }

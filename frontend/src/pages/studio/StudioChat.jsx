@@ -9,7 +9,7 @@ import { toast } from "react-hot-toast";
 function buildXPaymentHeader({ txHash, accept }) {
   const payload = {
     txHash,
-    network: accept.network ?? "eip155:84532",
+    network: accept.network ?? "eip155:11155111",
     payTo: accept.payTo,
     amount: accept.maxAmountRequired ?? accept.amount,
   };

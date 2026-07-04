@@ -15,7 +15,7 @@ router.get("/stats", async (req, res) => {
   res.json({
     contractAddress: address || null,
     chainId,
-    network: "Base Sepolia",
+    network: "Sepolia",
     explorerUrl: address ? explorerAddressUrl(address) : null,
   });
 });

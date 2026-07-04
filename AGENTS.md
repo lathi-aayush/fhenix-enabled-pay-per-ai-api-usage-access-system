@@ -213,4 +213,4 @@ npm run deploy           # needs DEPLOYER_PRIVATE_KEY + RPC_URL in .env
 - Frontend can read sealed balance using `cofhejs.unseal(result, FheTypes.Uint64)` with a user permit.
 - `@fhenixprotocol/cofhe-contracts` provides `FHE.sol` with `euint64`, `FHE.add`, `FHE.sub`, `FHE.allowSender`, `FHE.allow`.
 
-See `cofhesdk/` and `fhenix-confidential-contracts/` in the repo root for reference implementations.
+See [CoFHE docs](https://cofhe-docs.fhenix.zone/) and npm packages `@cofhe/sdk`, `@fhenixprotocol/cofhe-contracts`.

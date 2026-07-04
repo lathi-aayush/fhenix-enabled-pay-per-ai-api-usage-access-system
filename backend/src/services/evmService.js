@@ -1,8 +1,8 @@
 /**
- * evmService.js — EVM/Base Sepolia equivalent of evmService.js
+ * evmService.js — EVM/Sepolia equivalent of evmService.js
  *
  * Provides RPC interaction, tx receipt polling, address normalization,
- * and balance queries for Base Sepolia (chainId 84532).
+ * and balance queries for Sepolia (chainId 11155111).
  */
 
 import { ethers } from "ethers";
@@ -12,7 +12,7 @@ let _provider = null;
 function getRpcUrl() {
   return (
     process.env.RPC_URL?.trim() ||
-    "https://sepolia.base.org"
+    "https://ethereum-sepolia-rpc.publicnode.com"
   );
 }
 
@@ -83,7 +83,7 @@ export async function getReceiptWithRetry(txHash, { tries = 12, delayMs = 2000 }
     if (i < tries - 1) await sleep(delayMs);
   }
   throw new Error(
-    `Transaction ${hash} not visible on Base Sepolia after ${tries} attempts. ` +
+    `Transaction ${hash} not visible on Sepolia after ${tries} attempts. ` +
     "The network may be lagging — wait a moment and try again."
   );
 }
@@ -158,19 +158,19 @@ export function weiWithinTolerance(paidWei, expectedWei, tolerancePercent = 1) {
 }
 
 /**
- * BaseScan transaction URL for Base Sepolia.
+ * Etherscan transaction URL for Sepolia.
  */
 export function explorerTxUrl(txHash) {
   if (!txHash) return null;
-  return `https://sepolia.basescan.org/tx/${txHash}`;
+  return `https://sepolia.etherscan.io/tx/${txHash}`;
 }
 
 export function explorerAddressUrl(address) {
   if (!address) return null;
-  return `https://sepolia.basescan.org/address/${address}`;
+  return `https://sepolia.etherscan.io/address/${address}`;
 }
 
 export function explorerTokenUrl(address) {
   if (!address) return null;
-  return `https://sepolia.basescan.org/token/${address}`;
+  return `https://sepolia.etherscan.io/token/${address}`;
 }

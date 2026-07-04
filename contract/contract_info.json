@@ -1,8 +1,7 @@
 {
-  "address": "",
-  "chainId": 84532,
+  "address": "0x949952647538DB1F76C34392bd3e594ac91C2027",
+  "chainId": 11155111,
   "minDepositWei": "1000000000000000",
-  "deployer": "",
-  "deployedAt": "",
-  "note": "Run `npm run deploy` to populate this file after setting DEPLOYER_PRIVATE_KEY and RPC_URL"
+  "deployer": "0xA575a56b4c277B9dEA9F06ddFB7cB6Ce24bfC9C2",
+  "deployedAt": "2026-07-04T11:36:57.112Z"
 }

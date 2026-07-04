@@ -36,6 +36,10 @@ const apiUsageLogSchema = new mongoose.Schema(
     proofTxId: { type: String },
     /** True when this call was paid via the x402 protocol (keyless) */
     x402Payment: { type: Boolean, default: false },
+    /** True when paid from FHE encrypted prepaid balance */
+    fhePayment: { type: Boolean, default: false },
+    /** On-chain deductForCall tx when fhePayment is true */
+    fheDeductTxHash: { type: String },
   },
   { timestamps: { createdAt: true, updatedAt: false } }
 );

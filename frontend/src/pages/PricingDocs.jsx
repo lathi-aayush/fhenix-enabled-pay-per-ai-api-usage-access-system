@@ -74,7 +74,7 @@ export default function PricingDocs() {
           <section>
             <h2 id="web3-crypto" className="text-2xl font-bold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">Web3 & Cryptographic Infrastructure</h2>
             <p className="text-[14px] text-slate-600 mb-4 leading-relaxed">
-              Microtransactions are powered by the Base Sepolia and cryptographic keys:
+              Microtransactions are powered by Sepolia and cryptographic keys:
             </p>
             <div className="grid gap-6 md:grid-cols-2">
               <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-2">
@@ -107,7 +107,7 @@ export default function PricingDocs() {
                   <strong>API Usage Fee:</strong> Set dynamically by the creator who listed the model. Paid in ETH or custom ASAs directly to the creator's wallet.
                 </li>
                 <li>
-                  <strong>Base Sepolia Network Gas:</strong> A standard fee of 0.001 ETH required by the blockchain ledger to process and record the transaction.
+                  <strong>Sepolia Network Gas:</strong> A standard fee of 0.001 ETH required by the blockchain ledger to process and record the transaction.
                 </li>
               </ul>
             </div>

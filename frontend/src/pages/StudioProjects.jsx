@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 
 import ProfileDropdown from "../components/ProfileDropdown.jsx";
 import StudioSidebar from "../components/StudioSidebar.jsx";
+import UserLiveWalletBar from "../components/UserLiveWalletBar.jsx";
 
 const projects = [
   { name: "YouTube Shorts", jobs: 6, exports: 14, status: "Active" },

@@ -1,6 +1,6 @@
 /**
- * proxyX402Use.js â€” EVM/Base Sepolia x402 payment for /api/use proxy calls.
- * Replaces the Base Sepolia version (burner wallet + viem).
+ * proxyX402Use.js â€” EVM/Sepolia x402 payment for /api/use proxy calls.
+ * Replaces the Sepolia version (burner wallet + viem).
  *
  * Uses the session key wallet to sign and submit ETH transfers for x402 calls.
  */
@@ -10,13 +10,13 @@ import { getSessionKeyWallet } from "../wallet/sessionKey.js";
 import { getTxUrl } from "../utils/explorer.js";
 
 /**
- * Encode the X-Payment header for Base Sepolia.
+ * Encode the X-Payment header for Sepolia.
  * Format: base64(JSON({ txHash, network, amount, payTo }))
  */
 function buildXPaymentHeader({ txHash, accept }) {
   const payload = {
     txHash,
-    network: accept.network ?? "eip155:84532",
+    network: accept.network ?? "eip155:11155111",
     payTo: accept.payTo,
     amount: accept.maxAmountRequired ?? accept.amount,
   };

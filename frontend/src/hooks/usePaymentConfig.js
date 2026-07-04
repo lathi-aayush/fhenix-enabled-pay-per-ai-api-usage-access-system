@@ -8,7 +8,7 @@ const ENV_RECEIVER =
   "";
 
 const DEFAULT_RPC =
-  import.meta.env.VITE_RPC_URL?.trim() || "https://sepolia.base.org";
+  import.meta.env.VITE_RPC_URL?.trim() || "https://ethereum-sepolia-rpc.publicnode.com";
 
 export function usePaymentConfig() {
   const [config, setConfig] = useState({

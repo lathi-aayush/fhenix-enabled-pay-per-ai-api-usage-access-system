@@ -56,7 +56,7 @@ export default function FaqDocs() {
               <div>
                 <h3 id="what-is-x402" className="text-[17px] font-bold text-slate-900 mb-2">What is the x402 Protocol?</h3>
                 <p className="text-[14px] text-slate-600 leading-relaxed">
-                  x402 is an extension of the standard HTTP `402 Payment Required` code. It maps API calls directly to smart contracts on the Base Sepolia, allowing autonomous AI agents to negotiate prices and pay for computation programmatically.
+                  x402 is an extension of the standard HTTP `402 Payment Required` code. It maps API calls directly to smart contracts on Sepolia, allowing autonomous AI agents to negotiate prices and pay for computation programmatically.
                 </p>
               </div>
 
@@ -82,7 +82,7 @@ export default function FaqDocs() {
               <div>
                 <h3 id="network-fees" className="text-[17px] font-bold text-slate-900 mb-2">What are the transaction fees?</h3>
                 <p className="text-[14px] text-slate-600 leading-relaxed">
-                  Every payout or call logs event relies on standard Base Sepolia network fees (typically 0.001 ETH per transaction).
+                  Every payout or call logs event relies on standard Sepolia network fees (typically 0.001 ETH per transaction).
                 </p>
               </div>
             </div>

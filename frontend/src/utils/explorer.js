@@ -1,14 +1,14 @@
 /**
- * BaseScan explorer URLs for Base Sepolia.
- * Replaces explorer.js (Lora / Base Sepolia).
+ * Etherscan explorer URLs for Sepolia.
+ * Replaces explorer.js (Sepolia).
  */
 
-const BASESCAN_BASE = "https://sepolia.basescan.org";
+const ETHERSCAN_BASE = "https://sepolia.etherscan.io";
 
-/** Link to a transaction on Base Sepolia BaseScan. */
+/** Link to a transaction on Sepolia Etherscan. */
 export function getTxUrl(txHash) {
   if (!txHash) return null;
-  return `${BASESCAN_BASE}/tx/${txHash}`;
+  return `${ETHERSCAN_BASE}/tx/${txHash}`;
 }
 
 /** @deprecated use getTxUrl */
@@ -22,7 +22,7 @@ export function explorerTxUrl(txHash) {
 
 export function getAddressUrl(address) {
   if (!address) return null;
-  return `${BASESCAN_BASE}/address/${address}`;
+  return `${ETHERSCAN_BASE}/address/${address}`;
 }
 
 export function explorerAddressUrl(address) {
@@ -31,7 +31,7 @@ export function explorerAddressUrl(address) {
 
 export function getTokenUrl(tokenAddress) {
   if (!tokenAddress) return null;
-  return `${BASESCAN_BASE}/token/${tokenAddress}`;
+  return `${ETHERSCAN_BASE}/token/${tokenAddress}`;
 }
 
 export function explorerTokenUrl(address) {

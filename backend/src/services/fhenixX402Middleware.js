@@ -1,21 +1,21 @@
 /**
  * fhenixX402Middleware.js — Fhenix/EVM x402 payment middleware
  *
- * Implements HTTP 402 "Payment Required" for AI API call gating on Base Sepolia.
+ * Implements HTTP 402 "Payment Required" for AI API call gating on Sepolia.
  * Payment token: native ETH (or FHERC20 when fully deployed — encrypted amounts).
  *
  * Flow:
  *  1. buildPaymentRequirements() → 402 challenge body
  *  2. Client signs ETH transfer, sends X-Payment header
- *  3. verifyX402Payment() → checks receipt on Base Sepolia
- *  4. AI call proceeds; txHash returned to client for BaseScan proof
+ *  3. verifyX402Payment() → checks receipt on Sepolia
+ *  4. AI call proceeds; txHash returned to client for Etherscan proof
  */
 
 import { ethers } from "ethers";
 import { getReceiptWithRetry, getTransaction, normalizeEvmAddress, weiWithinTolerance } from "./evmService.js";
 
-// EIP-155 CAIP-2 network identifier for Base Sepolia
-export const X402_NETWORK = "eip155:84532";
+// EIP-155 CAIP-2 network identifier for Sepolia
+export const X402_NETWORK = "eip155:11155111";
 
 // Native ETH asset identifier (address(0) convention)
 export const X402_ETH_ASSET = "0x0000000000000000000000000000000000000000";
@@ -53,7 +53,7 @@ export function buildPaymentRequirements({ payTo, amountWei, resource, descripti
         payTo: receiver,
         asset: X402_ETH_ASSET,
         maxTimeoutSeconds: getMaxTimeoutSeconds(),
-        extra: { decimals: 18, name: "ETH", chain: "Base Sepolia" },
+        extra: { decimals: 18, name: "ETH", chain: "Sepolia" },
       },
     ],
   };
@@ -79,7 +79,7 @@ export function send402Response(res, paymentRequirements) {
 
 /**
  * Decode the X-Payment header sent by the client.
- * Expected format: base64(JSON({ txHash: "0x...", network: "eip155:84532" }))
+ * Expected format: base64(JSON({ txHash: "0x...", network: "eip155:11155111" }))
  */
 export function decodeXPaymentHeader(headerValue) {
   if (!headerValue || typeof headerValue !== "string") return null;

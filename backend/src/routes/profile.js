@@ -1,5 +1,6 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
+import { ethers } from "ethers";
 import { User } from "../models/User.js";
 import { Service } from "../models/Service.js";
 import { AccessToken } from "../models/AccessToken.js";
@@ -16,6 +17,12 @@ import { getBalanceCents } from "../services/gatewayBalanceService.js";
 const router = Router();
 
 const RATE = () => Number(process.env.ETH_USD_RATE || 35);
+
+function normalizePrivateKey(raw) {
+  const key = String(raw || "").trim();
+  if (!key) return "";
+  return key.startsWith("0x") ? key : `0x${key}`;
+}
 
 /**
  * GET /api/profile/summary
@@ -374,6 +381,82 @@ router.post("/burner", requireAuth, async (req, res) => {
   } catch (e) {
     console.error("[POST /burner] error:", e.message);
     res.status(500).json({ error: "Failed to sync burner wallet" });
+  }
+});
+
+/**
+ * GET /api/profile/session-key
+ * Fetch the user's synced encrypted EVM session key.
+ */
+router.get("/session-key", requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.json({ encryptedKey: null });
+    return res.json({ encryptedKey: user.sessionKeyEncrypted || null });
+  } catch {
+    return res.status(500).json({ error: "Failed to fetch session key" });
+  }
+});
+
+/**
+ * POST /api/profile/session-key
+ * Sync a locally encrypted EVM session key to the user profile.
+ */
+router.post("/session-key", requireAuth, async (req, res) => {
+  try {
+    const { encryptedKey } = req.body;
+    if (!encryptedKey || typeof encryptedKey !== "string") {
+      return res.status(400).json({ error: "encryptedKey is required" });
+    }
+
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.json({ success: true, skipped: true });
+
+    user.sessionKeyEncrypted = encryptedKey.trim();
+    await user.save();
+    return res.json({ success: true });
+  } catch (e) {
+    console.error("[session-key] sync error:", e.message);
+    return res.status(500).json({ error: "Failed to sync session key" });
+  }
+});
+
+/**
+ * POST /api/profile/session-key/address
+ * Derive the EVM address for a session private key.
+ */
+router.post("/session-key/address", requireAuth, async (req, res) => {
+  try {
+    const privateKey = normalizePrivateKey(req.body?.privateKey);
+    const wallet = new ethers.Wallet(privateKey);
+    return res.json({ address: wallet.address });
+  } catch {
+    return res.status(400).json({ error: "Invalid private key" });
+  }
+});
+
+/**
+ * POST /api/profile/session-key/send
+ * Send ETH from the local session key wallet for x402 payments.
+ */
+router.post("/session-key/send", requireAuth, async (req, res) => {
+  try {
+    const privateKey = normalizePrivateKey(req.body?.privateKey);
+    const to = String(req.body?.to || "").trim();
+    const amountWei = BigInt(String(req.body?.amountWei || "0"));
+
+    if (!ethers.isAddress(to)) return res.status(400).json({ error: "Invalid recipient" });
+    if (amountWei <= 0n) return res.status(400).json({ error: "Invalid amountWei" });
+
+    const provider = new ethers.JsonRpcProvider(process.env.RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com");
+    const wallet = new ethers.Wallet(privateKey, provider);
+    const tx = await wallet.sendTransaction({ to, value: amountWei });
+    const receipt = await tx.wait();
+
+    return res.json({ txHash: receipt.hash, from: wallet.address, to, amountWei: amountWei.toString() });
+  } catch (e) {
+    console.error("[session-key/send] error:", e.message);
+    return res.status(500).json({ error: "Failed to send session key payment", detail: e.message });
   }
 });
 

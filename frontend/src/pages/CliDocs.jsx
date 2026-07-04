@@ -75,7 +75,7 @@ export default function CliDocs() {
               <div>
                 <h3 id="cmd-deploy" className="text-[17px] font-bold text-slate-900 mb-2">sentinal deploy</h3>
                 <p className="text-[14px] text-slate-600 mb-3 leading-relaxed">
-                  Compile and deploy a new pay-per-usage billing smart contract to the Base Sepolia.
+                  Compile and deploy a new pay-per-usage billing smart contract to Sepolia.
                 </p>
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 font-mono text-[13px] text-slate-800">
                   sentinal deploy --network testnet --mnemonic "your mnemonic phrase..."
@@ -112,9 +112,9 @@ export default function CliDocs() {
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 overflow-x-auto">
               <pre className="text-[13px] text-slate-800 font-mono leading-relaxed">
 {`{
-  "rpc_url": "https://sepolia.base.org",
-  "chain_id": 84532,
-  "default_network": "base-sepolia"
+  "rpc_url": "https://ethereum-sepolia-rpc.publicnode.com",
+  "chain_id": 11155111,
+  "default_network": "sepolia"
 }`}
               </pre>
             </div>

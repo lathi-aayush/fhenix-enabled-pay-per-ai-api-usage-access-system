@@ -9,7 +9,7 @@ import React, { createContext, useCallback, useContext, useMemo, useRef, useStat
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "./AuthContext.jsx";
-import { connectMetaMask } from "../wallet/metamask.js";
+import { connectMetaMask, isMetaMaskInstalled } from "../wallet/metamask.js";
 
 const MetaMaskLoginContext = createContext(null);
 
@@ -50,6 +50,14 @@ export function MetaMaskLoginProvider({ children }) {
 
       setBusy(true);
       try {
+        if (!isMetaMaskInstalled()) {
+          toast.error("MetaMask not detected. Open this app in Chrome or Brave with the MetaMask extension installed.", {
+            id: "mm-login",
+            duration: 6000,
+          });
+          return false;
+        }
+
         toast.loading("Connecting MetaMask...", { id: "mm-login" });
         const addr = await connectMetaMask();
         toast.loading("Signing in...", { id: "mm-login" });
@@ -76,7 +84,9 @@ export function MetaMaskLoginProvider({ children }) {
         if (shouldNavigate) navigate(afterLogin);
         return true;
       } catch (e) {
-        console.error(e);
+        if (!String(e?.message || "").includes("MetaMask is not installed")) {
+          console.error(e);
+        }
         toast.error(e?.response?.data?.error || e?.message || "MetaMask login failed", {
           id: "mm-login",
         });
@@ -191,9 +201,6 @@ function RegistrationForm({ walletAddress, role, redirect, onComplete, onClose }
     </form>
   );
 }
-
-// useState is needed inside RegistrationForm
-import { useState } from "react";
 
 export function useMetaMaskLogin() {
   const ctx = useContext(MetaMaskLoginContext);

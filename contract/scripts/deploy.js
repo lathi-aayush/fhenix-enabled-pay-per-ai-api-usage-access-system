@@ -1,9 +1,10 @@
-import { ethers } from "hardhat";
+import hardhat from "hardhat";
 import { writeFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const { ethers } = hardhat;
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -22,7 +23,7 @@ async function main() {
 
   console.log("SentinelPayment deployed to:", address);
   console.log("Chain ID:", network.chainId.toString());
-  console.log("Explorer:", `https://sepolia.basescan.org/address/${address}`);
+  console.log("Explorer:", `https://sepolia.etherscan.io/address/${address}`);
 
   const info = {
     address,

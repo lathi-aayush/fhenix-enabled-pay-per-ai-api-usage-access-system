@@ -1,5 +1,4 @@
 import { recoverStaleGatewayLocks } from "./gatewayCrashRecovery.js";
-import { pollRecentVaultDeposits } from "./gatewayDepositService.js";
 import { aggregateYesterdayStats } from "./dailyStatsAggregator.js";
 import { enqueueGatewayJob } from "../queues/gatewayQueue.js";
 import { scanApiHealthAndAlert } from "./gatewayHealthMonitor.js";
@@ -13,7 +12,6 @@ export function startGatewayScheduler() {
   }
 
   const recoveryMs = Number(process.env.GATEWAY_RECOVERY_INTERVAL_MS || 300000);
-  const depositMs = Number(process.env.GATEWAY_DEPOSIT_POLL_MS || 30000);
 
   intervals.push(
     setInterval(() => {
@@ -21,14 +19,6 @@ export function startGatewayScheduler() {
         console.warn("[gatewayScheduler] recovery", e?.message)
       );
     }, recoveryMs)
-  );
-
-  intervals.push(
-    setInterval(() => {
-      void pollRecentVaultDeposits().catch((e) =>
-        console.warn("[gatewayScheduler] deposits", e?.message)
-      );
-    }, depositMs)
   );
 
   scheduleDailyStatsCron();
@@ -42,7 +32,7 @@ export function startGatewayScheduler() {
     }, healthMs)
   );
 
-  console.log("[gatewayScheduler] recovery + deposit poll + daily stats + health active");
+  console.log("[gatewayScheduler] recovery + daily stats + health active");
 }
 
 function scheduleDailyStatsCron() {

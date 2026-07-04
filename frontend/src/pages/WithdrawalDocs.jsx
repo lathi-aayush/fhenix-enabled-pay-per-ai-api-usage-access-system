@@ -139,7 +139,7 @@ export default function WithdrawalDocs() {
 
             <h3 id="post-withdraw" className="text-lg font-semibold text-slate-900 mt-8 mb-3">POST /api/creator/withdraw</h3>
             <p className="text-[14px] text-slate-600 mb-4 leading-relaxed">
-              Submits a request to withdraw funds on-chain. Triggers an atomic payment transaction on Base Sepolia.
+              Submits a request to withdraw funds on-chain. Triggers an atomic payment transaction on Sepolia.
             </p>
             <pre className="bg-slate-900 text-slate-100 rounded-lg p-4 font-mono text-xs overflow-x-auto leading-normal">
 {`// Headers:

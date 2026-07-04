@@ -1,13 +1,17 @@
 /**
- * metamask.js â€” MetaMask wallet integration for SentinelAI on Base Sepolia.
- * Replaces metamask.js (MetaMask / Base Sepolia).
+ * metamask.js â€” MetaMask wallet integration for SentinelAI on Sepolia.
+ * Replaces metamask.js (MetaMask / Sepolia).
  *
  * Uses window.ethereum directly â€” no external wallet library needed.
  */
 
-const BASE_SEPOLIA_CHAIN_ID = "0x14A34"; // 84532 in hex
+const SEPOLIA_CHAIN_ID = "0xaa36a7"; // 11155111 in hex
 
 let _connectedAddress = null;
+
+export function isMetaMaskInstalled() {
+  return typeof window !== "undefined" && Boolean(window.ethereum);
+}
 
 /**
  * Normalize an EVM address to lowercase checksummed form.
@@ -19,21 +23,21 @@ export function normalizeAddress(raw) {
 }
 
 function getProvider() {
-  if (typeof window === "undefined" || !window.ethereum) {
+  if (!isMetaMaskInstalled()) {
     throw new Error("MetaMask is not installed. Install it from metamask.io");
   }
   return window.ethereum;
 }
 
 /**
- * Switch MetaMask to Base Sepolia network.
+ * Switch MetaMask to Sepolia network.
  */
-async function switchToBaseSepolia() {
+async function switchToSepolia() {
   const provider = getProvider();
   try {
     await provider.request({
       method: "wallet_switchEthereumChain",
-      params: [{ chainId: BASE_SEPOLIA_CHAIN_ID }],
+      params: [{ chainId: SEPOLIA_CHAIN_ID }],
     });
   } catch (e) {
     if (e.code === 4902) {
@@ -42,11 +46,11 @@ async function switchToBaseSepolia() {
         method: "wallet_addEthereumChain",
         params: [
           {
-            chainId: BASE_SEPOLIA_CHAIN_ID,
-            chainName: "Base Sepolia",
+            chainId: SEPOLIA_CHAIN_ID,
+            chainName: "Sepolia",
             nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-            rpcUrls: ["https://sepolia.base.org"],
-            blockExplorerUrls: ["https://sepolia.basescan.org"],
+            rpcUrls: ["https://ethereum-sepolia-rpc.publicnode.com"],
+            blockExplorerUrls: ["https://sepolia.etherscan.io"],
           },
         ],
       });
@@ -56,13 +60,17 @@ async function switchToBaseSepolia() {
   }
 }
 
+export async function ensureSepoliaNetwork() {
+  await switchToSepolia();
+}
+
 /**
  * Connect MetaMask and return the active address.
  * Equivalent of connectMetaMask().
  */
 export async function connectMetaMask() {
   const provider = getProvider();
-  await switchToBaseSepolia();
+  await switchToSepolia();
   const accounts = await provider.request({ method: "eth_requestAccounts" });
   if (!accounts?.length) throw new Error("No accounts returned from MetaMask");
   _connectedAddress = normalizeAddress(accounts[0]);
@@ -122,7 +130,7 @@ export async function signMessage(message, address) {
  */
 export async function sendEthPayment({ from, to, amountWei }) {
   const provider = getProvider();
-  await switchToBaseSepolia();
+  await switchToSepolia();
 
   const sender = normalizeAddress(from) ?? _connectedAddress;
   if (!sender) throw new Error("No sender address. Connect MetaMask first.");
@@ -134,7 +142,7 @@ export async function sendEthPayment({ from, to, amountWei }) {
         from: sender,
         to: normalizeAddress(to),
         value: "0x" + BigInt(amountWei).toString(16),
-        chainId: BASE_SEPOLIA_CHAIN_ID,
+        chainId: SEPOLIA_CHAIN_ID,
       },
     ],
   });

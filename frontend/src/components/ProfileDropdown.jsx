@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext.jsx";
-import { connectMetaMask } from "../wallet/metamask.js";
+import { connectMetaMask, ensureSepoliaNetwork } from "../wallet/metamask.js";
 import { api } from "../api/client.js";
 
 export function shortenWalletAddress(addr) {
@@ -52,6 +52,7 @@ export default function ProfileDropdown() {
     setFetchingBalance(true);
     try {
       if (window.ethereum) {
+        await ensureSepoliaNetwork();
         const hex = await window.ethereum.request({
           method: "eth_getBalance",
           params: [address, "latest"],
@@ -192,7 +193,7 @@ export default function ProfileDropdown() {
           
           <div className="flex flex-col gap-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              EVM Wallet (Base Sepolia)
+              EVM Wallet (Sepolia)
             </span>
             
             {!user.walletAddress ? (
@@ -212,7 +213,7 @@ export default function ProfileDropdown() {
                     {shortenWalletAddress(user.walletAddress)}
                   </span>
                   <span className="font-mono font-bold text-slate-900 dark:text-white text-xs mt-0.5">
-                    {ethBalance} <span className="text-[10px] font-normal text-slate-400">ETH</span>
+                    {ethBalance} <span className="text-[10px] font-normal text-slate-400">SepoliaETH</span>
                   </span>
                 </div>
                 <button

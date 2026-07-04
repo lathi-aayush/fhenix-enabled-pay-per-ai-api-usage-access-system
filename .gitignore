@@ -1,11 +1,11 @@
 node_modules/
 .env
+contract/artifacts/
+contract/cache/
 .DS_Store
 dist/
 build/
 .vercel/
-chatbot/chat-front/node_modules/
-chatbot/chat-backend/node_modules/
 .cursor/
 .git/
 .github/
@@ -16,7 +16,10 @@ backend/outputs/
 sentinal-ai-*.json
 **/service-account*.json
 
-# Scratch check and test scripts
-backend/check_key_details.js
-backend/test_legacy_flow_billing.js
-backend/test_x402_flow_billing.js
+# Scratch / one-off dev scripts (use verify-key.js for API key diagnostics)
+backend/check_*.js
+backend/get_token.js
+backend/test-stats.js
+backend/update_*.js
+backend/src/dump_users.js
+ppt.md

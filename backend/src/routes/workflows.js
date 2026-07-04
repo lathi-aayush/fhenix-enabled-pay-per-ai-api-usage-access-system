@@ -494,7 +494,7 @@ const DEFAULT_TEMPLATES = [
           data: {
             label: "Video topic",
             inputType: "text",
-            value: "How I built a pay-per-use AI API on Base Sepolia in 30 days",
+            value: "How I built a pay-per-use AI API on Sepolia in 30 days",
             config: {},
           },
         },
@@ -932,7 +932,7 @@ const DEFAULT_TEMPLATES = [
             label: "Product brief",
             inputType: "text",
             value:
-              "Explain Sentinel â€” a pay-per-use AI API gateway on Base Sepolia. Show: connect wallet, pick an API, pay per call, get on-chain receipt. 40 seconds, professional tone.",
+              "Explain Sentinel â€” a pay-per-use AI API gateway on Sepolia. Show: connect wallet, pick an API, pay per call, get on-chain receipt. 40 seconds, professional tone.",
             config: {},
           },
         },

@@ -3,7 +3,7 @@
  *
  * POST /api/x402/use/:serviceId
  *
- * Client sends X-Payment header with a Base Sepolia ETH tx hash.
+ * Client sends X-Payment header with a Sepolia ETH tx hash.
  * Server verifies the payment on-chain, then forwards to the AI provider.
  */
 
@@ -108,7 +108,7 @@ router.post("/use/:serviceId", requireAuth, async (req, res) => {
           chargeEth,
           explorerUrl: explorerTxUrl(verification.txHash),
           payer: verification.senderAddress,
-          network: "Base Sepolia",
+          network: "Sepolia",
         },
       });
     }

@@ -7,17 +7,22 @@ const ETH_USD = Number(process.env.ETH_USD_RATE) || 3200;
 const INR_USD = Number(process.env.INR_USD_RATE) || 84.5;
 export const ETH_INR_RATE = ETH_USD * INR_USD;
 
-/** @param {number} wei */
-export function weiToEth(wei) {
-  return wei / 1e18;
+function toWeiBigInt(wei) {
+  if (typeof wei === "bigint") return wei;
+  return BigInt(Math.round(Number(wei)));
 }
 
-/** @param {number} wei */
+/** @param {number|bigint|string} wei */
+export function weiToEth(wei) {
+  return Number(toWeiBigInt(wei)) / 1e18;
+}
+
+/** @param {number|bigint|string} wei */
 export function weiToInr(wei) {
   return weiToEth(wei) * ETH_INR_RATE;
 }
 
-/** @param {number} wei */
+/** @param {number|bigint|string} wei */
 export function weiToUsd(wei) {
   return weiToEth(wei) * ETH_USD;
 }
@@ -130,11 +135,6 @@ export const RUN_TYPE_LABELS = {
 
 export function getPlanPriceWei(tier) {
   return PLAN_PRICES[tier] ?? null;
-}
-
-/** @deprecated use getPlanPriceWei */
-export function getPlanPriceWei(tier) {
-  return getPlanPriceWei(tier);
 }
 
 export function isPaidTier(tier) {

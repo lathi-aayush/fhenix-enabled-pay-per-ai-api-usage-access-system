@@ -14,8 +14,8 @@ router.get("/status", requireAuth, (req, res) => {
   res.json({
     enabled: false,
     message: "EVM gateway coming soon. Use direct ETH payments via /api/payment.",
-    network: "Base Sepolia",
-    chainId: 84532,
+    network: "Sepolia",
+    chainId: 11155111,
   });
 });
 

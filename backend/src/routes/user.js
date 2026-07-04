@@ -25,7 +25,7 @@ router.get("/eth-balance", requireAuth, requireRole("user", "creator"), async (r
   } catch (e) {
     console.error("[eth-balance]", e);
     res.status(502).json({
-      error: "Could not load on-chain balance from Base Sepolia",
+      error: "Could not load on-chain balance from Sepolia",
       detail: process.env.NODE_ENV === "development" ? e.message : undefined,
     });
   }

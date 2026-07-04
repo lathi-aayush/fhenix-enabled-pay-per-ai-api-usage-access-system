@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { api } from "../api/client.js";
-import { callProxyX402Use } from "../api/proxyX402Use.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useWalletAction } from "../hooks/useWalletAction.js";
 import GuestConnectBanner from "../components/GuestConnectBanner.jsx";
@@ -11,23 +10,79 @@ import { getPublicApiBase } from "../utils/apiBase.js";
 import { connectMetaMask, sendEthPayment, normalizeAddress as normalizeAccountAddress } from "../wallet/metamask.js";
 import { chargeForTokens, wordsToApproxTokens } from "../utils/tokenPricing.js";
 import { useTokenEstimate } from "../hooks/useTokenEstimate.js";
-import { StarRating } from "../components/MarketplaceCard.jsx";
+import { StarRating, shortenWallet } from "../components/MarketplaceCard.jsx";
 import { getTxUrl as testnetTxUrl } from "../utils/explorer.js";
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function buildXPaymentHeader({ txHash, accept }) {
+  return btoa(
+    JSON.stringify({
+      txHash,
+      network: accept.network ?? "eip155:11155111",
+      payTo: accept.payTo,
+      amount: accept.maxAmountRequired ?? accept.amount,
+    })
+  );
+}
+
+async function callX402WithMetaMask({ apiKey, from, body }) {
+  const headers = { Authorization: `Bearer ${apiKey}` };
+  let challengeData;
+
+  try {
+    const { data } = await api.post("/api/use", body, { headers });
+    const receipt = data?.sentinelReceipt ?? null;
+    const { sentinelReceipt: _sr, ...aiResponse } = data || {};
+    return {
+      aiResponse,
+      txHash: receipt?.txHash ?? receipt?.paymentTxHash ?? null,
+      receipt,
+    };
+  } catch (e) {
+    if (e?.response?.status !== 402) {
+      const msg = e?.response?.data?.error || e?.response?.data?.detail || e?.message;
+      throw new Error(msg || "x402 challenge request failed");
+    }
+    challengeData = e.response.data;
+  }
+
+  const accept = challengeData?.accepts?.[0];
+  if (!accept?.payTo || (accept.maxAmountRequired == null && accept.amount == null)) {
+    throw new Error("Invalid x402 payment challenge from server");
+  }
+
+  const amountWei = BigInt(accept.maxAmountRequired ?? accept.amount);
+  if (amountWei <= 0n) throw new Error("Invalid x402 charge amount from server");
+
+  const { txHash } = await sendEthPayment({
+    from,
+    to: accept.payTo,
+    amountWei,
+  });
+
+  const xPaymentHeader = buildXPaymentHeader({ txHash, accept });
+  const { data: final } = await api.post("/api/use", body, {
+    headers: { ...headers, "X-Payment": xPaymentHeader },
+  });
+
+  const receipt = final?.sentinelReceipt ?? null;
+  const { sentinelReceipt: _sr, ...aiResponse } = final || {};
+  const settledTxHash = receipt?.txHash ?? receipt?.paymentTxHash ?? txHash;
+  return { aiResponse, txHash: settledTxHash, receipt };
+}
+
 export default function ServiceDetail() {
   const { id } = useParams();
-  const { user, logout, sessionKeyReady, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { runWithWallet } = useWalletAction();
   const [service, setService] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [apiKey, setApiKey] = useState(null);
   const [showKeyModal, setShowKeyModal] = useState(false);
-  const rpcUrl = import.meta.env.VITE_RPC_URL || "https://sepolia.base.org";
   const [prompt, setPrompt] = useState("");
   const [invokeBusy, setInvokeBusy] = useState(false);
   const [costAck, setCostAck] = useState(false);
@@ -75,7 +130,6 @@ export default function ServiceDetail() {
         ]);
         if (!cancelled) {
           setService(svc);
-          // rpcUrl is now from env (VITE_RPC_URL)
         }
       } catch {
         toast.error("Service not found");
@@ -198,7 +252,7 @@ curl -sS "${apiBase}/api/use" \\
   -H "Content-Type: application/json" \\
   -d '{"prompt":"Hello"}'
 
-# 2) Sign ETH payment, submit on-chain, retry with X-Payment header
+# 2) Sign SepoliaETH payment, submit on-chain, retry with X-Payment header
 curl -sS "${apiBase}/api/use" \\
   -H "Authorization: Bearer ${apiKey}" \\
   -H "Content-Type: application/json" \\
@@ -213,7 +267,7 @@ curl -sS "${apiBase}/api/use" \\
   -H "Content-Type: application/json" \\
   -d '{"prompt":"Hello"}'
 
-# 2) Pay that exact ETH to developerWallet with paymentRef in note, then complete:
+# 2) Pay that exact SepoliaETH to developerWallet with paymentRef in note, then complete:
 curl -sS "${apiBase}/api/use" \\
   -H "Authorization: Bearer ${apiKey}" \\
   -H "Content-Type: application/json" \\
@@ -251,20 +305,14 @@ curl -sS "${apiBase}/api/use" \\
 
     try {
       if (service.x402Enabled) {
-        if (!sessionKeyReady) {
-          throw new Error("Session key wallet is still loading. Wait a moment and try again.");
-        }
         setQuotedCharge(Number(service.minimumChargeEth) || null);
         setPayStage("sign");
-        const burnerWallet = getSessionKeyWallet();
-        const { aiResponse, txId, receipt } = await callProxyX402Use({
+        const { aiResponse, txHash, receipt } = await callX402WithMetaMask({
           apiKey,
-          serviceId: service._id,
+          from: user.walletAddress,
           body: { prompt: prompt.trim() },
-          rpcUrl,
-          burnerWallet,
         });
-        setLastTxId(txId);
+        setLastTxId(txHash);
         setLastReceipt(receipt || null);
         setPayStage("done");
         const text =
@@ -286,20 +334,20 @@ curl -sS "${apiBase}/api/use" \\
         throw new Error("Unexpected quote response from server");
       }
 
-      const micro = Number(quote.expectedWei);
+      const expectedWei = BigInt(quote.expectedWei);
       const charge = Number(quote.chargeEth);
-      if (!Number.isFinite(micro) || micro <= 0) {
+      if (expectedWei <= 0n) {
         throw new Error("Invalid charge from server");
       }
 
       setQuotedCharge(charge);
       setPayStage("sign");
 
-      // Submit ETH payment via MetaMask (marketplace 2-step flow)
+      // Submit SepoliaETH payment via MetaMask (marketplace 2-step flow)
       const { txHash: txId } = await sendEthPayment({
         from: user.walletAddress,
         to,
-        amountWei: BigInt(micro),
+        amountWei: expectedWei,
       });
 
       setLastTxId(txId);
@@ -401,10 +449,10 @@ curl -sS "${apiBase}/api/use" \\
           <div>
             <p className="text-sm text-on-surface-variant">Pay per token (input + output), with a minimum per call</p>
             <p className="font-mono text-lg font-semibold text-secondary mt-1">
-              {Number.isFinite(ppt) ? ppt.toFixed(6) : "â€”"} ETH / 1k tokens
+              {Number.isFinite(ppt) ? ppt.toFixed(6) : "â€”"} SepoliaETH / 1k tokens
             </p>
             <p className="text-xs text-on-surface-variant mt-1 font-mono">
-              Min per paid call: {Number.isFinite(minC) ? `${minC.toFixed(6)} ETH` : "â€”"} Â· Paid to {devShort}
+              Min per paid call: {Number.isFinite(minC) ? `${minC.toFixed(6)} SepoliaETH` : "â€”"} Â· Paid to {devShort}
             </p>
           </div>
 
@@ -425,7 +473,7 @@ curl -sS "${apiBase}/api/use" \\
             <p className="text-sm text-on-surface-variant mb-3">
               Generate a <code className="font-mono text-xs">sk-sentinel-â€¦</code> proxy key.{" "}
               {x402Enabled
-                ? `Calls use x402 on POST /api/use (${Number.isFinite(minC) ? minC.toFixed(6) : "min"} ETH per call).`
+                ? `Calls use x402 on POST /api/use (${Number.isFinite(minC) ? minC.toFixed(6) : "min"} SepoliaETH per call).`
                 : "Each call: quote â†’ pay on-chain â†’ complete to unlock the AI response."}
             </p>
             <button
@@ -458,8 +506,8 @@ curl -sS "${apiBase}/api/use" \\
                   className="mt-1"
                 />
                 <span>
-                  I understand each call charges from my session key wallet
-                  {x402Enabled && Number.isFinite(minC) ? ` (min ${minC.toFixed(6)} ETH)` : ""}.
+                  I understand each call charges from my connected MetaMask wallet
+                  {x402Enabled && Number.isFinite(minC) ? ` (min ${minC.toFixed(6)} SepoliaETH)` : ""}.
                 </span>
               </label>
               <button

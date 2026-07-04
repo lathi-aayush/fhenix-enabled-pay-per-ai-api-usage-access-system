@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import { FHE, euint64, ebool, inEuint64 } from "@fhenixprotocol/cofhe-contracts/FHE.sol";
+import { FHE, euint64, ebool } from "@fhenixprotocol/cofhe-contracts/FHE.sol";
+import { InEuint64 } from "@fhenixprotocol/cofhe-contracts/ICofhe.sol";
 
 /**
  * SentinelPayment — FHE-enabled pay-per-AI-call settlement contract.
@@ -10,7 +11,7 @@ import { FHE, euint64, ebool, inEuint64 } from "@fhenixprotocol/cofhe-contracts/
  * The backend operator deducts encrypted amounts per AI API call via deductForCall().
  * Users can only see their own balance by sealing it with a permit.
  *
- * Deployed on Base Sepolia (chainId 84532).
+ * Deployed on Sepolia (chainId 11155111).
  */
 contract SentinelPayment {
     address public owner;
@@ -78,7 +79,7 @@ contract SentinelPayment {
     /**
      * Deduct an encrypted amount from a user's balance for an AI call.
      * Called by the backend operator after verifying the AI request.
-     * The amount is encrypted before submission via @cofhe/sdk on the backend.
+     * The amount is encrypted before submission via the CoFHE SDK on the backend.
      *
      * @param user        The user whose balance to deduct from
      * @param encAmount   Encrypted amount in wei (from @cofhe/sdk Encryptable.uint64)
@@ -86,7 +87,7 @@ contract SentinelPayment {
      */
     function deductForCall(
         address user,
-        inEuint64 calldata encAmount,
+        InEuint64 calldata encAmount,
         address service
     ) external onlyOwner {
         require(_hasBalance[user], "No balance");

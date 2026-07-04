@@ -1,5 +1,5 @@
 /**
- * Payment routes — 2-step marketplace purchase flow on Base Sepolia.
+ * Payment routes — 2-step marketplace purchase flow on Sepolia.
  *
  * POST /api/payment/create  → returns {receiver, amountWei, amountEth, nonce}
  * POST /api/payment/verify  → checks ETH tx on-chain, issues sk-sentinel-* API key
@@ -43,7 +43,7 @@ router.post(
     const receiver = String(service.creatorWallet || "").trim();
     if (!receiver || !isValidEvmAddress(receiver)) {
       return res.status(400).json({
-        error: "Service has no valid payout address. Creator must update their wallet to a Base Sepolia address.",
+        error: "Service has no valid payout address. Creator must update their wallet to a Sepolia address.",
       });
     }
 
@@ -81,9 +81,9 @@ router.post(
       amountWei,
       amountEth: minCharge,
       nonce: `sentinal:${paymentIntentId}`,
-      network: "Base Sepolia",
-      chainId: 84532,
-      rpcUrl: process.env.RPC_URL || "https://sepolia.base.org",
+      network: "Sepolia",
+      chainId: 11155111,
+      rpcUrl: process.env.RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com",
     });
   }
 );

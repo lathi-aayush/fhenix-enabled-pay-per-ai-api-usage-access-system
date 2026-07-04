@@ -264,7 +264,7 @@ export default function CreatorDashboard() {
             <p className="text-sm text-slate-500 mt-1">
               {activeTab === "endpoints" && "Deploy, manage, and monitor your AI endpoints"}
               {activeTab === "webhooks" && "Configure notifications for paid execution events"}
-              {activeTab === "withdrawals" && "Withdraw your Base Sepolia revenue instantly"}
+              {activeTab === "withdrawals" && "Withdraw your Sepolia revenue instantly"}
             </p>
           </div>
           {activeTab === "endpoints" && (

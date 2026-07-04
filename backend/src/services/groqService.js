@@ -3,9 +3,9 @@ import Groq from "groq-sdk";
 const client = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
 
 export const MODELS = {
-  heavy: "llama-3.3-70b-versatile",
-  fast: "llama-3.1-8b-instant",
-  deepseek: "deepseek-r1-distill-llama-70b",
+  heavy: process.env.GROQ_MODEL_HEAVY || "llama-3.3-70b-versatile",
+  fast: process.env.GROQ_MODEL_FAST || "llama-3.1-8b-instant",
+  deepseek: process.env.GROQ_MODEL_REASONING || "deepseek-r1-distill-llama-70b",
 };
 
 let consecutiveFailures = 0;

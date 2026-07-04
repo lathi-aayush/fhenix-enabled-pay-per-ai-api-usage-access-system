@@ -14,19 +14,19 @@ const CODE_SNIPPETS = {
 const client = new SentinelClient({
   apiKey: process.env.SENTINEL_API_KEY,  // sk-sentinel-...
   baseUrl: "https://your-sentinel-api.example",
-  network: "eip155:84532",
+  network: "eip155:11155111",
 });
 
 // Server-side signing — never expose private key in browser
 const signer = new EvmPrivateKeySigner(process.env.EVM_PRIVATE_KEY);
 
 const response = await client.chat(
-  [{ role: "user", content: "Explain Base Sepolia briefly." }],
+  [{ role: "user", content: "Explain Sepolia briefly." }],
   signer
 );
 
 console.log(SentinelClient.getAssistantText(response));
-// â†’ "Base Sepolia is a pure proof-of-stake blockchain..."
+// â†’ "Sepolia is an Ethereum test network..."
 
 console.log(response.sentinelReceipt);
 // â†’ { paymentTxId: "ABCD...", chargeEth: 0.001, totalTokens: 38 }`,
@@ -67,7 +67,7 @@ const quote = await client.invoke([
 ]);
 console.log(\`Pay \${quote.chargeEth} ETH to \${quote.developerWallet}\`);
 
-// Phase 2 â€” build, sign, submit the Base Sepolia payment
+// Phase 2 â€” build, sign, submit the Sepolia payment
 const txn = await buildPaymentTx({
   from: signer.address,
   to: quote.developerWallet,
@@ -96,7 +96,7 @@ import { NextResponse } from "next/server";
 const client = new SentinelClient({
   apiKey: process.env.SENTINEL_API_KEY!,
   baseUrl: process.env.SENTINEL_BASE_URL!,
-  network: "eip155:84532",
+  network: "eip155:11155111",
 });
 
 export async function POST(req: Request) {
@@ -134,8 +134,8 @@ const FLOW_STEPS = [
   {
     num: "02",
     icon: "account_balance_wallet",
-    title: "Pay on Base Sepolia",
-    desc: "SDK signs a micro-payment transaction and submits it to the Base Sepolia network",
+    title: "Pay on Sepolia",
+    desc: "SDK signs a micro-payment transaction and submits it to the Sepolia network",
   },
   {
     num: "03",
@@ -204,7 +204,7 @@ export default function SdkDemo() {
             </span>
           </h1>
           <p className="mt-4 text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
-            The official JavaScript SDK for pay-per-use AI APIs on Base Sepolia. One method.
+            The official JavaScript SDK for pay-per-use AI APIs on Sepolia. One method.
             Full TypeScript types. Works in Node.js, browsers, and Next.js.
           </p>
 

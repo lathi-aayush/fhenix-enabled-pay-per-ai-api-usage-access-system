@@ -17,7 +17,7 @@ const TEMPLATES = [
     description: "Script â†’ hero images â†’ cinematic launch video",
     chain: ["text", "image", "video"],
     prompt:
-      "Create a product launch kit for a pay-per-use AI API marketplace on Base Sepolia: launch script, 3 hero keyframes, and a 20-second cinematic promo video",
+      "Create a product launch kit for a pay-per-use AI API marketplace on Sepolia: launch script, 3 hero keyframes, and a 20-second cinematic promo video",
   },
   {
     title: "Brand mood board",
@@ -62,7 +62,7 @@ const TEMPLATES = [
     description: "Investor-ready storyline with slide outlines",
     chain: ["text"],
     prompt:
-      "Write an investor pitch deck narrative for Sentinel â€” a pay-per-use AI API gateway on Base Sepolia. Include problem, solution, market, business model, traction, and ask. Format as slide-by-slide outlines",
+      "Write an investor pitch deck narrative for Sentinel â€” a pay-per-use AI API gateway on Sepolia. Include problem, solution, market, business model, traction, and ask. Format as slide-by-slide outlines",
   },
   {
     title: "API docs draft",

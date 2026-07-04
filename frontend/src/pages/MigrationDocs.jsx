@@ -46,7 +46,7 @@ export default function MigrationDocs() {
 
         <h1 className="text-3xl font-bold text-slate-900 mb-6 tracking-tight">Migration Guide</h1>
         <p className="text-[15px] text-slate-600 mb-8 leading-relaxed">
-          Follow this guide to migrate your existing agents and creator services from Sentinal v1.0 to the optimized v2.0 protocol on the Base Sepolia.
+          Follow this guide to migrate your existing agents and creator services from Sentinal v1.0 to the optimized v2.0 protocol on Sepolia.
         </p>
 
         <div className="space-y-12 text-slate-800">

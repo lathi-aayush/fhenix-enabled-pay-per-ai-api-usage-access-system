@@ -1,6 +1,6 @@
 /**
- * studioOverage.js — Studio overage payment via MetaMask on Base Sepolia.
- * Replaces the Base Sepolia/MetaMask version.
+ * studioOverage.js — Studio overage payment via MetaMask on Sepolia.
+ * Replaces the Sepolia/MetaMask version.
  */
 
 import { api } from "./client.js";
@@ -46,7 +46,7 @@ export async function buildX402PaymentHeader({ from, to, amountWei }) {
 
   const payload = {
     txHash,
-    network: "eip155:84532",
+    network: "eip155:11155111",
     payTo: to,
     amount: amountWei.toString(),
   };

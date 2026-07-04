@@ -1,5 +1,5 @@
 /**
- * Wallet/contract top-up routes for Base Sepolia SentinelPayment contract.
+ * Wallet/contract top-up routes for Sepolia SentinelPayment contract.
  *
  * POST /api/wallet/topup/create  â†’ returns deposit params for the contract
  * POST /api/wallet/topup/verify  â†’ confirms ETH deposit on-chain
@@ -54,9 +54,9 @@ router.post(
         contractAddress: normalizeEvmAddress(contractAddress),
         amountWei: minWei.toString(),
         amountEth: ethers.formatEther(minWei),
-        network: "Base Sepolia",
-        chainId: 84532,
-        rpcUrl: process.env.RPC_URL || "https://sepolia.base.org",
+        network: "Sepolia",
+        chainId: 11155111,
+        rpcUrl: process.env.RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com",
         hint: "Call SentinelPayment.deposit({ value: amountWei }) to top up your encrypted balance.",
       });
     } catch (e) {

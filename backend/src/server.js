@@ -76,11 +76,11 @@ app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
 app.get("/api/public/network", (_req, res) => {
   res.json({
-    rpcUrl: process.env.RPC_URL || "https://sepolia.base.org",
-    chainId: Number(process.env.CHAIN_ID || 84532),
-    network: "Base Sepolia",
+    rpcUrl: process.env.RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com",
+    chainId: Number(process.env.CHAIN_ID || 11155111),
+    network: "Sepolia",
     receiverWallet: getPublicReceiverWallet(),
-    explorer: "https://sepolia.basescan.org",
+    explorer: "https://sepolia.etherscan.io",
   });
 });
 

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo.png";
 import ProfileDropdown from "./ProfileDropdown.jsx";
+import UserLiveWalletBar from "./UserLiveWalletBar.jsx";
 
 import { useAuth } from "../context/AuthContext.jsx";
 import { useMetaMaskLogin } from "../context/MetaMaskLoginContext.jsx";

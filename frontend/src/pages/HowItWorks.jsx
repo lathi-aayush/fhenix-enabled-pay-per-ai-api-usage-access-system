@@ -45,7 +45,7 @@ export default function HowItWorks() {
         </h1>
 
         <p className="text-[15px] text-slate-600 mb-8 leading-relaxed">
-          SentinalAI is a decentralized, pay-per-usage AI gateway on Base Sepolia. Users and autonomous
+          SentinalAI is a decentralized, pay-per-usage AI gateway on Sepolia. Users and autonomous
           agents access premium models without subscriptions, credit-card billing, or shared API keys â€”
           every call is priced transparently and settled on-chain.
         </p>
@@ -104,7 +104,7 @@ export default function HowItWorks() {
                     The solution: microtransactions + HTTP 402
                   </h3>
                   <p className="text-[14px] text-slate-600 leading-relaxed">
-                    Base Sepolia confirms payments in seconds with sub-cent fees â€” ideal for per-token
+                    Sepolia confirms payments in seconds with sub-cent fees â€” ideal for per-token
                     billing. Combined with the{" "}
                     <code className="bg-slate-200 px-1 py-0.5 rounded font-mono text-[12px]">
                       402 Payment Required

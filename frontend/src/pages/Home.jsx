@@ -35,7 +35,7 @@ const itemVariants = {
 };
 
 const MARQUEE_ITEMS = [
-  { name: "Base Sepolia", icon: "hub", color: "text-indigo-500" },
+  { name: "Sepolia", icon: "hub", color: "text-indigo-500" },
   { name: "0.001 ETH / tx", icon: "toll", color: "text-emerald-500" },
   { name: "MetaMask", icon: "account_balance_wallet", color: "text-violet-500" },
   { name: "DeepSeek V3", icon: "psychology", color: "text-indigo-500" },
@@ -139,7 +139,7 @@ export default function Home() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                   </span>
-                  <span className="text-emerald-600">Live on Base Sepolia</span>
+                  <span className="text-emerald-600">Live on Sepolia</span>
                 </span>
               </motion.div>
 
@@ -159,7 +159,7 @@ export default function Home() {
                 className="font-body text-[16px] text-slate-500 max-w-2xl leading-relaxed text-center"
               >
                 A <strong className="text-slate-700">decentralized API marketplace</strong> â€” pay per call, no subscription. An{" "}
-                <strong className="text-slate-700">AI creative Studio</strong> for creators with pay-per-call micropayments. Both settled on Base Sepolia.
+                <strong className="text-slate-700">AI creative Studio</strong> for creators with pay-per-call micropayments. Both settled on Sepolia.
               </motion.p>
 
               {/* 3 value pillars â€” centered row */}
@@ -229,7 +229,7 @@ export default function Home() {
             <p className="text-[10px] font-bold tracking-[0.15em] text-indigo-600 uppercase mb-2">For Developers</p>
             <h3 className="font-headline text-2xl font-bold text-slate-900">Marketplace</h3>
             <p className="text-sm text-slate-500 mt-3 leading-relaxed">
-              Browse AI APIs, pay per call with MetaMask, and integrate x402 payments on Base Sepolia.
+              Browse AI APIs, pay per call with MetaMask, and integrate x402 payments on Sepolia.
             </p>
             <div className="mt-6 flex flex-col items-start gap-2">
               <span className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 group-hover:text-indigo-700 transition-colors">
@@ -322,7 +322,7 @@ export default function Home() {
             <div>
               <span className="text-xl font-bold tracking-tight font-headline text-slate-900">Sentinal</span>
               <p className="text-sm text-slate-400 mt-3 leading-relaxed max-w-xs">
-                Pay-per-use AI APIs on Base Sepolia. No subscriptions, no lock-in.
+                Pay-per-use AI APIs on Sepolia. No subscriptions, no lock-in.
               </p>
             </div>
             <div>
@@ -517,7 +517,7 @@ export default function Home() {
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-1">1. Acceptance of Terms</h4>
                     <p>
-                      By connecting your wallet to Sentinal, you agree to comply with these terms. The platform serves as a peer-to-peer developer marketplace mapping AI APIs to Base Sepolia smart contracts.
+                      By connecting your wallet to Sentinal, you agree to comply with these terms. The platform serves as a peer-to-peer developer marketplace mapping AI APIs to Sepolia smart contracts.
                     </p>
                   </div>
                   <div>
@@ -529,7 +529,7 @@ export default function Home() {
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-1">3. Protocol Fees</h4>
                     <p>
-                      Transactions may involve smart contract executing fees and standard network gas charges paid directly to the Base Sepolia. Sentinal does not custody or hold user funds.
+                      Transactions may involve smart contract executing fees and standard network gas charges paid directly to Sepolia. Sentinal does not custody or hold user funds.
                     </p>
                   </div>
                 </div>
@@ -552,7 +552,7 @@ export default function Home() {
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-1">3. On-Chain Transparency</h4>
                     <p>
-                      All pay-per-usage API call counts and wallet interaction metrics are logged publicly and permanently on the Base Sepolia.
+                      All pay-per-usage API call counts and wallet interaction metrics are logged publicly and permanently on Sepolia.
                     </p>
                   </div>
                 </div>
@@ -563,7 +563,7 @@ export default function Home() {
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-1">1. On-Chain Settlements & Non-Refundability</h4>
                     <p>
-                      All pay-per-usage transactions are processed and settled directly on the Base Sepolia. Once a transaction is broadcasted, it is irreversible. Sentinal cannot refund ETH or custom tokens spent on API keys or requests.
+                      All pay-per-usage transactions are processed and settled directly on Sepolia. Once a transaction is broadcasted, it is irreversible. Sentinal cannot refund ETH or custom tokens spent on API keys or requests.
                     </p>
                   </div>
                   <div>
@@ -581,7 +581,7 @@ export default function Home() {
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-1">4. Smart Contract Execution & Logging</h4>
                     <p>
-                      By using this platform, you interact with Base Sepolia Smart Contracts. Transaction details, including masked wallet addresses, transaction IDs, and call logs, are publicly recorded on the blockchain forever.
+                      By using this platform, you interact with Sepolia smart contracts. Transaction details, including masked wallet addresses, transaction IDs, and call logs, are publicly recorded on the blockchain forever.
                     </p>
                   </div>
                 </div>

@@ -37,8 +37,8 @@ if (process.env.REDIS_DISABLED === "1") {
   }
 }
 console.log("[env] RECEIVER_WALLET:", process.env.RECEIVER_WALLET ? "loaded" : "MISSING");
-console.log("[env] RPC_URL:", process.env.RPC_URL || "https://sepolia.base.org (default)");
-console.log("[env] CHAIN_ID:", process.env.CHAIN_ID || "84532 (default)");
+console.log("[env] RPC_URL:", process.env.RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com (default)");
+console.log("[env] CHAIN_ID:", process.env.CHAIN_ID || "11155111 (default)");
 console.log(
   "[env] GOOGLE_API_KEY:",
   process.env.GOOGLE_API_KEY?.trim() || process.env.GEMINI_API_KEY?.trim() ? "loaded" : "MISSING (Prompt Generator disabled)"

@@ -13,7 +13,10 @@ SentinelAI lets creators monetize AI models on a pay-per-call basis. Users pay p
 
 ### How it works
 
-SentinelAI lets creators monetize AI models on a pay-per-call basis. Users pay per API call using native ETH on Base Sepolia. Balances stored in the on-chain `SentinelPayment` contract are **FHE-encrypted** — nobody (not even the operator) can see individual user balances on-chain.
+1. **Creators** publish AI services with per-call pricing on the marketplace.
+2. **Users** buy access with MetaMask (ETH on Base Sepolia) or pay per call via x402 session keys.
+3. **FHE balances** in `SentinelPayment` keep prepaid wallet amounts encrypted on-chain.
+4. **Backend** verifies payments, proxies AI calls, and settles charges.
 
 ---
 
@@ -51,8 +54,7 @@ fhenix-enabled-pay-per-ai-api-usage-access-system/
 │       ├── wallet/sessionKey.js            Local EVM key for headless payments
 │       ├── context/MetaMaskLoginContext.jsx Login/registration
 │       └── utils/explorer.js               BaseScan URL helpers
-├── cofhesdk/                  Reference: @cofhe/sdk source
-└── fhenix-confidential-contracts/ Reference: Fhenix confidential contracts
+└── docs/                      Integration and deployment guides
 ```
 
 ---

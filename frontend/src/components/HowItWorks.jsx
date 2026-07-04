@@ -101,7 +101,7 @@ const marketplaceSteps = [
     bg: "from-emerald-500/10 to-emerald-400/5",
     border: "border-emerald-500/20",
     title: "Connect MetaMask",
-    desc: "Link your Base Sepolia MetaMask in one click. No credit card. No subscription. Just ETH.",
+    desc: "Link your Sepolia MetaMask in one click. No credit card. No subscription. Just ETH.",
     pill: "Step 2",
     pillColor: "bg-emerald-600 text-white",
     videoEmbed: "https://www.youtube.com/embed/m720vHR8g1U?si=SmBaluRmj19-_yO2&start=57",
@@ -123,7 +123,7 @@ const marketplaceSteps = [
     bg: "from-orange-500/10 to-orange-400/5",
     border: "border-orange-500/20",
     title: "View Live Billing",
-    desc: "See every transaction on-chain via Base Sepolia. Full transparency. Zero hidden fees.",
+    desc: "See every transaction on-chain via Sepolia. Full transparency. Zero hidden fees.",
     pill: "Step 4",
     pillColor: "bg-orange-600 text-white",
   },
@@ -429,7 +429,7 @@ export default function HowItWorks() {
           </span>
         </h2>
         <p className="text-slate-500 text-base max-w-xl leading-relaxed">
-          SentinalAI combines a decentralized <strong className="text-slate-700">API Marketplace</strong> powered by Base Sepolia payments with an AI-first <strong className="text-slate-700">Studio</strong> for content creators.
+          SentinalAI combines a decentralized <strong className="text-slate-700">API Marketplace</strong> powered by Sepolia payments with an AI-first <strong className="text-slate-700">Studio</strong> for content creators.
         </p>
 
         {/* animated stats */}
@@ -468,7 +468,7 @@ export default function HowItWorks() {
           </div>
           <div className="ml-auto hidden md:flex items-center gap-2 text-[11px] text-slate-400 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-full">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Base Sepolia Live
+            Sepolia Live
           </div>
         </div>
 

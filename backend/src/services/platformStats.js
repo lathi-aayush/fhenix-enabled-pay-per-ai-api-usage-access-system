@@ -84,7 +84,7 @@ export async function getPlatformStats() {
     console.warn("[platformStats] count queries failed:", e?.message);
   }
 
-  // --- Treasury balance (Base Sepolia ETH) ---
+  // --- Treasury balance (Sepolia ETH) ---
   const treasuryWallet = String(
     process.env.TREASURY_WALLET_ADDRESS || process.env.RECEIVER_WALLET || ""
   ).trim();
@@ -112,9 +112,9 @@ export async function getPlatformStats() {
   const verifiedOnChain = usageRow?.verifiedOnChain ?? 0;
 
   return {
-    network: "Base Sepolia",
-    chainId: 84532,
-    explorer: "https://sepolia.basescan.org",
+    network: "Sepolia",
+    chainId: 11155111,
+    explorer: "https://sepolia.etherscan.io",
     homepage: {
       apisAvailable: activeServices + activeProxyApis,
       onChainTxns: Math.max(verifiedOnChain, totalApiCalls),

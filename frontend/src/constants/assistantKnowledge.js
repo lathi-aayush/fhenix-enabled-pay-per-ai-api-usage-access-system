@@ -61,7 +61,7 @@ export const ASSISTANT_FAQ = [
     question: "What is Sentinal?",
     aliases: ["what is sentinal", "what is sentinel", "about sentinal", "tell me about sentinal"],
     answer:
-      "Sentinal is a decentralized pay-per-use AI platform built on Base Sepolia. Browse AI APIs in the Marketplace or create content with AI Studio â€” every call is billed in ETH with on-chain transparency.",
+      "Sentinal is a decentralized pay-per-use AI platform built on Sepolia. Browse AI APIs in the Marketplace or create content with AI Studio â€” every call is billed in ETH with on-chain transparency.",
     action: { type: "route", target: "/docs/how-it-works", label: "Learn how it works" },
   },
   {
@@ -85,7 +85,7 @@ export const ASSISTANT_FAQ = [
     question: "How does pay-per-call work?",
     aliases: ["pay per call", "pay-per-call", "micro payment", "micro eth", "billing model", "how does billing work"],
     answer:
-      "Each API call is metered by our backend. Micro-ETH is deducted from your wallet and settled on Base Sepolia â€” no subscriptions, no credit cards, no middleman.",
+      "Each API call is metered by our backend. Micro-ETH is deducted from your wallet and settled on Sepolia â€” no subscriptions, no credit cards, no middleman.",
     action: { type: "route", target: "/docs/how-it-works", label: "See payment flow" },
   },
   {
@@ -109,7 +109,7 @@ export const ASSISTANT_FAQ = [
     question: "What is the x402 protocol?",
     aliases: ["what is x402", "http 402", "machine payments", "x402 payments", "x402 protocol"],
     answer:
-      "x402 extends HTTP 402 Payment Required so autonomous agents can negotiate prices and pay for API access programmatically on Base Sepolia.",
+      "x402 extends HTTP 402 Payment Required so autonomous agents can negotiate prices and pay for API access programmatically on Sepolia.",
     action: { type: "route", target: "/docs/x402", label: "Read x402 docs" },
   },
   {
@@ -133,7 +133,7 @@ export const ASSISTANT_FAQ = [
     question: "How much does it cost?",
     aliases: ["how much", "pricing", "eth cost", "fees", "cost per call", "price"],
     answer:
-      "You pay per API call in ETH. Standard Base Sepolia network fees apply (~0.001 ETH per on-chain transaction).",
+      "You pay per API call in ETH. Standard Sepolia network fees apply (~0.001 ETH per on-chain transaction).",
     action: { type: "route", target: "/docs/pricing", label: "View pricing" },
   },
   {

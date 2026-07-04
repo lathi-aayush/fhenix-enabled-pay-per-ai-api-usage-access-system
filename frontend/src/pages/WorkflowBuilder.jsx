@@ -90,13 +90,13 @@ function BuilderInner() {
     }
     const refresh = () =>
       getSessionBalance()
-        .then((m) => setBurnerBal(m / 1e6))
+        .then((wei) => setBurnerBal(Number(wei) / 1e18))
         .catch(() => setBurnerBal(null));
     refresh();
     const onBal = () => refresh();
     window.addEventListener("walletBalanceUpdate", onBal);
     return () => window.removeEventListener("walletBalanceUpdate", onBal);
-  }, [sessionKeyReady, rpcUrl]);
+  }, [sessionKeyReady]);
 
   const selectedNode = nodes.find((n) => n.id === selectedId);
 

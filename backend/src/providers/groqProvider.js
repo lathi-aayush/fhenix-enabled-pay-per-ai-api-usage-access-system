@@ -2,8 +2,8 @@ import Groq from "groq-sdk";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
 
-export const HEAVY = "llama-3.3-70b-versatile";
-export const FAST = "llama-3.1-8b-instant";
+export const HEAVY = process.env.GROQ_MODEL_HEAVY || "llama-3.3-70b-versatile";
+export const FAST = process.env.GROQ_MODEL_FAST || "llama-3.1-8b-instant";
 
 function ensureKey() {
   if (!process.env.GROQ_API_KEY) {

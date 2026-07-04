@@ -121,8 +121,8 @@ function buildOveragePayload(runType, overageTier, amountWei) {
     amountEth: weiToEth(amountWei),
     amountInr: Math.round(weiToInr(amountWei)),
     amountUsd: Number(weiToUsd(amountWei).toFixed(6)),
-    network: "Base Sepolia",
-    chainId: 84532,
+    network: "Sepolia",
+    chainId: 11155111,
   };
 }
 

@@ -84,7 +84,7 @@ router.get("/agent-context", async (_req, res) => {
         per_1k_tokens_eth: Number(s.pricePerThousandTokens),
         minimum_charge_eth: Number(s.minimumChargeEth),
         billing_notes:
-          "Pay-per-use via Base Sepolia. No subscription required. " +
+          "Pay-per-use via Sepolia. No subscription required. " +
           "Each call is charged based on actual token usage, floored to the minimum charge.",
       },
       usage: {
@@ -94,7 +94,7 @@ router.get("/agent-context", async (_req, res) => {
       how_to_use: {
         step_1_generate_key: `POST /api/access/generate  body: { "serviceId": "${s._id}" }  (requires Sentinel JWT)`,
         step_2_call_api: `POST /api/use  headers: { "Authorization": "Bearer <api_key>" }  body: { "messages": [{ "role": "user", "content": "<your prompt>" }] }`,
-        step_3_pay: "Respond to the returned paymentRef by sending the specified amountWei on Base Sepolia to the developerWallet address.",
+        step_3_pay: "Respond to the returned paymentRef by sending the specified amountWei on Sepolia to the developerWallet address.",
         step_4_claim: `POST /api/use  headers: { "Authorization": "Bearer <api_key>" }  body: { "txId": "<evm_tx_hash>", "paymentRef": "<payment_ref_uuid>" }`,
       },
       how_to_use_x402: s.x402Enabled ? {
@@ -113,10 +113,10 @@ router.get("/agent-context", async (_req, res) => {
     sentinel_agent_context: true,
     version: "1.0",
     generated_at: new Date().toISOString(),
-    network: "base-sepolia",
+    network: "sepolia",
     base_url: "http://localhost:5000",
     description:
-      "This is the Sentinel AI API Marketplace â€” a pay-per-use AI API platform built on Base Sepolia. " +
+      "This is the Sentinel AI API Marketplace â€” a pay-per-use AI API platform built on Sepolia. " +
       "Users pay micro-transactions in ETH for each AI call. No subscriptions, no lock-in. " +
       "Use this JSON to identify which service best fits a given task and budget.",
     instructions_for_ai_agent:

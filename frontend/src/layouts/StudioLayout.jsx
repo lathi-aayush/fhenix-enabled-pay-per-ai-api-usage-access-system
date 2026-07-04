@@ -140,7 +140,7 @@ export default function StudioLayout() {
     !pathname.includes("history");
 
   const [rpcUrl, setrpcUrl] = useState(
-    import.meta.env.VITE_RPC_URL?.trim() || "https://sepolia.base.org"
+    import.meta.env.VITE_RPC_URL?.trim() || "https://ethereum-sepolia-rpc.publicnode.com"
   );
   const [openGroups, setOpenGroups] = useState(() =>
     Object.fromEntries(NAV_GROUPS.map((g) => [g.id, g.defaultOpen ?? false]))

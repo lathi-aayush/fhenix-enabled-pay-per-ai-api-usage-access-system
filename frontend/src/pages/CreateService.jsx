@@ -190,7 +190,7 @@ export default function CreateService() {
           </div>
         </div>
         <p className="text-sm text-slate-500 mt-2 mb-8 leading-relaxed">
-          Deploy and monetize your custom AI models on the decentralized marketplace. Users pay securely per token consumed, routed directly through the Base Sepolia.
+          Deploy and monetize your custom AI models on the decentralized marketplace. Users pay securely per token consumed, routed directly through Sepolia.
         </p>
 
         <form onSubmit={onSubmit} className="space-y-6 bg-white/70 backdrop-blur-md border border-slate-200/80 p-8 rounded-3xl shadow-xl flex flex-col gap-6">
