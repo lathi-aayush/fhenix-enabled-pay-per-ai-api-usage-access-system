@@ -141,7 +141,7 @@ export default function DocsSidebar({ isCollapsed, setIsCollapsed }) {
                 </li>
                 <li>
                   <a 
-                    href="https://github.com/lathi-aayush/pay-per-usage-ai-api-access-system-using-algorand/tree/main/sdk"
+                    href="https://github.com/lathi-aayush/fhenix-enabled-pay-per-ai-api-usage-access-system/tree/main/sdk"
                     target="_blank"
                     rel="noreferrer"
                     className="block px-3 py-1.5 rounded transition-colors hover:bg-slate-50 text-slate-500 hover:text-slate-800 flex items-center gap-1"

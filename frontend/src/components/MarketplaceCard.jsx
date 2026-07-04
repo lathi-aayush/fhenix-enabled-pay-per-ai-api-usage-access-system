@@ -13,7 +13,7 @@ export function StarRating({ rating = 0, reviewCount = 0, size = "sm", showCount
             key={star}
             className={star <= Math.round(value) ? "text-amber-500" : "text-slate-300"}
           >
-            ★
+            â˜…
           </span>
         ))}
       </div>
@@ -28,15 +28,15 @@ export function StarRating({ rating = 0, reviewCount = 0, size = "sm", showCount
 }
 
 export function shortenWallet(addr) {
-  if (!addr || typeof addr !== "string") return "—";
+  if (!addr || typeof addr !== "string") return "â€”";
   if (addr.length <= 12) return addr;
-  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+  return `${addr.slice(0, 6)}â€¦${addr.slice(-4)}`;
 }
 
 export default function MarketplaceCard({ s, compact = false }) {
   const navigate = useNavigate();
   const ppt = Number(s.pricePerThousandTokens);
-  const minC = Number(s.minimumChargeAlgo);
+  const minC = Number(s.minimumChargeEth);
   const creatorLabel = s.creatorDisplayName || shortenWallet(s.creatorWallet);
 
   return (
@@ -65,7 +65,7 @@ export default function MarketplaceCard({ s, compact = false }) {
 
       <p className="text-sm text-on-surface-variant mt-2 line-clamp-3">{s.description}</p>
       <p className="mt-2 text-xs text-on-surface-variant">
-        {(s.aiProvider || "—") + " · " + (s.modelName || "—")}
+        {(s.aiProvider || "â€”") + " Â· " + (s.modelName || "â€”")}
       </p>
 
       {s.creatorWallet && (
@@ -93,10 +93,10 @@ export default function MarketplaceCard({ s, compact = false }) {
       {!compact && (
         <>
           <p className="mt-3 text-secondary font-mono text-sm font-semibold">
-            {Number.isFinite(ppt) ? ppt.toFixed(6) : "—"} ALGO / 1k tokens
+            {Number.isFinite(ppt) ? ppt.toFixed(6) : "â€”"} ETH / 1k tokens
           </p>
           <p className="mt-1 text-xs text-on-surface-variant font-mono">
-            Min/call: {Number.isFinite(minC) ? `${minC.toFixed(6)} ALGO` : "—"}
+            Min/call: {Number.isFinite(minC) ? `${minC.toFixed(6)} ETH` : "â€”"}
           </p>
         </>
       )}

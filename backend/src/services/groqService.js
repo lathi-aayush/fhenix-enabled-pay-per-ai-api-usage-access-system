@@ -19,7 +19,7 @@ export function estimateTokens(text) {
   return Math.ceil(String(text || "").length / 4);
 }
 
-/** ~$0.0001 per 1k tokens expressed as ALGO credits for workflow metering */
+/** ~$0.0001 per 1k tokens expressed as ETH credits for workflow metering */
 export function calculateCredits(tokens) {
   return (tokens / 1000) * 0.0001;
 }

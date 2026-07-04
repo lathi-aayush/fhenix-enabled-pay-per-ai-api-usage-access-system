@@ -102,7 +102,7 @@ export async function isOverageTxReplay(userId, txId) {
 
 /**
  * @param {string} userId
- * @param {{ runType: string, algoAmount: number, txId: string }} entry
+ * @param {{ runType: string, ethAmount: number, txId: string }} entry
  */
 export async function logStudioOverage(userId, entry) {
   const user = await User.findById(userId);
@@ -119,7 +119,7 @@ export async function logStudioOverage(userId, entry) {
   user.studioOverageLog = user.studioOverageLog || [];
   user.studioOverageLog.push({
     runType: entry.runType,
-    algoAmount: entry.algoAmount,
+    ethAmount: entry.ethAmount,
     txId: entry.txId,
     timestamp: new Date(),
     settled: true,

@@ -22,7 +22,7 @@ export default function CreateService() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [pricePerThousandTokens, setPricePerThousandTokens] = useState("");
-  const [minimumChargeAlgo, setMinimumChargeAlgo] = useState("0.001");
+  const [minimumChargeEth, setMinimumChargeEth] = useState("0.001");
   const [aiProvider, setAiProvider] = useState("groq");
   const [providerApiKey, setProviderApiKey] = useState("");
   const [modelName, setModelName] = useState("llama-3.3-70b-versatile");
@@ -36,8 +36,8 @@ export default function CreateService() {
   const [samplePromptText, setSamplePromptText] = useState("");
 
   const pptNum = parseFloat(pricePerThousandTokens);
-  const minNum = parseFloat(minimumChargeAlgo);
-  const { estimatedAlgo, minApplies } = useTokenEstimate(
+  const minNum = parseFloat(minimumChargeEth);
+  const { estimatedEth, minApplies } = useTokenEstimate(
     samplePromptText,
     Number.isFinite(pptNum) ? pptNum : 0,
     Number.isFinite(minNum) ? minNum : 0
@@ -54,7 +54,7 @@ export default function CreateService() {
     if (!Number.isFinite(pptNum) || !Number.isFinite(minNum)) return [];
     return EXAMPLE_TOKEN_LEVELS.map((tokens) => ({
       tokens,
-      algo: chargeForTokens(tokens, pptNum, minNum),
+      eth: chargeForTokens(tokens, pptNum, minNum),
     }));
   }, [pptNum, minNum]);
 
@@ -74,13 +74,13 @@ export default function CreateService() {
   async function onSubmit(e) {
     e.preventDefault();
     const ppt = parseFloat(pricePerThousandTokens);
-    const minC = parseFloat(minimumChargeAlgo);
+    const minC = parseFloat(minimumChargeEth);
     if (!title.trim() || !Number.isFinite(ppt) || ppt < 0) {
       toast.error("Valid title and price per thousand tokens required");
       return;
     }
     if (!Number.isFinite(minC) || minC < 0.000001) {
-      toast.error("Minimum charge must be at least 0.000001 ALGO");
+      toast.error("Minimum charge must be at least 0.000001 ETH");
       return;
     }
     if (!providerApiKey.trim() || !modelName.trim()) {
@@ -93,14 +93,14 @@ export default function CreateService() {
         title: title.trim(),
         description,
         pricePerThousandTokens: ppt,
-        minimumChargeAlgo: minC,
+        minimumChargeEth: minC,
         aiProvider,
         providerApiKey: providerApiKey.trim(),
         modelName: modelName.trim(),
         x402Enabled,
         customEndpointUrl: aiProvider === "custom" ? customEndpointUrl.trim() : undefined,
       });
-      toast.success("Service published — your key is encrypted on the server");
+      toast.success("Service published â€” your key is encrypted on the server");
       navigate("/creator");
     } catch (err) {
       const d = err?.response?.data;
@@ -190,7 +190,7 @@ export default function CreateService() {
           </div>
         </div>
         <p className="text-sm text-slate-500 mt-2 mb-8 leading-relaxed">
-          Deploy and monetize your custom AI models on the decentralized marketplace. Users pay securely per token consumed, routed directly through the Algorand blockchain.
+          Deploy and monetize your custom AI models on the decentralized marketplace. Users pay securely per token consumed, routed directly through the Base Sepolia.
         </p>
 
         <form onSubmit={onSubmit} className="space-y-6 bg-white/70 backdrop-blur-md border border-slate-200/80 p-8 rounded-3xl shadow-xl flex flex-col gap-6">
@@ -263,7 +263,7 @@ export default function CreateService() {
             </div>
           </div>
 
-          {/* Base URL — only for self-hosted / non-listed upstream APIs */}
+          {/* Base URL â€” only for self-hosted / non-listed upstream APIs */}
           <AnimatePresence>
             {PROVIDERS.find((p) => p.id === aiProvider)?.needsBaseUrl && (
               <motion.div
@@ -282,7 +282,7 @@ export default function CreateService() {
                     <div>
                       <p className="text-xs font-bold text-violet-900">Only needed for self-hosted APIs</p>
                       <p className="text-[11px] text-violet-700 mt-1 leading-relaxed">
-                        Groq, OpenAI, Gemini, OpenRouter, and other listed providers use a built-in URL — no base URL.
+                        Groq, OpenAI, Gemini, OpenRouter, and other listed providers use a built-in URL â€” no base URL.
                         Use this only for vLLM, Ollama, RunPod, or your own OpenAI-compatible server.
                       </p>
                       <div className="flex flex-wrap gap-1.5 mt-2.5">
@@ -459,7 +459,7 @@ export default function CreateService() {
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-0.5">
                   <span className="material-symbols-outlined text-[12px]">payments</span>
-                  Cost / 1k tokens (ALGO)
+                  Cost / 1k tokens (ETH)
                 </label>
                 <input
                   type="number"
@@ -492,7 +492,7 @@ export default function CreateService() {
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] text-slate-500 font-semibold">Suggested price / 1k tokens:</span>
                   <span className="font-mono text-xs font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-100/50 px-2.5 py-1 rounded-xl">
-                    {suggestedPrice.toFixed(6)} ALGO
+                    {suggestedPrice.toFixed(6)} ETH
                   </span>
                 </div>
                 <button
@@ -511,7 +511,7 @@ export default function CreateService() {
             <div className="space-y-2">
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
                 <span className="material-symbols-outlined text-[15px]">payments</span>
-                Price / 1k tokens (ALGO)
+                Price / 1k tokens (ETH)
               </label>
               <div className="relative">
                 <input
@@ -532,7 +532,7 @@ export default function CreateService() {
             <div className="space-y-2">
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
                 <span className="material-symbols-outlined text-[15px]">toll</span>
-                Minimum per call (ALGO)
+                Minimum per call (ETH)
               </label>
               <div className="relative">
                 <input
@@ -540,8 +540,8 @@ export default function CreateService() {
                   step="any"
                   min="0.000001"
                   className="w-full bg-slate-50/50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-xs font-mono font-medium focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all placeholder:text-slate-400"
-                  value={minimumChargeAlgo}
-                  onChange={(e) => setMinimumChargeAlgo(e.target.value)}
+                  value={minimumChargeEth}
+                  onChange={(e) => setMinimumChargeEth(e.target.value)}
                   placeholder="0.001000"
                   required
                 />
@@ -563,7 +563,7 @@ export default function CreateService() {
                 className="w-full bg-slate-50/50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-xs font-medium focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all min-h-[88px] placeholder:text-slate-400 leading-relaxed"
                 value={samplePromptText}
                 onChange={(e) => setSamplePromptText(e.target.value)}
-                placeholder="Type text as if a user were calling your API — estimate updates as you type."
+                placeholder="Type text as if a user were calling your API â€” estimate updates as you type."
               />
               <span className="material-symbols-outlined absolute left-3.5 top-3.5 text-slate-400 text-[16px]">
                 spellcheck
@@ -574,7 +574,7 @@ export default function CreateService() {
               <span className="material-symbols-outlined text-emerald-600 text-[16px]">payments</span>
               <span className="text-[11px] text-slate-600 font-semibold">Estimated call cost:</span>
               <span className="font-mono text-xs font-extrabold text-emerald-700">
-                {estimatedAlgo.toFixed(6)} ALGO
+                {estimatedEth.toFixed(6)} ETH
               </span>
               {minApplies && (
                 <span className="text-[9px] text-amber-700 font-bold bg-amber-50 border border-amber-200/40 px-2 py-0.5 rounded-md ml-1">
@@ -602,7 +602,7 @@ export default function CreateService() {
                   {previews.map((p) => (
                     <li key={p.tokens} className="flex justify-between items-center bg-white/40 px-3 py-2 rounded-xl border border-slate-100">
                       <span className="font-semibold text-slate-600">~{p.tokens} tokens</span>
-                      <span className="text-indigo-600 font-bold">{p.algo.toFixed(6)} ALGO</span>
+                      <span className="text-indigo-600 font-bold">{p.eth.toFixed(6)} ETH</span>
                     </li>
                   ))}
                 </ul>
@@ -626,7 +626,7 @@ export default function CreateService() {
               {submitting && (
                 <span className="inline-block h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               )}
-              {submitting ? "Publishing service…" : "Publish service"}
+              {submitting ? "Publishing serviceâ€¦" : "Publish service"}
             </button>
           </div>
         </form>

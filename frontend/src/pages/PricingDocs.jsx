@@ -55,7 +55,7 @@ export default function PricingDocs() {
           <section>
             <h2 id="how-it-works" className="text-2xl font-bold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">How Micro-payments Work</h2>
             <p className="text-[14px] text-slate-600 mb-4 leading-relaxed">
-              Instead of paying flat monthly fees, users and autonomous agents pay creators a tiny fraction of a token (e.g. 0.01 ALGO) per individual API call. 
+              Instead of paying flat monthly fees, users and autonomous agents pay creators a tiny fraction of a token (e.g. 0.01 ETH) per individual API call. 
             </p>
             <ol className="space-y-4 text-[14px] text-slate-700 leading-relaxed list-decimal pl-5">
               <li>
@@ -74,7 +74,7 @@ export default function PricingDocs() {
           <section>
             <h2 id="web3-crypto" className="text-2xl font-bold tracking-tight text-slate-900 mb-4 border-b border-slate-100 pb-2">Web3 & Cryptographic Infrastructure</h2>
             <p className="text-[14px] text-slate-600 mb-4 leading-relaxed">
-              Microtransactions are powered by the Algorand blockchain and cryptographic keys:
+              Microtransactions are powered by the Base Sepolia and cryptographic keys:
             </p>
             <div className="grid gap-6 md:grid-cols-2">
               <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-2">
@@ -104,10 +104,10 @@ export default function PricingDocs() {
               </p>
               <ul className="space-y-3 list-disc pl-5 text-slate-600">
                 <li>
-                  <strong>API Usage Fee:</strong> Set dynamically by the creator who listed the model. Paid in ALGO or custom ASAs directly to the creator's wallet.
+                  <strong>API Usage Fee:</strong> Set dynamically by the creator who listed the model. Paid in ETH or custom ASAs directly to the creator's wallet.
                 </li>
                 <li>
-                  <strong>Algorand Network Gas:</strong> A standard fee of 0.001 ALGO required by the blockchain ledger to process and record the transaction.
+                  <strong>Base Sepolia Network Gas:</strong> A standard fee of 0.001 ETH required by the blockchain ledger to process and record the transaction.
                 </li>
               </ul>
             </div>

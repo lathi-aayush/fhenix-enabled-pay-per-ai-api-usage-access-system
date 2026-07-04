@@ -5,19 +5,19 @@ import { api } from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTokenEstimate } from "../hooks/useTokenEstimate.js";
 
-// ── Inline bar chart (no external dep) ───────────────────────────────────────
-const CHART_H = 160; // px — must match the container height below
-const LABEL_H = 20;  // px — reserved for the month label
+// â”€â”€ Inline bar chart (no external dep) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const CHART_H = 160; // px â€” must match the container height below
+const LABEL_H = 20;  // px â€” reserved for the month label
 const BAR_AREA = CHART_H - LABEL_H;
 
 function BarChart({
   bars,
   color = "#031634",          // default: primary
   labelKey = "label",
-  valueKey = "totalAlgo",
+  valueKey = "totalEth",
   secondaryKey = "totalINR",
-  prefix = "ALGO",
-  secondaryPrefix = "₹",
+  prefix = "ETH",
+  secondaryPrefix = "â‚¹",
 }) {
   const max = Math.max(...bars.map((b) => b[valueKey] ?? 0), 0.0001);
 
@@ -84,7 +84,7 @@ function BarChart({
   );
 }
 
-// ── Confidence ring ───────────────────────────────────────────────────────────
+// â”€â”€ Confidence ring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ConfidenceRing({ value }) {
   const r = 26;
   const circ = 2 * Math.PI * r;
@@ -104,7 +104,7 @@ function ConfidenceRing({ value }) {
   );
 }
 
-// ── Trend badge ───────────────────────────────────────────────────────────────
+// â”€â”€ Trend badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function TrendBadge({ direction, pct }) {
   const map = {
     increasing: { icon: "trending_up", cls: "text-error bg-error-container" },
@@ -120,12 +120,12 @@ function TrendBadge({ direction, pct }) {
   );
 }
 
-// ── Skeleton loader ───────────────────────────────────────────────────────────
+// â”€â”€ Skeleton loader â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Skeleton({ className = "" }) {
   return <div className={`animate-pulse bg-surface-container-high rounded ${className}`} />;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function PredictionDashboard() {
   const { user } = useAuth();
@@ -142,7 +142,7 @@ export default function PredictionDashboard() {
   const [costPreviewText, setCostPreviewText] = useState("");
   const DEMO_PPT = 0.01;
   const DEMO_MIN = 0.001;
-  const { estimatedAlgo, minApplies } = useTokenEstimate(costPreviewText, DEMO_PPT, DEMO_MIN);
+  const { estimatedEth, minApplies } = useTokenEstimate(costPreviewText, DEMO_PPT, DEMO_MIN);
 
   async function fetchData() {
     setLoading(true);
@@ -181,18 +181,18 @@ export default function PredictionDashboard() {
 
           <div className="flex flex-col lg:flex-row gap-4 lg:items-start lg:justify-between">
             <div className="w-full lg:max-w-md border border-outline-variant rounded-md p-4 bg-white">
-              <p className="text-xs font-medium text-primary mb-2">Live cost preview (illustrative 0.01 ALGO / 1k tok)</p>
+              <p className="text-xs font-medium text-primary mb-2">Live cost preview (illustrative 0.01 ETH / 1k tok)</p>
               <textarea
                 className="w-full border border-outline-variant rounded px-2 py-1.5 text-sm min-h-[72px]"
-                placeholder="Type sample prompt text…"
+                placeholder="Type sample prompt textâ€¦"
                 value={costPreviewText}
                 onChange={(e) => setCostPreviewText(e.target.value)}
               />
               <p className="text-xs text-on-surface-variant mt-2">
                 Estimated cost{" "}
-                <span className="font-mono font-semibold text-secondary">{estimatedAlgo.toFixed(6)} ALGO</span>
+                <span className="font-mono font-semibold text-secondary">{estimatedEth.toFixed(6)} ETH</span>
                 {minApplies && (
-                  <span className="block text-amber-800 mt-1">Minimum charge applies ({DEMO_MIN} ALGO).</span>
+                  <span className="block text-amber-800 mt-1">Minimum charge applies ({DEMO_MIN} ETH).</span>
                 )}
               </p>
             </div>
@@ -248,7 +248,7 @@ export default function PredictionDashboard() {
         </div>
 
         {loading ? (
-          /* ── Skeleton ── */
+          /* â”€â”€ Skeleton â”€â”€ */
           <div className="space-y-6">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24" />)}
@@ -261,17 +261,17 @@ export default function PredictionDashboard() {
 
         ) : usage && !usage.error ? (
           <>
-            {/* ── Top KPI strip ── */}
+            {/* â”€â”€ Top KPI strip â”€â”€ */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
               <div className="bg-white border border-surface-variant rounded-md p-5">
                 <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">Avg Historical</p>
-                <p className="font-headline text-xl text-primary mt-1 font-semibold">{usage.summary.avgHistoricalAlgo.toFixed(4)}</p>
-                <p className="text-xs text-on-surface-variant">ALGO / month</p>
+                <p className="font-headline text-xl text-primary mt-1 font-semibold">{usage.summary.avgHistoricalEth.toFixed(4)}</p>
+                <p className="text-xs text-on-surface-variant">ETH / month</p>
               </div>
               <div className="bg-white border border-surface-variant rounded-md p-5">
                 <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">Avg Forecast</p>
-                <p className="font-headline text-xl text-primary mt-1 font-semibold">{usage.summary.avgForecastAlgo.toFixed(4)}</p>
-                <p className="text-xs text-on-surface-variant">ALGO / month</p>
+                <p className="font-headline text-xl text-primary mt-1 font-semibold">{usage.summary.avgForecastEth.toFixed(4)}</p>
+                <p className="text-xs text-on-surface-variant">ETH / month</p>
               </div>
               <div className="bg-white border border-surface-variant rounded-md p-5">
                 <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">Trend</p>
@@ -290,45 +290,45 @@ export default function PredictionDashboard() {
               </div>
             </div>
 
-            {/* ── Historical chart ── */}
+            {/* â”€â”€ Historical chart â”€â”€ */}
             <div className="bg-white border border-surface-variant rounded-md p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="font-headline font-semibold text-primary text-base">Historical Spend</h2>
-                  <p className="text-xs text-on-surface-variant">Monthly ALGO transactions (hover for INR)</p>
+                  <p className="text-xs text-on-surface-variant">Monthly ETH transactions (hover for INR)</p>
                 </div>
                 {historyData && (
                   <div className="text-right">
                     <p className="text-xs text-on-surface-variant">Total ({historyData.total.txs} txns)</p>
-                    <p className="font-mono text-sm font-semibold text-primary">{historyData.total.algo?.toFixed(4)} ALGO</p>
-                    <p className="font-mono text-xs text-secondary">₹{historyData.total.inr?.toFixed(2)}</p>
+                    <p className="font-mono text-sm font-semibold text-primary">{historyData.total.eth?.toFixed(4)} ETH</p>
+                    <p className="font-mono text-xs text-secondary">â‚¹{historyData.total.inr?.toFixed(2)}</p>
                   </div>
                 )}
               </div>
               {usage.history.length > 0
-                ? <BarChart bars={usage.history} labelKey="label" valueKey="totalAlgo" secondaryKey="totalINR" color="#031634" />
+                ? <BarChart bars={usage.history} labelKey="label" valueKey="totalEth" secondaryKey="totalINR" color="#031634" />
                 : <p className="text-sm text-on-surface-variant text-center py-8">No historical data for this period.</p>
               }
             </div>
 
-            {/* ── Forecast section ── */}
+            {/* â”€â”€ Forecast section â”€â”€ */}
             <div className="mb-6">
               <h2 className="font-headline font-semibold text-primary text-base mb-3">
-                Forecast — Next {forecastMonths} month{forecastMonths > 1 ? "s" : ""}
+                Forecast â€” Next {forecastMonths} month{forecastMonths > 1 ? "s" : ""}
               </h2>
               <div className="bg-white border border-surface-variant rounded-md p-6">
                 {usage.forecast.length > 0 ? (
                   <>
                     <BarChart
-                      bars={usage.forecast.map(f => ({ label: f.label, totalAlgo: f.predictedAlgo, totalINR: f.predictedINR }))}
+                      bars={usage.forecast.map(f => ({ label: f.label, totalEth: f.predictedEth, totalINR: f.predictedINR }))}
                       color="#006b5b"
                     />
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
                       {usage.forecast.map((f, i) => (
                         <div key={i} className="bg-surface-container-low border border-outline-variant/30 rounded p-4">
                           <p className="text-xs text-on-surface-variant font-semibold">{f.label}</p>
-                          <p className="font-headline text-lg text-primary mt-1">{f.predictedAlgo} <span className="text-sm font-body font-normal text-on-surface-variant">ALGO</span></p>
-                          <p className="text-xs font-mono text-secondary mt-0.5">${f.predictedUSD} · ₹{f.predictedINR}</p>
+                          <p className="font-headline text-lg text-primary mt-1">{f.predictedEth} <span className="text-sm font-body font-normal text-on-surface-variant">ETH</span></p>
+                          <p className="text-xs font-mono text-secondary mt-0.5">${f.predictedUSD} Â· â‚¹{f.predictedINR}</p>
                         </div>
                       ))}
                     </div>
@@ -339,7 +339,7 @@ export default function PredictionDashboard() {
               </div>
             </div>
 
-            {/* ── Wallet recommendation ── */}
+            {/* â”€â”€ Wallet recommendation â”€â”€ */}
             <div className="bg-primary-container border border-primary/20 rounded-md p-6">
               <div className="flex items-start gap-4">
                 <div className="bg-secondary w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
@@ -351,15 +351,15 @@ export default function PredictionDashboard() {
                   <div className="flex flex-wrap gap-4 mt-4">
                     <div>
                       <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">Next 30 days</p>
-                      <p className="font-mono font-semibold text-primary">{usage.recommendation.next30dAlgo} ALGO</p>
+                      <p className="font-mono font-semibold text-primary">{usage.recommendation.next30dEth} ETH</p>
                     </div>
                     <div>
                       <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">Recommended top-up</p>
-                      <p className="font-mono font-semibold text-secondary">{usage.recommendation.topupAlgo} ALGO</p>
+                      <p className="font-mono font-semibold text-secondary">{usage.recommendation.topupEth} ETH</p>
                     </div>
                     <div>
                       <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">In INR</p>
-                      <p className="font-mono font-semibold text-primary">₹{usage.recommendation.topupINR}</p>
+                      <p className="font-mono font-semibold text-primary">â‚¹{usage.recommendation.topupINR}</p>
                     </div>
                     <div>
                       <p className="text-[10px] uppercase tracking-widest text-on-surface-variant">Safety buffer</p>
@@ -372,7 +372,7 @@ export default function PredictionDashboard() {
           </>
 
         ) : (
-          /* ── Not enough data state ── */
+          /* â”€â”€ Not enough data state â”€â”€ */
           <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
             <div className="w-14 h-14 bg-surface-container rounded-full flex items-center justify-center">
               <span className="material-symbols-outlined text-on-surface-variant text-3xl">bar_chart</span>
@@ -387,17 +387,17 @@ export default function PredictionDashboard() {
               <div className="bg-white border border-surface-variant rounded-md p-6 mt-6 w-full max-w-lg text-left">
                 <h3 className="font-headline text-base font-semibold text-primary mb-3">Raw History</h3>
                 <BarChart
-                  bars={historyData.periods.map(p => ({ label: p.label, totalAlgo: p.totalAlgo, totalINR: p.totalINR }))}
+                  bars={historyData.periods.map(p => ({ label: p.label, totalEth: p.totalEth, totalINR: p.totalINR }))}
                   color="#031634"
                 />
                 <div className="mt-3 flex gap-6 font-mono text-sm">
                   <div>
-                    <p className="text-[10px] text-on-surface-variant uppercase tracking-wide">Total ALGO</p>
-                    <p className="text-primary font-semibold">{historyData.total.algo?.toFixed(4)}</p>
+                    <p className="text-[10px] text-on-surface-variant uppercase tracking-wide">Total ETH</p>
+                    <p className="text-primary font-semibold">{historyData.total.eth?.toFixed(4)}</p>
                   </div>
                   <div>
                     <p className="text-[10px] text-on-surface-variant uppercase tracking-wide">Total INR</p>
-                    <p className="text-secondary font-semibold">₹{historyData.total.inr?.toFixed(2)}</p>
+                    <p className="text-secondary font-semibold">â‚¹{historyData.total.inr?.toFixed(2)}</p>
                   </div>
                   <div>
                     <p className="text-[10px] text-on-surface-variant uppercase tracking-wide">Transactions</p>

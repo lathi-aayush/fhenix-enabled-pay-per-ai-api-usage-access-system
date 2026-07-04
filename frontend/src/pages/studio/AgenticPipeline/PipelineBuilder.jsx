@@ -11,10 +11,10 @@ import { useStudioFeatures } from "../../../hooks/useStudioFeatures.js";
 import { CREDIT_WEIGHTS, RUN_TYPE_LABELS } from "../../../constants/studioPlans.js";
 
 const RUN_TYPE_OPTIONS = [
-  { id: "agentic_text", price: "0.5 ALGO" },
-  { id: "agentic_images", price: "5.0 ALGO" },
-  { id: "agentic_video", price: "15.0 ALGO", requiresVideo: true },
-  { id: "agentic_full", price: "15.0 ALGO", requiresVideo: true, requiresTts: true },
+  { id: "agentic_text", price: "0.5 ETH" },
+  { id: "agentic_images", price: "5.0 ETH" },
+  { id: "agentic_video", price: "15.0 ETH", requiresVideo: true },
+  { id: "agentic_full", price: "15.0 ETH", requiresVideo: true, requiresTts: true },
 ];
 
 export default function PipelineBuilder({ pipeline }) {
@@ -60,7 +60,7 @@ export default function PipelineBuilder({ pipeline }) {
       <div className="bg-white border border-surface-variant rounded-md p-4 space-y-3">
         <textarea
           className={`${inputClass} min-h-[100px] resize-y`}
-          placeholder="Describe what you want to create — e.g. a cinematic promo video for a fitness app"
+          placeholder="Describe what you want to create â€” e.g. a cinematic promo video for a fitness app"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           disabled={isRunning}
@@ -119,7 +119,7 @@ export default function PipelineBuilder({ pipeline }) {
                 className="text-slate-400 hover:text-rose-600"
                 onClick={() => setImageFile(null)}
               >
-                ✕
+                âœ•
               </button>
             </span>
           )}
@@ -130,7 +130,7 @@ export default function PipelineBuilder({ pipeline }) {
           onClick={run}
           className="px-6 py-2.5 bg-[#031634] text-white text-sm font-semibold rounded-md disabled:opacity-50 hover:opacity-95"
         >
-          {isRunning ? "Pipeline running…" : "Run pipeline"}
+          {isRunning ? "Pipeline runningâ€¦" : "Run pipeline"}
         </button>
       </div>
 
@@ -154,7 +154,7 @@ export default function PipelineBuilder({ pipeline }) {
         >
           <div className="flex items-center gap-2 px-3 py-2 border-b border-emerald-200 bg-emerald-100/80 rounded-t-lg">
             <span className="material-symbols-outlined text-emerald-700">check_circle</span>
-            <p className="text-sm font-bold text-emerald-900">Pipeline complete — your outputs</p>
+            <p className="text-sm font-bold text-emerald-900">Pipeline complete â€” your outputs</p>
           </div>
           <OutputViewer run={result} />
         </div>

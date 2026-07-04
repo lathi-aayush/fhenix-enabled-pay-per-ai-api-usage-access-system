@@ -3,7 +3,7 @@ import { studioFetch } from "./studioFetch.js";
 function friendlyError(err) {
   const msg = err?.message || String(err);
   if (msg.includes("quota exceeded") || msg.includes("403") || msg.includes("402")) {
-    return "Payment required. Approve the transaction in your Pera Wallet.";
+    return "Payment required. Approve the transaction in your MetaMask.";
   }
   if (msg.includes("401") || msg.includes("Unauthorized")) {
     return "Sign in to use the Prompt Generator.";

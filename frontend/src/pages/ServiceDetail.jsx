@@ -57,13 +57,13 @@ export default function ServiceDetail() {
 
   const localInputTokenEstimate = useMemo(() => wordsToApproxTokens(promptWordCount), [promptWordCount]);
 
-  const localEstimateAlgo = useMemo(() => {
+  const localEstimateEth = useMemo(() => {
     if (!service || !Number.isFinite(ppt) || !Number.isFinite(minC)) return null;
     if (localInputTokenEstimate <= 0) return null;
     return chargeForTokens(localInputTokenEstimate, ppt, minC);
   }, [service, ppt, minC, localInputTokenEstimate]);
 
-  const { estimatedAlgo, minApplies } = useTokenEstimate(prompt, ppt, minC);
+  const { estimatedEth, minApplies } = useTokenEstimate(prompt, ppt, minC);
 
   useEffect(() => {
     let cancelled = false;
@@ -192,13 +192,13 @@ export default function ServiceDetail() {
     if (!apiKey) return;
     if (service?.x402Enabled) {
       const snippet = `# x402 via proxy API (Bearer required):
-# 1) POST /api/use without X-Payment → HTTP 402 + payment requirements
+# 1) POST /api/use without X-Payment â†’ HTTP 402 + payment requirements
 curl -sS "${apiBase}/api/use" \\
   -H "Authorization: Bearer ${apiKey}" \\
   -H "Content-Type: application/json" \\
   -d '{"prompt":"Hello"}'
 
-# 2) Sign ALGO payment, submit on-chain, retry with X-Payment header
+# 2) Sign ETH payment, submit on-chain, retry with X-Payment header
 curl -sS "${apiBase}/api/use" \\
   -H "Authorization: Bearer ${apiKey}" \\
   -H "Content-Type: application/json" \\
@@ -207,13 +207,13 @@ curl -sS "${apiBase}/api/use" \\
       navigator.clipboard.writeText(snippet).then(() => toast.success("x402 cURL copied"));
       return;
     }
-    const snippet = `# 1) Quote (no txId) — returns paymentRef + chargeEth
+    const snippet = `# 1) Quote (no txId) â€” returns paymentRef + chargeEth
 curl -sS "${apiBase}/api/use" \\
   -H "Authorization: Bearer ${apiKey}" \\
   -H "Content-Type: application/json" \\
   -d '{"prompt":"Hello"}'
 
-# 2) Pay that exact ALGO to developerWallet with paymentRef in note, then complete:
+# 2) Pay that exact ETH to developerWallet with paymentRef in note, then complete:
 curl -sS "${apiBase}/api/use" \\
   -H "Authorization: Bearer ${apiKey}" \\
   -H "Content-Type: application/json" \\
@@ -272,7 +272,7 @@ curl -sS "${apiBase}/api/use" \\
           aiResponse?.message?.content ??
           JSON.stringify(aiResponse);
         setAiPreview(typeof text === "string" ? text : String(text));
-        toast.success("x402 payment verified — AI response ready");
+        toast.success("x402 payment verified â€” AI response ready");
         return;
       }
 
@@ -336,7 +336,7 @@ curl -sS "${apiBase}/api/use" \\
   if (loading) {
     return (
       <div className="pt-4 pb-8 w-full flex items-center justify-center min-h-[40vh]">
-        <p className="text-on-surface-variant animate-pulse">Loading service…</p>
+        <p className="text-on-surface-variant animate-pulse">Loading serviceâ€¦</p>
       </div>
     );
   }
@@ -346,7 +346,7 @@ curl -sS "${apiBase}/api/use" \\
       <div className="pt-4 pb-8 w-full flex flex-col items-center justify-center gap-4 min-h-[40vh]">
         <p className="text-on-surface-variant">Service not found.</p>
         <Link to="/marketplace/browse" className="text-sm text-secondary hover:underline">
-          ← Back to Marketplace
+          â† Back to Marketplace
         </Link>
       </div>
     );
@@ -359,7 +359,7 @@ curl -sS "${apiBase}/api/use" \\
   return (
     <div className="font-body text-on-surface pt-4 pb-8 w-full">
       <Link to="/marketplace/browse" className="text-sm text-secondary hover:underline">
-        ← Marketplace
+        â† Marketplace
       </Link>
 
       <div className="mt-4 pb-4">
@@ -371,10 +371,10 @@ curl -sS "${apiBase}/api/use" \\
 
         <div className="mt-6 flex flex-wrap gap-3 text-sm">
           <span className="px-3 py-1 rounded-md bg-white border border-surface-variant">
-            Provider: <strong>{service.aiProvider ?? "—"}</strong>
+            Provider: <strong>{service.aiProvider ?? "â€”"}</strong>
           </span>
           <span className="px-3 py-1 rounded-md bg-white border border-surface-variant font-mono text-xs">
-            {service.modelName || "—"}
+            {service.modelName || "â€”"}
           </span>
           <span className="px-3 py-1 rounded-md bg-white border border-surface-variant">
             Calls: <strong>{service.totalUses ?? 0}</strong>
@@ -401,10 +401,10 @@ curl -sS "${apiBase}/api/use" \\
           <div>
             <p className="text-sm text-on-surface-variant">Pay per token (input + output), with a minimum per call</p>
             <p className="font-mono text-lg font-semibold text-secondary mt-1">
-              {Number.isFinite(ppt) ? ppt.toFixed(6) : "—"} ALGO / 1k tokens
+              {Number.isFinite(ppt) ? ppt.toFixed(6) : "â€”"} ETH / 1k tokens
             </p>
             <p className="text-xs text-on-surface-variant mt-1 font-mono">
-              Min per paid call: {Number.isFinite(minC) ? `${minC.toFixed(6)} ALGO` : "—"} · Paid to {devShort}
+              Min per paid call: {Number.isFinite(minC) ? `${minC.toFixed(6)} ETH` : "â€”"} Â· Paid to {devShort}
             </p>
           </div>
 
@@ -416,17 +416,17 @@ curl -sS "${apiBase}/api/use" \\
 
           {!isAuthenticated && (
             <GuestConnectBanner
-              message="Connect Pera Wallet to get an API key and call this service."
+              message="Connect MetaMask to get an API key and call this service."
               className="mb-4"
             />
           )}
 
           <div className="border-t border-surface-variant pt-6">
             <p className="text-sm text-on-surface-variant mb-3">
-              Generate a <code className="font-mono text-xs">sk-sentinel-…</code> proxy key.{" "}
+              Generate a <code className="font-mono text-xs">sk-sentinel-â€¦</code> proxy key.{" "}
               {x402Enabled
-                ? `Calls use x402 on POST /api/use (${Number.isFinite(minC) ? minC.toFixed(6) : "min"} ALGO per call).`
-                : "Each call: quote → pay on-chain → complete to unlock the AI response."}
+                ? `Calls use x402 on POST /api/use (${Number.isFinite(minC) ? minC.toFixed(6) : "min"} ETH per call).`
+                : "Each call: quote â†’ pay on-chain â†’ complete to unlock the AI response."}
             </p>
             <button
               type="button"
@@ -434,7 +434,7 @@ curl -sS "${apiBase}/api/use" \\
               onClick={() => runWithWallet(() => generateKey())}
               className="w-full sm:w-auto bg-primary text-white px-8 py-3 rounded-md font-medium hover:opacity-90 disabled:opacity-50"
             >
-              {generating ? "Working…" : isAuthenticated ? "Get proxy API key" : "Connect wallet to get API key"}
+              {generating ? "Workingâ€¦" : isAuthenticated ? "Get proxy API key" : "Connect wallet to get API key"}
             </button>
           </div>
 
@@ -447,7 +447,7 @@ curl -sS "${apiBase}/api/use" \\
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={3}
-                placeholder="Enter your prompt…"
+                placeholder="Enter your promptâ€¦"
                 className="w-full border border-outline-variant rounded-md px-3 py-2 text-sm"
               />
               <label className="flex items-start gap-2 text-sm text-on-surface-variant">
@@ -459,7 +459,7 @@ curl -sS "${apiBase}/api/use" \\
                 />
                 <span>
                   I understand each call charges from my session key wallet
-                  {x402Enabled && Number.isFinite(minC) ? ` (min ${minC.toFixed(6)} ALGO)` : ""}.
+                  {x402Enabled && Number.isFinite(minC) ? ` (min ${minC.toFixed(6)} ETH)` : ""}.
                 </span>
               </label>
               <button
@@ -468,7 +468,7 @@ curl -sS "${apiBase}/api/use" \\
                 onClick={runPaidInvoke}
                 className="bg-secondary text-on-secondary px-6 py-2.5 rounded-md text-sm font-medium hover:opacity-90 disabled:opacity-50"
               >
-                {invokeBusy ? "Processing…" : x402Enabled ? "Run with x402" : "Run paid invoke"}
+                {invokeBusy ? "Processingâ€¦" : x402Enabled ? "Run with x402" : "Run paid invoke"}
               </button>
               {aiPreview && (
                 <div className="mt-4 p-4 bg-surface-container rounded-md border border-outline-variant">
@@ -483,7 +483,7 @@ curl -sS "${apiBase}/api/use" \\
                         rel="noreferrer"
                         className="text-indigo-600 hover:underline"
                       >
-                        {lastTxId.slice(0, 10)}…
+                        {lastTxId.slice(0, 10)}â€¦
                       </a>
                       {lastReceipt?.paymentProtocol === "x402" ? " (x402)" : ""}
                     </p>
@@ -522,7 +522,7 @@ curl -sS "${apiBase}/api/use" \\
             </button>
           </div>
           {reviewsLoading ? (
-            <p className="text-sm text-on-surface-variant">Loading reviews…</p>
+            <p className="text-sm text-on-surface-variant">Loading reviewsâ€¦</p>
           ) : reviews.length === 0 ? (
             <p className="text-sm text-on-surface-variant">No reviews yet. Be the first to share feedback.</p>
           ) : (
@@ -566,7 +566,7 @@ curl -sS "${apiBase}/api/use" \\
               {x402Enabled ? (
                 <>
                   This service uses x402 on <code className="font-mono text-xs">POST /api/use</code>. Send your proxy key
-                  as <code className="font-mono text-xs">Authorization: Bearer …</code>, receive HTTP 402, pay on-chain,
+                  as <code className="font-mono text-xs">Authorization: Bearer â€¦</code>, receive HTTP 402, pay on-chain,
                   then retry with the <code className="font-mono text-xs">X-Payment</code> header.
                 </>
               ) : (
@@ -638,7 +638,7 @@ curl -sS "${apiBase}/api/use" \\
                     className={`text-2xl ${star <= reviewRating ? "text-amber-500" : "text-slate-300"}`}
                     aria-label={`${star} stars`}
                   >
-                    ★
+                    â˜…
                   </button>
                 ))}
               </div>
@@ -651,7 +651,7 @@ curl -sS "${apiBase}/api/use" \\
                 rows={4}
                 maxLength={2000}
                 className="mt-1 w-full border border-outline-variant rounded-md px-3 py-2 text-sm"
-                placeholder="Share your experience with this API…"
+                placeholder="Share your experience with this APIâ€¦"
               />
             </label>
             <div className="mt-5 flex gap-3">
@@ -660,7 +660,7 @@ curl -sS "${apiBase}/api/use" \\
                 disabled={submittingReview}
                 className="bg-primary text-white px-4 py-2 rounded-md text-sm disabled:opacity-50"
               >
-                {submittingReview ? "Saving…" : "Submit review"}
+                {submittingReview ? "Savingâ€¦" : "Submit review"}
               </button>
               <button
                 type="button"

@@ -62,7 +62,7 @@ export default function WithdrawalDocs() {
                   </span>
                   <h3 className="text-xl font-semibold tracking-tight">Accrued Balance to Linked Wallet</h3>
                   <p className="text-[14px] text-slate-600 max-w-2xl leading-relaxed">
-                    When customers consume your endpoints, the platform routes a portion of their pay-per-use fees into the Sentinal vault. The Creator Withdrawal Dashboard aggregates these earnings and releases them directly to your linked Pera Wallet with a single click.
+                    When customers consume your endpoints, the platform routes a portion of their pay-per-use fees into the Sentinal vault. The Creator Withdrawal Dashboard aggregates these earnings and releases them directly to your linked MetaMask with a single click.
                   </p>
                 </div>
                 <div className="shrink-0 flex items-center justify-center w-20 h-20 rounded-full bg-emerald-50 border border-emerald-100">
@@ -83,7 +83,7 @@ export default function WithdrawalDocs() {
                 <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm">1</div>
                 <h4 className="font-semibold text-slate-900 text-[15px]">1. Total Earned</h4>
                 <p className="text-[13px] text-slate-600 leading-relaxed">
-                  Sum of all ALGO payments verified from successful API calls on your services. This matches your accumulated platform logs.
+                  Sum of all ETH payments verified from successful API calls on your services. This matches your accumulated platform logs.
                 </p>
               </div>
 
@@ -123,12 +123,12 @@ export default function WithdrawalDocs() {
   "totalWithdrawn": 0.5,
   "withdrawable": 0.562505,
   "pendingWithdrawals": 0,
-  "minWithdrawalAlgo": 0.1,
+  "minWithdrawalEth": 0.1,
   "creatorWallet": "ICM4Y4YVJWSBOV4LQIBXYVTHF2NDOJSUAPTX2DE4HQTPVDS5ZQCXP3MHLI",
   "withdrawals": [
     {
       "id": "66a8cf218...",
-      "amountAlgo": 0.5,
+      "amountEth": 0.5,
       "status": "completed",
       "txId": "K2YVJX...",
       "createdAt": "2026-05-31T07:15:35.000Z"
@@ -139,7 +139,7 @@ export default function WithdrawalDocs() {
 
             <h3 id="post-withdraw" className="text-lg font-semibold text-slate-900 mt-8 mb-3">POST /api/creator/withdraw</h3>
             <p className="text-[14px] text-slate-600 mb-4 leading-relaxed">
-              Submits a request to withdraw funds on-chain. Triggers an atomic payment transaction on Algorand TestNet.
+              Submits a request to withdraw funds on-chain. Triggers an atomic payment transaction on Base Sepolia.
             </p>
             <pre className="bg-slate-900 text-slate-100 rounded-lg p-4 font-mono text-xs overflow-x-auto leading-normal">
 {`// Headers:
@@ -155,7 +155,7 @@ export default function WithdrawalDocs() {
 {
   "withdrawal": {
     "id": "66a8cf218...",
-    "amountAlgo": 0.5,
+    "amountEth": 0.5,
     "status": "completed",
     "txId": "K2YVJX...",
     "createdAt": "2026-05-31T07:22:12.000Z"

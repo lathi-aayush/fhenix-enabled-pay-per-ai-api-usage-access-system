@@ -46,7 +46,7 @@ export default function MigrationDocs() {
 
         <h1 className="text-3xl font-bold text-slate-900 mb-6 tracking-tight">Migration Guide</h1>
         <p className="text-[15px] text-slate-600 mb-8 leading-relaxed">
-          Follow this guide to migrate your existing agents and creator services from Sentinal v1.0 to the optimized v2.0 protocol on the Algorand blockchain.
+          Follow this guide to migrate your existing agents and creator services from Sentinal v1.0 to the optimized v2.0 protocol on the Base Sepolia.
         </p>
 
         <div className="space-y-12 text-slate-800">
@@ -57,7 +57,7 @@ export default function MigrationDocs() {
             </p>
             <ul className="space-y-3 text-[14px] text-slate-600 leading-relaxed list-disc pl-5">
               <li><strong>Gas Optimizations:</strong> Smart contract call fees have been reduced by over 30% via state grouping.</li>
-              <li><strong>Dynamic Fee Headers:</strong> The x402 header has changed to support custom ASAs (Algorand Standard Assets) in addition to ALGO.</li>
+              <li><strong>Dynamic Fee Headers:</strong> The x402 header now supports ERC-20 tokens in addition to native ETH.</li>
               <li><strong>Persistent Webhooks:</strong> Creators now receive real-time webhook updates on every successful microtransaction payout.</li>
             </ul>
           </section>
@@ -91,7 +91,7 @@ const client = new SentinalClient({
             <ol className="space-y-4 text-[14px] text-slate-700 leading-relaxed list-decimal pl-5">
               <li>Go to the **Creator Dashboard** &gt; **My Endpoints**.</li>
               <li>Select your listed API service.</li>
-              <li>Click **Update Contract** to sync with the new Algorand Application ID.</li>
+              <li>Click **Update Contract** to sync with the new contract address.</li>
             </ol>
           </section>
         </div>

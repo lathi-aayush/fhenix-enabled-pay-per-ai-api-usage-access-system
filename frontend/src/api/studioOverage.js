@@ -1,6 +1,6 @@
 /**
  * studioOverage.js — Studio overage payment via MetaMask on Base Sepolia.
- * Replaces the Algorand/Pera version.
+ * Replaces the Base Sepolia/MetaMask version.
  */
 
 import { api } from "./client.js";

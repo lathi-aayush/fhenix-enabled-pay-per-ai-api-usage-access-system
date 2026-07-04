@@ -1,8 +1,8 @@
 /**
  * Wallet/contract top-up routes for Base Sepolia SentinelPayment contract.
  *
- * POST /api/wallet/topup/create  → returns deposit params for the contract
- * POST /api/wallet/topup/verify  → confirms ETH deposit on-chain
+ * POST /api/wallet/topup/create  â†’ returns deposit params for the contract
+ * POST /api/wallet/topup/verify  â†’ confirms ETH deposit on-chain
  */
 
 import { Router } from "express";
@@ -45,7 +45,7 @@ router.post(
       await TopUpIntent.create({
         userWallet,
         paymentIntentId,
-        amountMicroAlgos: minWei.toString(), // reusing field name, now stores wei
+        amountWei: minWei.toString(), // reusing field name, now stores wei
         status: "pending",
       });
 

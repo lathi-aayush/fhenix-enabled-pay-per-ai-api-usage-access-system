@@ -5,10 +5,10 @@ export function wordsToApproxTokens(words) {
   return Math.ceil(w * (4 / 3));
 }
 
-export function chargeForTokens(totalTokens, pricePerThousand, minimumChargeAlgo) {
+export function chargeForTokens(totalTokens, pricePerThousand, minimumChargeEth) {
   const t = Number(totalTokens);
   const ppt = Number(pricePerThousand);
-  const minC = Number(minimumChargeAlgo);
+  const minC = Number(minimumChargeEth);
   if (!Number.isFinite(t) || t < 0) return 0;
   if (!Number.isFinite(ppt) || ppt < 0) return 0;
   if (!Number.isFinite(minC) || minC < 0) return 0;
@@ -17,6 +17,6 @@ export function chargeForTokens(totalTokens, pricePerThousand, minimumChargeAlgo
   return Math.round(charge * 1e6) / 1e6;
 }
 
-export function chargeForWords(words, pricePerThousand, minimumChargeAlgo) {
-  return chargeForTokens(wordsToApproxTokens(words), pricePerThousand, minimumChargeAlgo);
+export function chargeForWords(words, pricePerThousand, minimumChargeEth) {
+  return chargeForTokens(wordsToApproxTokens(words), pricePerThousand, minimumChargeEth);
 }

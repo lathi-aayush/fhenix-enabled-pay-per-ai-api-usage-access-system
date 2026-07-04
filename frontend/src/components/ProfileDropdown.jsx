@@ -18,7 +18,7 @@ export default function ProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState("");
-  const [algoBalance, setAlgoBalance] = useState("0.00");
+  const [ethBalance, setEthBalance] = useState("0.00");
   const [linking, setLinking] = useState(false);
   const [fetchingBalance, setFetchingBalance] = useState(false);
   const dropdownRef = useRef(null);
@@ -57,11 +57,11 @@ export default function ProfileDropdown() {
           params: [address, "latest"],
         });
         const ethVal = (Number(BigInt(hex)) / 1e18).toFixed(4);
-        setAlgoBalance(ethVal);
+        setEthBalance(ethVal);
       }
     } catch (e) {
       console.warn("On-chain balance fetch failed", e);
-      setAlgoBalance(null);
+      setEthBalance(null);
     } finally {
       setFetchingBalance(false);
     }
@@ -70,15 +70,15 @@ export default function ProfileDropdown() {
   const handleLinkWallet = async () => {
     setLinking(true);
     try {
-      toast.loading("Connecting MetaMask...", { id: "pera-link-dropdown" });
+      toast.loading("Connecting MetaMask...", { id: "wallet-link-dropdown" });
       const address = await connectMetaMask();
-      toast.loading("Linking address to your profile...", { id: "pera-link-dropdown" });
+      toast.loading("Linking address to your profile...", { id: "wallet-link-dropdown" });
       await linkWallet(address);
-      toast.success("Wallet linked successfully!", { id: "pera-link-dropdown" });
+      toast.success("Wallet linked successfully!", { id: "wallet-link-dropdown" });
       fetchOnChainBalance(address);
     } catch (e) {
       console.error(e);
-      toast.error(e?.response?.data?.error || e?.message || "Wallet linking aborted", { id: "pera-link-dropdown" });
+      toast.error(e?.response?.data?.error || e?.message || "Wallet linking aborted", { id: "wallet-link-dropdown" });
     } finally {
       setLinking(false);
     }
@@ -212,7 +212,7 @@ export default function ProfileDropdown() {
                     {shortenWalletAddress(user.walletAddress)}
                   </span>
                   <span className="font-mono font-bold text-slate-900 dark:text-white text-xs mt-0.5">
-                    {algoBalance} <span className="text-[10px] font-normal text-slate-400">ALGO</span>
+                    {ethBalance} <span className="text-[10px] font-normal text-slate-400">ETH</span>
                   </span>
                 </div>
                 <button

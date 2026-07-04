@@ -49,7 +49,7 @@ router.get("/summary", requireAuth, async (req, res) => {
 
     const walletAddress = user.walletAddress;
 
-    // ——— Gateway summary (always available, even without wallet) ———
+    // â€”â€”â€” Gateway summary (always available, even without wallet) â€”â€”â€”
     try {
       const balanceCents = await getBalanceCents(userId);
 
@@ -82,10 +82,10 @@ router.get("/summary", requireAuth, async (req, res) => {
       const gwAgg = gatewayUsageAgg[0] || {};
       responseData.gatewaySummary = {
         balanceCents,
-        balanceAlgo: balanceCents / rate,
+        balanceEth: balanceCents / rate,
         totalCalls: gwAgg.totalCalls || 0,
         totalSpentCents: gwAgg.totalCostCents || 0,
-        totalSpentAlgo: (gwAgg.totalCostCents || 0) / rate,
+        totalSpentEth: (gwAgg.totalCostCents || 0) / rate,
         totalTokens: gwAgg.totalTokens || 0,
         activeSubscriptions: subscriptions.length,
         subscriptions: subscriptions.map((s) => ({
@@ -93,7 +93,7 @@ router.get("/summary", requireAuth, async (req, res) => {
           apiName: s.apiId?.name,
           proxySlug: s.apiId?.proxySlug,
           pricePerUnitCents: s.apiId?.pricePerUnit,
-          pricePerUnitAlgo: (s.apiId?.pricePerUnit || 0) / rate,
+          pricePerUnitEth: (s.apiId?.pricePerUnit || 0) / rate,
           pricingModel: s.apiId?.pricingModel,
         })),
         recentLogs: recentGatewayLogs.map((l) => ({
@@ -105,21 +105,21 @@ router.get("/summary", requireAuth, async (req, res) => {
           method: l.method,
           httpStatus: l.httpStatus,
           costCents: l.costCents,
-          costAlgo: (l.costCents || 0) / rate,
+          costEth: (l.costCents || 0) / rate,
           tokensTotal: l.tokensTotal,
           requestStatus: l.requestStatus,
           responseTimeMs: l.responseTimeMs,
         })),
         recentTransactions: recentTx.map((tx) => ({
           ...tx,
-          amountAlgo: (tx.amountCents || 0) / rate,
+          amountEth: (tx.amountCents || 0) / rate,
         })),
       };
     } catch (e) {
       console.warn("[profile-summary] gateway data failed:", e?.message);
     }
 
-    // ——— Gateway developer earnings (for creators) ———
+    // â€”â€”â€” Gateway developer earnings (for creators) â€”â€”â€”
     if (user.role === "creator") {
       try {
         const [devEarningsAgg, proxyApis] = await Promise.all([
@@ -140,9 +140,9 @@ router.get("/summary", requireAuth, async (req, res) => {
         responseData.creatorSummary = responseData.creatorSummary || {};
         responseData.creatorSummary.gatewayEarnings = {
           availableCents: earningsByStatus.available || 0,
-          availableAlgo: (earningsByStatus.available || 0) / rate,
+          availableEth: (earningsByStatus.available || 0) / rate,
           paidOutCents: earningsByStatus.paid_out || 0,
-          paidOutAlgo: (earningsByStatus.paid_out || 0) / rate,
+          paidOutEth: (earningsByStatus.paid_out || 0) / rate,
           proxyApiCount: proxyApis.length,
           proxyApis: proxyApis.map((a) => ({
             id: a._id,
@@ -159,7 +159,7 @@ router.get("/summary", requireAuth, async (req, res) => {
       }
     }
 
-    // ——— Legacy stats (only if wallet connected) ———
+    // â€”â€”â€” Legacy stats (only if wallet connected) â€”â€”â€”
     if (walletAddress) {
       try {
         if (user.role === "creator") {
@@ -187,7 +187,7 @@ router.get("/summary", requireAuth, async (req, res) => {
               title: s.title,
               description: s.description,
               pricePerThousandTokens: s.pricePerThousandTokens,
-              minimumChargeAlgo: s.minimumChargeAlgo,
+              minimumChargeEth: s.minimumChargeEth,
               totalRevenue: s.totalRevenue,
               totalUses: s.totalUses,
               aiProvider: s.aiProvider,
@@ -198,7 +198,7 @@ router.get("/summary", requireAuth, async (req, res) => {
               id: log._id,
               userWallet: log.userWallet,
               serviceTitle: log.serviceId?.title || "Unknown API",
-              amountAlgo: log.amountAlgo || log.chargeAlgo || 0,
+              amountEth: log.amountEth || log.chargeEth || 0,
               promptTokens: log.promptTokens || 0,
               completionTokens: log.completionTokens || 0,
               success: log.success,
@@ -209,7 +209,7 @@ router.get("/summary", requireAuth, async (req, res) => {
 
         // User Statistics
         const purchasedKeys = await AccessToken.find({ userWallet: walletAddress })
-          .populate("serviceId", "title description pricePerThousandTokens minimumChargeAlgo aiProvider modelName");
+          .populate("serviceId", "title description pricePerThousandTokens minimumChargeEth aiProvider modelName");
 
         const recentCalls = await ApiUsageLog.find({ userWallet: walletAddress })
           .populate("serviceId", "title")
@@ -220,7 +220,7 @@ router.get("/summary", requireAuth, async (req, res) => {
         let totalSpent = 0;
         let totalTokens = 0;
         allLogs.forEach((log) => {
-          totalSpent += log.amountAlgo || log.chargeAlgo || 0;
+          totalSpent += log.amountEth || log.chargeEth || 0;
           totalTokens += log.totalTokens || 0;
         });
 
@@ -239,13 +239,13 @@ router.get("/summary", requireAuth, async (req, res) => {
               aiProvider: token.serviceId.aiProvider,
               modelName: token.serviceId.modelName,
               pricePerThousandTokens: token.serviceId.pricePerThousandTokens,
-              minimumChargeAlgo: token.serviceId.minimumChargeAlgo,
+              minimumChargeEth: token.serviceId.minimumChargeEth,
             } : null,
           })),
           recentCalls: recentCalls.map((log) => ({
             id: log._id,
             serviceTitle: log.serviceId?.title || "Unknown API",
-            amountAlgo: log.amountAlgo || log.chargeAlgo || 0,
+            amountEth: log.amountEth || log.chargeEth || 0,
             totalTokens: log.totalTokens || 0,
             success: log.success,
             createdAt: log.createdAt,

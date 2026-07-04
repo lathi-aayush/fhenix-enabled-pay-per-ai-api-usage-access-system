@@ -46,7 +46,7 @@ function AINode({ id, data, selected }) {
         onClick={(e) => e.stopPropagation()}
       />
       <p className="text-[10px] text-secondary font-mono mt-1">
-        ~{(data?.estimatedCredits ?? 0.002).toFixed(4)} ALGO est.
+        ~{(data?.estimatedCredits ?? 0.002).toFixed(4)} ETH est.
       </p>
     </NodeShell>
   );

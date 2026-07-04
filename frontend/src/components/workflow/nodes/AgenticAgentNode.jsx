@@ -75,7 +75,7 @@ function AgenticAgentNode({ id, data, selected, type }) {
         </select>
       )}
       <p className="text-[10px] text-secondary font-mono mt-1">
-        ~{(data?.estimatedCredits ?? meta.credits).toFixed(4)} ALGO est.
+        ~{(data?.estimatedCredits ?? meta.credits).toFixed(4)} ETH est.
       </p>
     </NodeShell>
   );

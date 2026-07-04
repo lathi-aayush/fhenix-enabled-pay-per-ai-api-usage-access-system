@@ -4,7 +4,7 @@ const topUpIntentSchema = new mongoose.Schema(
   {
     userWallet: { type: String, required: true, index: true },
     paymentIntentId: { type: String, required: true, unique: true },
-    amountMicroAlgos: { type: Number, required: true },
+    amountWei: { type: Number, required: true },
     status: {
       type: String,
       enum: ["pending", "verified"],

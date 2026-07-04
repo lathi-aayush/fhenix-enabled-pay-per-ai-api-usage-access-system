@@ -16,7 +16,7 @@ export async function migrateServicePricing() {
             pricePerThousandTokens: {
               $cond: [{ $gt: ["$price", 0] }, { $divide: ["$price", 500] }, 0],
             },
-            minimumChargeAlgo: {
+            minimumChargeEth: {
               $max: [
                 { $cond: [{ $gt: ["$price", 0] }, { $divide: ["$price", 10] }, 0] },
                 0.001,

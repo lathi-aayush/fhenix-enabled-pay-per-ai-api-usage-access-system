@@ -114,7 +114,7 @@ export default function CreatorDashboard() {
   }
 
   async function removeService(svc) {
-    if (!window.confirm(`Delete “${svc.title}”? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete â€œ${svc.title}â€? This cannot be undone.`)) return;
     try {
       await api.delete(`/api/services/${svc._id}`);
       toast.success("Service deleted");
@@ -162,7 +162,7 @@ export default function CreatorDashboard() {
       if (data.success) {
         toast.success(`Test delivered (HTTP ${data.httpStatus})`);
       } else {
-        toast.error(data.errorMessage || `Test failed (HTTP ${data.httpStatus ?? "—"})`);
+        toast.error(data.errorMessage || `Test failed (HTTP ${data.httpStatus ?? "â€”"})`);
       }
       await load();
     } catch (err) {
@@ -193,12 +193,12 @@ export default function CreatorDashboard() {
     e.preventDefault();
     const amount = Number(withdrawAmount);
     if (!Number.isFinite(amount) || amount <= 0) {
-      toast.error("Enter a valid ALGO amount");
+      toast.error("Enter a valid ETH amount");
       return;
     }
-    const min = withdrawalData?.minWithdrawalAlgo ?? 0.1;
+    const min = withdrawalData?.minWithdrawalEth ?? 0.1;
     if (amount < min) {
-      toast.error(`Minimum withdrawal is ${min} ALGO`);
+      toast.error(`Minimum withdrawal is ${min} ETH`);
       return;
     }
     if (amount > (withdrawalData?.withdrawable ?? 0)) {
@@ -218,7 +218,7 @@ export default function CreatorDashboard() {
         withdrawals: [data.withdrawal, ...(prev?.withdrawals ?? [])],
       }));
       setWithdrawAmount("");
-      toast.success(`Withdrawal sent — ${data.withdrawal.txId?.slice(0, 10)}…`);
+      toast.success(`Withdrawal sent â€” ${data.withdrawal.txId?.slice(0, 10)}â€¦`);
     } catch (err) {
       toast.error(err?.response?.data?.error || "Withdrawal failed");
       try {
@@ -264,7 +264,7 @@ export default function CreatorDashboard() {
             <p className="text-sm text-slate-500 mt-1">
               {activeTab === "endpoints" && "Deploy, manage, and monitor your AI endpoints"}
               {activeTab === "webhooks" && "Configure notifications for paid execution events"}
-              {activeTab === "withdrawals" && "Withdraw your Algorand revenue instantly"}
+              {activeTab === "withdrawals" && "Withdraw your Base Sepolia revenue instantly"}
             </p>
           </div>
           {activeTab === "endpoints" && (
@@ -308,7 +308,7 @@ export default function CreatorDashboard() {
         {loading ? (
           <div className="flex items-center gap-2 text-slate-400 py-10 justify-center">
             <span className="inline-block h-5 w-5 border-2 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin" />
-            <span className="text-sm font-semibold">Loading dashboard…</span>
+            <span className="text-sm font-semibold">Loading dashboardâ€¦</span>
           </div>
         ) : (
           <AnimatePresence mode="wait">
@@ -324,7 +324,7 @@ export default function CreatorDashboard() {
                   {/* Combined stats from legacy + gateway */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
                     {[
-                      { label: "Total revenue", value: gwData?.totals?.totalRevenueAlgo != null ? `${gwData.totals.totalRevenueAlgo.toFixed(4)} ALGO` : `${(stats?.totalRevenue ?? 0).toFixed(4)} ALGO`, icon: "payments", color: "text-emerald-500 bg-emerald-50 border-emerald-100" },
+                      { label: "Total revenue", value: gwData?.totals?.totalRevenueEth != null ? `${gwData.totals.totalRevenueEth.toFixed(4)} ETH` : `${(stats?.totalRevenue ?? 0).toFixed(4)} ETH`, icon: "payments", color: "text-emerald-500 bg-emerald-50 border-emerald-100" },
                       { label: "Tokens served", value: ((stats?.totalTokensServed ?? 0) + (gwData?.totals?.legacyTokensServed ?? 0)).toLocaleString(), icon: "generating_tokens", color: "text-indigo-500 bg-indigo-50 border-indigo-100" },
                       { label: "Total calls", value: gwData?.totals?.totalCalls ?? stats?.totalUses ?? 0, icon: "api", color: "text-violet-500 bg-violet-50 border-violet-100" },
                       { label: "Endpoints", value: (stats?.serviceCount ?? 0) + (gwData?.apis?.length ?? 0), icon: "terminal", color: "text-amber-500 bg-amber-50 border-amber-100" },
@@ -343,16 +343,16 @@ export default function CreatorDashboard() {
                   {gwData?.earnings && (
                     <div className="bg-gradient-to-r from-indigo-50/50 to-violet-50/50 backdrop-blur-md border border-indigo-200/40 rounded-2xl p-4 mb-4 flex flex-wrap gap-6 items-center text-xs">
                       <span className="text-[10px] font-bold tracking-wider text-indigo-600 uppercase">Gateway Earnings</span>
-                      <span className="text-slate-600">Available: <span className="font-mono font-bold text-emerald-600">{(gwData.earnings.availableAlgo || 0).toFixed(4)} ALGO</span></span>
-                      <span className="text-slate-600">Pending: <span className="font-mono font-bold text-amber-600">{(gwData.earnings.pendingAlgo || 0).toFixed(4)} ALGO</span></span>
-                      <span className="text-slate-600">Paid out: <span className="font-mono font-bold text-slate-700">{(gwData.earnings.paidOutAlgo || 0).toFixed(4)} ALGO</span></span>
+                      <span className="text-slate-600">Available: <span className="font-mono font-bold text-emerald-600">{(gwData.earnings.availableEth || 0).toFixed(4)} ETH</span></span>
+                      <span className="text-slate-600">Pending: <span className="font-mono font-bold text-amber-600">{(gwData.earnings.pendingEth || 0).toFixed(4)} ETH</span></span>
+                      <span className="text-slate-600">Paid out: <span className="font-mono font-bold text-slate-700">{(gwData.earnings.paidOutEth || 0).toFixed(4)} ETH</span></span>
                       <span className="text-slate-600">Consumers: <span className="font-mono font-bold">{gwData.activeConsumers || 0}</span></span>
                     </div>
                   )}
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8" style={{ display: 'none' }}>
                     {[
-                      { label: "Total revenue", value: `${(stats?.totalRevenue ?? 0).toFixed(4)} ALGO`, icon: "payments", color: "text-emerald-500 bg-emerald-50 border-emerald-100" },
+                      { label: "Total revenue", value: `${(stats?.totalRevenue ?? 0).toFixed(4)} ETH`, icon: "payments", color: "text-emerald-500 bg-emerald-50 border-emerald-100" },
                       { label: "Tokens served", value: (stats?.totalTokensServed ?? 0).toLocaleString(), icon: "generating_tokens", color: "text-indigo-500 bg-indigo-50 border-indigo-100" },
                       { label: "Total calls", value: stats?.totalUses ?? 0, icon: "api", color: "text-violet-500 bg-violet-50 border-violet-100" },
                       { label: "Endpoints", value: stats?.serviceCount ?? 0, icon: "terminal", color: "text-amber-500 bg-amber-50 border-amber-100" },
@@ -418,14 +418,14 @@ export default function CreatorDashboard() {
 
                             <div className="bg-slate-50/60 border border-slate-100 rounded-xl p-3.5 sm:text-right shrink-0 flex flex-col gap-1 shadow-inner">
                               <p className="text-indigo-600 font-mono text-xs font-bold">
-                                {Number(s.pricePerThousandTokens ?? 0).toFixed(6)} ALGO / 1k tokens
+                                {Number(s.pricePerThousandTokens ?? 0).toFixed(6)} ETH / 1k tokens
                               </p>
                               <p className="text-[10px] text-slate-500 font-mono">
-                                min/call: {Number(s.minimumChargeAlgo ?? 0).toFixed(6)} ALGO
+                                min/call: {Number(s.minimumChargeEth ?? 0).toFixed(6)} ETH
                               </p>
                               <div className="h-px bg-slate-200/50 my-1.5" />
                               <p className="text-[10px] text-slate-500 font-semibold">
-                                calls: <span className="text-slate-800 font-mono font-bold">{s.logCalls ?? 0}</span> · earned: <span className="text-emerald-600 font-mono font-bold">{(s.logEarnedAlgo ?? 0).toFixed(4)} ALGO</span>
+                                calls: <span className="text-slate-800 font-mono font-bold">{s.logCalls ?? 0}</span> Â· earned: <span className="text-emerald-600 font-mono font-bold">{(s.logEarnedEth ?? 0).toFixed(4)} ETH</span>
                               </p>
                               <p className="text-[9px] text-slate-400">
                                 served: <span className="font-mono">{(s.logTokensServed ?? 0).toLocaleString()}</span> tokens
@@ -488,7 +488,7 @@ export default function CreatorDashboard() {
                         >
                           <div className="flex flex-wrap items-center gap-2 justify-between">
                             <span className="text-sm font-semibold text-slate-800">
-                              {row.serviceTitle} <span className="text-slate-300">·</span> <span className="font-mono text-xs text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-200/40">{row.userWallet?.slice(0, 12)}…</span>
+                              {row.serviceTitle} <span className="text-slate-300">Â·</span> <span className="font-mono text-xs text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-200/40">{row.userWallet?.slice(0, 12)}â€¦</span>
                             </span>
                             <span
                               className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
@@ -497,15 +497,15 @@ export default function CreatorDashboard() {
                                   : "bg-emerald-50 border-emerald-200 text-emerald-700"
                               }`}
                             >
-                              {row.success === false ? "Paid on-chain · AI failed" : "Completed"}
+                              {row.success === false ? "Paid on-chain Â· AI failed" : "Completed"}
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-4 text-xs text-slate-400 pt-2 border-t border-slate-100/50">
                             <span className="font-mono text-indigo-600 font-bold">
-                              charge: {Number(row.chargeAlgo ?? row.amountAlgo).toFixed(6)} ALGO
+                              charge: {Number(row.chargeEth ?? row.amountEth).toFixed(6)} ETH
                             </span>
                             <span>
-                              tokens in/out: <span className="font-semibold text-slate-600">{row.promptTokens ?? "—"}</span>/<span className="font-semibold text-slate-600">{row.completionTokens ?? "—"}</span> (Σ <span className="font-semibold text-slate-600">{row.totalTokens ?? "—"}</span>)
+                              tokens in/out: <span className="font-semibold text-slate-600">{row.promptTokens ?? "â€”"}</span>/<span className="font-semibold text-slate-600">{row.completionTokens ?? "â€”"}</span> (Î£ <span className="font-semibold text-slate-600">{row.totalTokens ?? "â€”"}</span>)
                             </span>
                             <span>{row.createdAt ? new Date(row.createdAt).toLocaleString() : ""}</span>
                             {(row.paymentTxId || row.payoutTxId) && (
@@ -539,7 +539,7 @@ export default function CreatorDashboard() {
 
                   {newSecret && (
                     <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 shadow-sm">
-                      <p className="font-bold text-amber-900 text-sm mb-1">Save your signing secret — shown once!</p>
+                      <p className="font-bold text-amber-900 text-sm mb-1">Save your signing secret â€” shown once!</p>
                       <p className="font-mono text-xs break-all text-amber-950 bg-white/60 p-2.5 rounded-lg border border-amber-200/50 select-all font-bold">{newSecret}</p>
                       <div className="flex gap-2 mt-3">
                         <button
@@ -609,7 +609,7 @@ export default function CreatorDashboard() {
                                 <p className="text-xs text-slate-600 font-medium mt-2">{wh.description}</p>
                               )}
                               <p className="text-[10px] text-slate-400 mt-1.5 font-semibold">
-                                Secret Preview: <span className="font-mono text-slate-500">{wh.secretPreview}</span> · events: <span className="font-mono text-slate-500">{(wh.events ?? []).join(", ")}</span>
+                                Secret Preview: <span className="font-mono text-slate-500">{wh.secretPreview}</span> Â· events: <span className="font-mono text-slate-500">{(wh.events ?? []).join(", ")}</span>
                               </p>
                             </div>
                             <span
@@ -647,7 +647,7 @@ export default function CreatorDashboard() {
                           </div>
                           {wh.lastDeliveryAt && (
                             <p className="text-[10px] text-slate-400 font-semibold mt-1">
-                              Last delivery: <span className="text-slate-600">{new Date(wh.lastDeliveryAt).toLocaleString()}</span> · status:{" "}
+                              Last delivery: <span className="text-slate-600">{new Date(wh.lastDeliveryAt).toLocaleString()}</span> Â· status:{" "}
                               <span className={wh.lastDeliveryStatus === "success" ? "text-emerald-600 font-bold" : "text-rose-600 font-bold"}>
                                 {wh.lastDeliveryStatus === "success" ? "success" : "failed"}
                               </span>
@@ -688,9 +688,9 @@ export default function CreatorDashboard() {
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                     {[
-                      { label: "Total earned", value: `${(withdrawalData?.totalEarned ?? 0).toFixed(4)} ALGO`, desc: "Accrued from paid API calls", accent: "text-indigo-600" },
-                      { label: "Total withdrawn", value: `${(withdrawalData?.totalWithdrawn ?? 0).toFixed(4)} ALGO`, desc: "Completed payouts", accent: "text-slate-800" },
-                      { label: "Withdrawable balance", value: `${(withdrawalData?.withdrawable ?? 0).toFixed(4)} ALGO`, desc: `Min ${(withdrawalData?.minWithdrawalAlgo ?? 0.1).toFixed(1)} ALGO payout`, accent: "text-emerald-600" },
+                      { label: "Total earned", value: `${(withdrawalData?.totalEarned ?? 0).toFixed(4)} ETH`, desc: "Accrued from paid API calls", accent: "text-indigo-600" },
+                      { label: "Total withdrawn", value: `${(withdrawalData?.totalWithdrawn ?? 0).toFixed(4)} ETH`, desc: "Completed payouts", accent: "text-slate-800" },
+                      { label: "Withdrawable balance", value: `${(withdrawalData?.withdrawable ?? 0).toFixed(4)} ETH`, desc: `Min ${(withdrawalData?.minWithdrawalEth ?? 0.1).toFixed(1)} ETH payout`, accent: "text-emerald-600" },
                     ].map((c, i) => (
                       <div key={i} className="bg-white/70 backdrop-blur-md border border-slate-200/80 p-5 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-300 flex flex-col justify-between">
                         <div>
@@ -706,15 +706,15 @@ export default function CreatorDashboard() {
                     <h2 className="font-headline text-lg font-bold text-slate-900 mb-1">Request withdrawal</h2>
                     <p className="text-xs text-slate-500 mb-4">
                       Payouts are sent from the Sentinal TestNet treasury to:{" "}
-                      <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200/40">{user?.walletAddress?.slice(0, 12)}…</span>
+                      <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200/40">{user?.walletAddress?.slice(0, 12)}â€¦</span>
                     </p>
                     <form onSubmit={submitWithdrawal} className="flex flex-col sm:flex-row gap-3 sm:items-end">
                       <div className="flex-1 space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Amount (ALGO)</label>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Amount (ETH)</label>
                         <input
                           type="number"
                           step="0.000001"
-                          min={withdrawalData?.minWithdrawalAlgo ?? 0.1}
+                          min={withdrawalData?.minWithdrawalEth ?? 0.1}
                           max={withdrawalData?.withdrawable ?? undefined}
                           value={withdrawAmount}
                           onChange={(e) => setWithdrawAmount(e.target.value)}
@@ -725,13 +725,13 @@ export default function CreatorDashboard() {
                       </div>
                       <button
                         type="submit"
-                        disabled={withdrawing || (withdrawalData?.withdrawable ?? 0) < (withdrawalData?.minWithdrawalAlgo ?? 0.1)}
+                        disabled={withdrawing || (withdrawalData?.withdrawable ?? 0) < (withdrawalData?.minWithdrawalEth ?? 0.1)}
                         className="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:shadow-lg hover:shadow-indigo-500/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                       >
                         {withdrawing && (
                           <span className="inline-block h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         )}
-                        {withdrawing ? "Submitting on-chain…" : "Withdraw"}
+                        {withdrawing ? "Submitting on-chainâ€¦" : "Withdraw"}
                       </button>
                     </form>
                   </div>
@@ -756,9 +756,9 @@ export default function CreatorDashboard() {
                           {(withdrawalData?.withdrawals ?? []).map((row) => (
                             <tr key={row.id} className="hover:bg-slate-50/30 transition-colors">
                               <td className="px-5 py-3.5 text-slate-500 font-medium">
-                                {row.createdAt ? new Date(row.createdAt).toLocaleString() : "—"}
+                                {row.createdAt ? new Date(row.createdAt).toLocaleString() : "â€”"}
                               </td>
-                              <td className="px-5 py-3.5 font-mono font-bold text-slate-800">{Number(row.amountAlgo).toFixed(6)} ALGO</td>
+                              <td className="px-5 py-3.5 font-mono font-bold text-slate-800">{Number(row.amountEth).toFixed(6)} ETH</td>
                               <td className="px-5 py-3.5">
                                 <span
                                   className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
@@ -784,12 +784,12 @@ export default function CreatorDashboard() {
                                     rel="noreferrer"
                                     className="font-mono text-xs text-indigo-600 hover:text-indigo-700 underline font-bold"
                                   >
-                                    {row.txId.slice(0, 12)}…
+                                    {row.txId.slice(0, 12)}â€¦
                                   </a>
                                 ) : row.errorDetail ? (
                                   <span className="text-xs text-rose-600 font-medium">{row.errorDetail}</span>
                                 ) : (
-                                  "—"
+                                  "â€”"
                                 )}
                               </td>
                             </tr>

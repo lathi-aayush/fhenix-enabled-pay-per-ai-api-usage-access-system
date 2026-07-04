@@ -3,7 +3,7 @@ import { studioFetch } from "./studioFetch.js";
 export function friendlyWorkflowError(err) {
   const msg = err?.response?.data?.error || err?.message || String(err);
   if (msg.includes("quota exceeded") || msg.includes("402")) {
-    return "Payment required. Approve the transaction in your Pera Wallet.";
+    return "Payment required. Approve the transaction in your MetaMask.";
   }
   return msg.slice(0, 220) || "Workflow failed. Please retry.";
 }

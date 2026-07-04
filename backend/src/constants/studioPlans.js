@@ -3,7 +3,7 @@
  * Exchange rates: set ETH_USD_RATE and INR_USD_RATE in env (update weekly).
  */
 
-const ETH_USD = Number(process.env.ETH_USD_RATE) || 0.129;
+const ETH_USD = Number(process.env.ETH_USD_RATE) || 3200;
 const INR_USD = Number(process.env.INR_USD_RATE) || 84.5;
 export const ETH_INR_RATE = ETH_USD * INR_USD;
 
@@ -23,16 +23,13 @@ export function weiToUsd(wei) {
 }
 
 /**
- * Monthly subscription prices in wei (1 ALGO = 1e18 wei).
+ * Monthly subscription prices in wei (1 ETH = 1e18 wei).
  * @type {Record<string, number>}
  */
 export const PLAN_PRICES = {
   free: 0,
-  /** ~₹491/mo · ~$5.81/mo @ ALGO=$0.129 */
   creator: 45_000_000,
-  /** ~₹1,309/mo · ~$15.48/mo */
   pro: 120_000_000,
-  /** ~₹3,819/mo · ~$45.15/mo */
   enterprise: 350_000_000,
 };
 
@@ -136,7 +133,7 @@ export function getPlanPriceWei(tier) {
 }
 
 /** @deprecated use getPlanPriceWei */
-export function getPlanPriceMicro(tier) {
+export function getPlanPriceWei(tier) {
   return getPlanPriceWei(tier);
 }
 
@@ -162,7 +159,7 @@ export function getCreditWeight(runType) {
   return CREDIT_WEIGHTS[runType] ?? CREDIT_WEIGHTS.prompt_single;
 }
 
-export function getOverageMicro(runType) {
+export function getOverageWei(runType) {
   const tier = RUNTYPE_TO_OVERAGE[runType] ?? "lite";
   return OVERAGE_PRICES[tier] ?? OVERAGE_PRICES.lite;
 }

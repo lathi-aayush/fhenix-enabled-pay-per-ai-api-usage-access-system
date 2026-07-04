@@ -1,8 +1,8 @@
 /**
- * metamask.js — MetaMask wallet integration for SentinelAI on Base Sepolia.
- * Replaces pera.js (Pera Wallet / Algorand).
+ * metamask.js â€” MetaMask wallet integration for SentinelAI on Base Sepolia.
+ * Replaces metamask.js (MetaMask / Base Sepolia).
  *
- * Uses window.ethereum directly — no external wallet library needed.
+ * Uses window.ethereum directly â€” no external wallet library needed.
  */
 
 const BASE_SEPOLIA_CHAIN_ID = "0x14A34"; // 84532 in hex
@@ -37,7 +37,7 @@ async function switchToBaseSepolia() {
     });
   } catch (e) {
     if (e.code === 4902) {
-      // Chain not added — add it
+      // Chain not added â€” add it
       await provider.request({
         method: "wallet_addEthereumChain",
         params: [
@@ -58,7 +58,7 @@ async function switchToBaseSepolia() {
 
 /**
  * Connect MetaMask and return the active address.
- * Equivalent of connectPera().
+ * Equivalent of connectMetaMask().
  */
 export async function connectMetaMask() {
   const provider = getProvider();
@@ -71,7 +71,7 @@ export async function connectMetaMask() {
 
 /**
  * Silently restore an existing MetaMask connection (no popup).
- * Equivalent of reconnectPera().
+ * Equivalent of reconnectMetaMask().
  */
 export async function reconnectMetaMask() {
   try {
@@ -96,7 +96,7 @@ export function getConnectedAddress() {
 
 /**
  * Sign an arbitrary message using MetaMask personal_sign (EIP-191).
- * Used for wallet challenge auth — replaces Pera signData().
+ * Used for wallet challenge auth â€” replaces MetaMask signData().
  *
  * Returns the hex signature string (0x...).
  */
@@ -112,7 +112,7 @@ export async function signMessage(message, address) {
 
 /**
  * Send a native ETH payment via MetaMask.
- * Equivalent of signAndSendPayment() from pera.js.
+ * Equivalent of signAndSendPayment() from metamask.js.
  *
  * @param {object} opts
  * @param {string} opts.from      Sender address

@@ -171,7 +171,7 @@ router.get("/stats", requireAuth, requireCreator, async (req, res) => {
       $group: {
         _id: "$serviceId",
         calls: { $sum: 1 },
-        earnedAlgo: { $sum: "$amountAlgo" },
+        earnedEth: { $sum: "$amountEth" },
         tokensServed: { $sum: { $ifNull: ["$totalTokens", 0] } },
       },
     },
@@ -180,7 +180,7 @@ router.get("/stats", requireAuth, requireCreator, async (req, res) => {
   const byService = Object.fromEntries(
     perServiceAgg.map((row) => [
       String(row._id),
-      { calls: row.calls, earnedAlgo: row.earnedAlgo, tokensServed: row.tokensServed ?? 0 },
+      { calls: row.calls, earnedEth: row.earnedEth, tokensServed: row.tokensServed ?? 0 },
     ])
   );
 
@@ -195,7 +195,7 @@ router.get("/stats", requireAuth, requireCreator, async (req, res) => {
       $group: {
         _id: null,
         totalCalls: { $sum: 1 },
-        totalEarned: { $sum: "$amountAlgo" },
+        totalEarned: { $sum: "$amountEth" },
         totalTokensServed: { $sum: { $ifNull: ["$totalTokens", 0] } },
       },
     },
@@ -207,12 +207,12 @@ router.get("/stats", requireAuth, requireCreator, async (req, res) => {
 
   const safe = services.map(({ encryptedApiKey: _e, ...rest }) => {
     const sid = String(rest._id);
-    const agg = byService[sid] || { calls: 0, earnedAlgo: 0, tokensServed: 0 };
+    const agg = byService[sid] || { calls: 0, earnedEth: 0, tokensServed: 0 };
     return {
       ...rest,
       providerConfigured: Boolean(rest.aiProvider && _e),
       logCalls: agg.calls,
-      logEarnedAlgo: agg.earnedAlgo,
+      logEarnedEth: agg.earnedEth,
       logTokensServed: agg.tokensServed,
     };
   });
@@ -247,7 +247,7 @@ router.get(
     const logs = await ApiUsageLog.find({ serviceId: { $in: serviceIds } })
       .sort({ createdAt: -1 })
       .limit(limit)
-      .populate("serviceId", "title pricePerThousandTokens minimumChargeAlgo creatorWallet")
+      .populate("serviceId", "title pricePerThousandTokens minimumChargeEth creatorWallet")
       .lean();
     res.json(
       logs.map((l) => ({
@@ -255,8 +255,8 @@ router.get(
         createdAt: l.createdAt,
         userWallet: l.userWallet,
         developerWallet: l.developerWallet,
-        amountAlgo: l.amountAlgo,
-        chargeAlgo: l.chargeAlgo ?? l.amountAlgo,
+        amountEth: l.amountEth,
+        chargeEth: l.chargeEth ?? l.amountEth,
         promptTokens: l.promptTokens,
         completionTokens: l.completionTokens,
         totalTokens: l.totalTokens,
@@ -273,7 +273,7 @@ router.get(
   }
 );
 
-/** Live Google/OpenAI/etc. test using the encrypted key on this listing (no ALGO payment). */
+/** Live Google/OpenAI/etc. test using the encrypted key on this listing (no ETH payment). */
 router.post(
   "/services/:id/test-upstream",
   requireAuth,
@@ -330,7 +330,7 @@ router.post(
         model: service.modelName,
         hint:
           service.aiProvider === "gemini"
-            ? "Use a Google AI Studio key (AIza…), disable HTTP referrer restrictions, and model gemini-2.0-flash."
+            ? "Use a Google AI Studio key (AIzaâ€¦), disable HTTP referrer restrictions, and model gemini-2.0-flash."
             : "Check provider API key and model name.",
       });
     }
@@ -537,7 +537,7 @@ router.get(
       totalWithdrawn: balances.totalWithdrawn,
       withdrawable: balances.withdrawable,
       pendingWithdrawals: balances.pendingWithdrawals,
-      minWithdrawalAlgo: MIN_WITHDRAWAL_ETH,
+      minWithdrawalEth: MIN_WITHDRAWAL_ETH,
       creatorWallet: req.user.walletAddress,
       withdrawals: history,
     });
@@ -563,7 +563,7 @@ router.post(
       const result = await requestCreatorWithdrawal({
         creatorWallet: req.user.walletAddress,
         userId: req.user.userId,
-        amountAlgo: Number(req.body.amount),
+        amountEth: Number(req.body.amount),
       });
       res.status(201).json(result);
     } catch (err) {

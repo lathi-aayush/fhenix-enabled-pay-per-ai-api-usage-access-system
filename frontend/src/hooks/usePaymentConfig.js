@@ -7,12 +7,12 @@ const ENV_RECEIVER =
   import.meta.env.VITE_RECEIVER_WALLET?.trim() ||
   "";
 
-const DEFAULT_ALGOD =
+const DEFAULT_RPC =
   import.meta.env.VITE_RPC_URL?.trim() || "https://sepolia.base.org";
 
 export function usePaymentConfig() {
   const [config, setConfig] = useState({
-    rpcUrl: DEFAULT_ALGOD,
+    rpcUrl: DEFAULT_RPC,
     receiverWallet: ENV_RECEIVER,
     loading: !ENV_RECEIVER,
   });
@@ -26,7 +26,7 @@ export function usePaymentConfig() {
         const receiverWallet = data?.receiverWallet?.trim() || ENV_RECEIVER;
         if (receiverWallet) setCachedReceiverWallet(receiverWallet);
         setConfig({
-          rpcUrl: data?.rpcUrl?.trim() || DEFAULT_ALGOD,
+          rpcUrl: data?.rpcUrl?.trim() || DEFAULT_RPC,
           receiverWallet,
           loading: false,
         });

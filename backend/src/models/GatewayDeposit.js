@@ -4,7 +4,7 @@ const gatewayDepositSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
     txId: { type: String, required: true, unique: true },
-    amountMicroAlgos: { type: Number, required: true },
+    amountWei: { type: Number, required: true },
     amountCents: { type: Number, required: true },
     senderAddress: { type: String },
     status: {
@@ -12,7 +12,7 @@ const gatewayDepositSchema = new mongoose.Schema(
       enum: ["pending", "confirmed", "failed"],
       default: "pending",
     },
-    confirmedRound: { type: Number },
+    blockNumber: { type: Number },
   },
   { timestamps: true }
 );

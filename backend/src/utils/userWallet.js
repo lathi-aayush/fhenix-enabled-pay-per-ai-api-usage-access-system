@@ -18,7 +18,7 @@ export function normalizeEvmAddress(addr) {
 
 /**
  * Canonical checksummed EVM address — throws on invalid input.
- * Drop-in replacement for canonicalWalletAddress (Algorand version).
+ * Drop-in replacement for canonicalWalletAddress (Base Sepolia version).
  */
 export function canonicalWalletAddress(raw) {
   const s = String(raw ?? "").trim();

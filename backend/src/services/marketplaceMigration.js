@@ -17,10 +17,10 @@ function slugify(title, id) {
   return `${base || "api"}-${String(id).slice(-6)}`;
 }
 
-function algoMinimumToCents(minimumChargeAlgo) {
+function ethMinimumToCents(minimumChargeEth) {
   const rate = Number(process.env.ETH_USD_RATE || 35);
-  const algo = Number(minimumChargeAlgo) || 0;
-  return Math.max(1, Math.round(algo * rate));
+  const eth = Number(minimumChargeEth) || 0;
+  return Math.max(1, Math.round(eth * rate));
 }
 
 export function serviceToProxyApiPayload(service, developerId) {
@@ -42,7 +42,7 @@ export function serviceToProxyApiPayload(service, developerId) {
     pricePerUnit:
       Number(service.pricePerThousandTokens) > 0
         ? Math.max(1, Math.round(Number(service.pricePerThousandTokens) * Number(process.env.ETH_USD_RATE || 35)))
-        : algoMinimumToCents(service.minimumChargeAlgo),
+        : ethMinimumToCents(service.minimumChargeEth),
     authType: "bearer",
     authHeaderEncrypted: service.encryptedApiKey,
     streamingSupported: true,
@@ -158,7 +158,7 @@ export async function migrateAccessTokensToSubscriptions({ limit = 500 } = {}) {
 
 function mapUsageLogToRecord(log, proxy, consumer, developer) {
   const success = log.success !== false;
-  const costCents = algoMinimumToCents(log.chargeAlgo ?? log.amountAlgo);
+  const costCents = ethMinimumToCents(log.chargeEth ?? log.amountEth);
   return {
     requestId: log.paymentRef || log.paymentTxId || `legacy-${log._id}`,
     consumerId: consumer?._id,
@@ -224,9 +224,6 @@ export async function ensureSentinelApiKey(userId) {
   }
   const key = `sk-sentinel-${crypto.randomBytes(32).toString("hex")}`;
   user.sentinelApiKey = key;
-  if (!user.algoAddress && user.walletAddress) {
-    user.algoAddress = user.walletAddress;
-  }
   await user.save();
   return { key, created: true };
 }

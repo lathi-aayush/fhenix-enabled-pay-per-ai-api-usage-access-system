@@ -34,7 +34,7 @@ function ImageGenNode({ id, data, selected }) {
         <option value="3:4">3:4</option>
       </select>
       <p className="text-[10px] text-secondary font-mono mt-1">
-        ~{(data?.estimatedCredits ?? 0.006).toFixed(4)} ALGO est.
+        ~{(data?.estimatedCredits ?? 0.006).toFixed(4)} ETH est.
       </p>
     </NodeShell>
   );

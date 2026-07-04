@@ -6,23 +6,18 @@ import { getSessionKeyWallet } from "../../wallet/sessionKey.js";
 import ReactMarkdown from "react-markdown";
 import { toast } from "react-hot-toast";
 
-function bytesToBase64(bytes) {
-  const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-  let binary = "";
-  for (let i = 0; i < u8.length; i++) binary += String.fromCharCode(u8[i]);
-  return btoa(binary);
-}
-
-function buildXPaymentHeader(signedTxnBytes) {
+function buildXPaymentHeader({ txHash, accept }) {
   const payload = {
-    paymentGroup: [bytesToBase64(signedTxnBytes)],
-    paymentIndex: 0,
+    txHash,
+    network: accept.network ?? "eip155:84532",
+    payTo: accept.payTo,
+    amount: accept.maxAmountRequired ?? accept.amount,
   };
   return btoa(JSON.stringify(payload));
 }
 
 export default function StudioChat() {
-  const { user, burnerReady } = useAuth();
+  const { burnerReady } = useAuth();
   const location = useLocation();
 
   const [services, setServices] = useState([]);
@@ -33,7 +28,7 @@ export default function StudioChat() {
   const [streaming, setStreaming] = useState(false);
 
   const messagesEndRef = useRef(null);
-  
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -47,10 +42,10 @@ export default function StudioChat() {
       try {
         const { data } = await api.get("/api/x402/services");
         setServices(data.services || []);
-        
+
         const params = new URLSearchParams(location.search);
         const sid = params.get("serviceId");
-        if (sid && data.services.some(s => s.id === sid)) {
+        if (sid && data.services.some((s) => s.id === sid)) {
           setSelectedServiceId(sid);
         } else if (data.services.length > 0) {
           setSelectedServiceId(data.services[0].id);
@@ -73,10 +68,9 @@ export default function StudioChat() {
     setLoading(true);
 
     try {
-      if (!burnerReady) throw new Error("Burner wallet is not ready.");
+      if (!burnerReady) throw new Error("Session key wallet is not ready.");
       const sessionWallet = getSessionKeyWallet();
 
-      // Step 1: Request quote (402 Payment Required expected)
       let challengeData;
       try {
         await api.post(`/api/x402/use/${selectedServiceId}`, {
@@ -85,56 +79,40 @@ export default function StudioChat() {
         });
         throw new Error("Expected 402 Payment Required, but request succeeded without payment.");
       } catch (err) {
-        if (err.response && err.response.status === 402) {
+        if (err.response?.status === 402) {
           challengeData = err.response.data;
         } else {
           throw err;
         }
       }
 
-      const acceptReq = challengeData.accepts[0];
-      const amountMicroAlgos = Number(acceptReq.maxAmountRequired);
+      const accept = challengeData.accepts?.[0];
+      if (!accept?.payTo) throw new Error("Invalid payment challenge from server");
 
-      // Step 2: Pay on-chain
-      toast(`Paying ${amountMicroAlgos / 1e6} ALGO to start chat...`);
-      const algodUrl = import.meta.env.VITE_ALGORAND_NODE || "https://testnet-api.algonode.cloud";
-      const algodClient = new algosdk.Algodv2("", algodUrl, "");
-      
-      const params = await algodClient.getTransactionParams().do();
-      const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-        sender: sessionWallet.addr,
-        receiver: acceptReq.payTo,
-        amount: BigInt(amountMicroAlgos),
-        suggestedParams: params,
-        note: new TextEncoder().encode("SentinalAI Chat Stream"),
+      const amountWei = BigInt(accept.maxAmountRequired ?? accept.amount);
+      if (amountWei <= 0n) throw new Error("Invalid charge amount from server");
+
+      toast(`Paying ${Number(amountWei) / 1e18} ETH to start chat...`);
+
+      const balanceHex = await window.ethereum?.request({
+        method: "eth_getBalance",
+        params: [sessionWallet.address, "latest"],
+      });
+      const balance = BigInt(balanceHex || "0x0");
+      if (balance < amountWei) {
+        throw new Error(
+          `Session key wallet has insufficient balance. Fund ${sessionWallet.address} from MetaMask.`
+        );
+      }
+
+      const { data: payData } = await api.post("/api/profile/session-key/send", {
+        privateKey: sessionWallet.privateKey,
+        to: accept.payTo,
+        amountWei: amountWei.toString(),
       });
 
-      const signedTxn = txn.signTxn(sessionWallet.sk);
-      const txId = txn.txID();
-      await algodClient.sendRawTransaction(signedTxn).do();
+      const xPaymentHeader = buildXPaymentHeader({ txHash: payData.txHash, accept });
 
-      // Wait for confirmation
-      let confirmedTx = null;
-      let attempts = 0;
-      while (!confirmedTx && attempts < 10) {
-        try {
-          confirmedTx = await algodClient.pendingTransactionInformation(txId).do();
-          if (confirmedTx["confirmed-round"]) break;
-        } catch (e) {}
-        attempts++;
-        await new Promise(resolve => setTimeout(resolve, 1500));
-      }
-
-      if (!confirmedTx?.["confirmed-round"]) {
-        throw new Error("Transaction confirmation timed out.");
-      }
-
-      // Allow Algorand indexer to catch up before x402 verification (backend polls indexer)
-      await new Promise((resolve) => setTimeout(resolve, 2500));
-
-      const xPaymentHeader = buildXPaymentHeader(signedTxn);
-
-      // Step 3: Paid AI call (JSON response — same transport as round 1 / x402-test.html)
       setStreaming(true);
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
@@ -151,20 +129,16 @@ export default function StudioChat() {
         if (last?.role === "assistant") last.content = assistantText;
         return updated;
       });
-
     } catch (err) {
       console.error(err);
       const apiErr = err.response?.data;
       const apiMsg =
-        apiErr?.detail ||
-        apiErr?.error ||
-        (typeof apiErr === "string" ? apiErr : null);
+        apiErr?.detail || apiErr?.error || (typeof apiErr === "string" ? apiErr : null);
       const message = apiMsg
         ? `${err.response?.status ? `Request failed (${err.response.status})` : "Request failed"}: ${apiMsg}`
         : err.message;
       toast.error(message || "Failed to chat.");
-      // Remove placeholder if it failed
-      setMessages(prev => prev.filter(m => m.content !== ""));
+      setMessages((prev) => prev.filter((m) => m.content !== ""));
     } finally {
       setLoading(false);
       setStreaming(false);
@@ -172,28 +146,33 @@ export default function StudioChat() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm m-6" style={{ height: "calc(100vh - 120px)" }}>
-      {/* Header */}
+    <div
+      className="flex flex-col h-full bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm m-6"
+      style={{ height: "calc(100vh - 120px)" }}
+    >
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 shrink-0">
         <div>
           <h2 className="text-lg font-semibold text-slate-800">AI Chat</h2>
-          <p className="text-sm text-slate-500">Pay per token using your Burner Wallet.</p>
+          <p className="text-sm text-slate-500">Pay per call using your session key wallet.</p>
         </div>
         <div>
-          <select 
+          <select
             className="border border-slate-300 rounded-md px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary/20"
             value={selectedServiceId}
             onChange={(e) => setSelectedServiceId(e.target.value)}
           >
-            <option value="" disabled>Select an AI Service</option>
-            {services.map(s => (
-              <option key={s.id} value={s.id}>{s.name} ({s.model})</option>
+            <option value="" disabled>
+              Select an AI Service
+            </option>
+            {services.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.model})
+              </option>
             ))}
           </select>
         </div>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-slate-400">
@@ -201,9 +180,15 @@ export default function StudioChat() {
           </div>
         ) : (
           messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] rounded-xl px-4 py-3 shadow-sm ${msg.role === 'user' ? 'bg-primary text-white' : 'bg-white border border-slate-200 text-slate-800'}`}>
-                {msg.role === 'user' ? (
+            <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div
+                className={`max-w-[80%] rounded-xl px-4 py-3 shadow-sm ${
+                  msg.role === "user"
+                    ? "bg-primary text-white"
+                    : "bg-white border border-slate-200 text-slate-800"
+                }`}
+              >
+                {msg.role === "user" ? (
                   <p className="whitespace-pre-wrap">{msg.content}</p>
                 ) : (
                   <div className="prose prose-sm max-w-none prose-slate">
@@ -214,18 +199,17 @@ export default function StudioChat() {
             </div>
           ))
         )}
-        {(loading && !streaming) && (
+        {loading && !streaming && (
           <div className="flex justify-start">
             <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm flex items-center gap-2 text-slate-500">
               <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-              <span className="text-sm">Paying & Confirming...</span>
+              <span className="text-sm">Paying & confirming...</span>
             </div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
       <div className="p-4 bg-white border-t border-slate-200 shrink-0">
         <form onSubmit={handleSubmit} className="flex gap-3">
           <input
@@ -233,10 +217,10 @@ export default function StudioChat() {
             className="flex-1 border border-slate-300 rounded-full px-5 py-3 outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-inner"
             placeholder="Type your message..."
             value={input}
-            onChange={e => setInput(e.target.value)}
+            onChange={(e) => setInput(e.target.value)}
             disabled={loading || streaming}
           />
-          <button 
+          <button
             type="submit"
             disabled={!input.trim() || loading || streaming || !selectedServiceId}
             className="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-sm"

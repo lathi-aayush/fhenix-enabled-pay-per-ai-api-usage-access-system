@@ -11,17 +11,9 @@
 
 SentinelAI lets creators monetize AI models on a pay-per-call basis. Users pay per API call using native ETH on Base Sepolia. Balances stored in the on-chain `SentinelPayment` contract are **FHE-encrypted** — nobody (not even the operator) can see individual user balances on-chain.
 
-### How it's different from the Algorand version
+### How it works
 
-| Feature | Algorand Version | Fhenix/EVM Version |
-|---|---|---|
-| Chain | Algorand TestNet | Base Sepolia (EVM) |
-| Wallet | Pera Wallet | MetaMask |
-| Payments | ALGO micro-transactions | ETH (native, Base Sepolia) |
-| Balance privacy | Public on-chain | FHE-encrypted `euint64` |
-| Smart contract | Puya ARC-4 Python | Solidity + FHE.sol |
-| Explorer | Lora (algokit.io) | BaseScan (sepolia.basescan.org) |
-| SDK | algosdk | ethers.js + @cofhe/sdk |
+SentinelAI lets creators monetize AI models on a pay-per-call basis. Users pay per API call using native ETH on Base Sepolia. Balances stored in the on-chain `SentinelPayment` contract are **FHE-encrypted** — nobody (not even the operator) can see individual user balances on-chain.
 
 ---
 

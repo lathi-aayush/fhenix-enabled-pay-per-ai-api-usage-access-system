@@ -2,9 +2,9 @@ import { User } from "../models/User.js";
 import { TxRecord } from "../models/TxRecord.js";
 import {
   getReceiptWithRetry,
-  getTransaction,
-  normalizeEvmAddress as normalizeAlgoAddress,
-  isValidEvmAddress,
+  parseEthTransferFromTx,
+  normalizeEvmAddress,
+  weiToEth,
 } from "../services/evmService.js";
 import { getPlanPriceWei, isPaidTier, getPlanCredits } from "../constants/studioPlans.js";
 import { resetMonthlyCredits } from "../services/studioCredits.js";
@@ -16,9 +16,6 @@ function getReceiverWallet() {
   return w;
 }
 
-function expectedUpgradeNote(tier, userId) {
-  return `sentinel_upgrade:${tier}:${userId}`;
-}
 
 export async function postSubscriptionUpgrade(req, res) {
   if (!process.env.RECEIVER_WALLET?.trim()) {
@@ -43,7 +40,7 @@ export async function postSubscriptionUpgrade(req, res) {
   }
   if (!user.walletAddress) {
     return res.status(400).json({
-      error: "Link your Pera wallet to this account before upgrading (Profile → Link wallet).",
+      error: "Link your MetaMask wallet to this account before upgrading (Profile â†’ Link wallet).",
     });
   }
 
@@ -60,15 +57,15 @@ export async function postSubscriptionUpgrade(req, res) {
     return res.status(500).json({ error: "Server misconfiguration: RECEIVER_WALLET not set" });
   }
 
-  const requiredMicro = getPlanPriceWei(tierNorm);
-  if (requiredMicro == null) {
+  const requiredWei = getPlanPriceWei(tierNorm);
+  if (requiredWei == null) {
     return res.status(400).json({ error: "Unknown plan price" });
   }
 
-  let txInfo;
+  let receipt;
   try {
-    txInfo = await getReceiptWithRetry(txIdTrim, {
-      maxAttempts: 12,
+    receipt = await getReceiptWithRetry(txIdTrim, {
+      tries: 12,
       delayMs: 2000,
     });
   } catch (e) {
@@ -78,21 +75,20 @@ export async function postSubscriptionUpgrade(req, res) {
     });
   }
 
-  const confirmedRound = // indexerTransactionConfirmedRound removed(txInfo);
-  if (!confirmedRound) {
+  if (!receipt || receipt.status !== 1) {
     return res.status(400).json({ error: "Transaction is not confirmed on-chain" });
   }
 
-  const parsed = getTransaction(txInfo);
+  const parsed = await parseEthTransferFromTx(txIdTrim);
   if (!parsed) {
     return res.status(400).json({ error: "Transaction is not a payment" });
   }
 
-  const { sender, receiver, amount, note } = parsed;
-  const senderN = normalizeAlgoAddress(sender);
-  const receiverN = normalizeAlgoAddress(receiver);
-  const expectedReceiverN = normalizeAlgoAddress(receiverWallet);
-  const userWalletN = normalizeAlgoAddress(user.walletAddress);
+  const { sender, receiver, amountWei } = parsed;
+  const senderN = normalizeEvmAddress(sender);
+  const receiverN = normalizeEvmAddress(receiver);
+  const expectedReceiverN = normalizeEvmAddress(receiverWallet);
+  const userWalletN = normalizeEvmAddress(user.walletAddress);
 
   if (!sameWallet(senderN, userWalletN)) {
     return res.status(400).json({ error: "Payment sender does not match your linked wallet" });
@@ -100,16 +96,10 @@ export async function postSubscriptionUpgrade(req, res) {
   if (receiverN !== expectedReceiverN) {
     return res.status(400).json({ error: "Payment receiver does not match platform wallet" });
   }
-  if (Number(amount) < requiredMicro) {
+  if (amountWei < BigInt(requiredWei)) {
     return res.status(400).json({
-      error: `Insufficient payment. Required at least ${requiredMicro / 1e6} ALGO for ${tierNorm}.`,
+      error: `Insufficient payment. Required at least ${weiToEth(requiredWei)} ETH for ${tierNorm}.`,
     });
-  }
-
-  const noteStr = /* decodeNote removed */ (note);
-  const expectedNote = expectedUpgradeNote(tierNorm, user._id.toString());
-  if (noteStr !== expectedNote) {
-    return res.status(400).json({ error: "Transaction note mismatch" });
   }
 
   const usageResetAt = new Date();
@@ -125,14 +115,14 @@ export async function postSubscriptionUpgrade(req, res) {
   await user.save();
 
   console.info(
-    `[studio upgrade] user=${user._id} ${previousTier}→${tierNorm} credits=${getPlanCredits(tierNorm)} resetAt=${usageResetAt.toISOString()}`
+    `[studio upgrade] user=${user._id} ${previousTier}â†’${tierNorm} credits=${getPlanCredits(tierNorm)} resetAt=${usageResetAt.toISOString()}`
   );
 
   await TxRecord.create({
     txId: txIdTrim,
     userId: user._id,
     tier: tierNorm,
-    amountMicroAlgo: Number(amount),
+    amountWei: Number(amountWei),
     confirmedAt: new Date(),
   });
 

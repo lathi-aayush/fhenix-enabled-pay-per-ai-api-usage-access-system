@@ -1,16 +1,18 @@
 import crypto from "crypto";
-import Ethsdk from "Ethsdk";
 import { estimateTokens, calculateCredits } from "./groqService.js";
 import { User } from "../models/User.js";
 import { WorkflowRun } from "../models/WorkflowRun.js";
 import { ApiUsageLog } from "../models/ApiUsageLog.js";
-import { decryptSecret } from "../utils/encrypt.js";
-import { getReceiptWithRetry, getTransaction, normalizeEvmAddress, weiWithinTolerance } from "./evmService.js";
+import {
+  getReceiptWithRetry,
+  parseEthTransferFromTx,
+  normalizeEvmAddress,
+} from "./evmService.js";
 import { weiWithinTolerance } from "./billing.js";
 
 /**
- * x402-style payment gate integrated with existing burner wallet flow.
- * Uses Eth credit estimates; frontend sends paymentProof (txId) after burner signs.
+ * x402-style payment gate integrated with existing session key wallet flow.
+ * Uses ETH credit estimates; frontend sends paymentProof (txHash) after signing.
  */
 
 export function estimateRunCost(workflow) {
@@ -49,13 +51,13 @@ export function estimateRunCost(workflow) {
 export function createPaymentChallenge(userId, workflowId, runId, estimatedCredits) {
   const recipient =
     process.env.X402_CONTRACT_ADDRESS ||
-    process.env.TREASURY_WALLET ||
+    process.env.TREASURY_WALLET_ADDRESS ||
     process.env.RECEIVER_WALLET ||
     "";
   return {
     protocol: "x402-sentinal-v1",
     amount: estimatedCredits,
-    currency: "Eth",
+    currency: "ETH",
     recipient,
     metadata: {
       workflowId: String(workflowId),
@@ -63,7 +65,7 @@ export function createPaymentChallenge(userId, workflowId, runId, estimatedCredi
       userId: String(userId),
       nonce: crypto.randomBytes(8).toString("hex"),
     },
-    message: `Workflow run requires ~${estimatedCredits} Eth (burner wallet)`,
+    message: `Workflow run requires ~${estimatedCredits} ETH (session key wallet)`,
   };
 }
 
@@ -79,7 +81,6 @@ export async function verifyAndCharge({ paymentProof, challenge, estimatedCredit
     return { success: false, error: "Invalid payment proof" };
   }
 
-  // 1. Replay Protection: ensure the transaction has not already been used
   const usedInWorkflow = await WorkflowRun.findOne({ txHash });
   const usedInApi = await ApiUsageLog.findOne({ paymentTxId: txHash });
   if (usedInWorkflow || usedInApi) {
@@ -89,13 +90,9 @@ export async function verifyAndCharge({ paymentProof, challenge, estimatedCredit
     };
   }
 
-  // 2. Fetch on-chain transaction from Indexer
-  let txInfo;
+  let receipt;
   try {
-    txInfo = await getReceiptWithRetry(txHash, {
-      maxAttempts: 10,
-      delayMs: 2000,
-    });
+    receipt = await getReceiptWithRetry(txHash, { tries: 10, delayMs: 2000 });
   } catch (err) {
     return {
       success: false,
@@ -103,18 +100,23 @@ export async function verifyAndCharge({ paymentProof, challenge, estimatedCredit
     };
   }
 
-  // 3. Parse payment details
-  const parsed = // parsePaymentFromIndexer removed(txInfo);
-  if (!parsed) {
+  if (!receipt || receipt.status !== 1) {
     return {
       success: false,
-      error: "Invalid transaction type: expected standard Eth payment transaction",
+      error: "Transaction failed or not confirmed on-chain",
     };
   }
 
-  const { sender, receiver, amount, note } = parsed;
+  const parsed = await parseEthTransferFromTx(txHash);
+  if (!parsed) {
+    return {
+      success: false,
+      error: "Invalid transaction type: expected native ETH payment",
+    };
+  }
 
-  // 4. Verify Recipient Wallet Address
+  const { sender, receiver, amountWei } = parsed;
+
   const expectedReceiver = normalizeEvmAddress(challenge.recipient);
   const actualReceiver = normalizeEvmAddress(receiver);
   if (actualReceiver !== expectedReceiver) {
@@ -124,26 +126,14 @@ export async function verifyAndCharge({ paymentProof, challenge, estimatedCredit
     };
   }
 
-  // 5. Verify Note / Workflow Reference Integrity
-  const decodedNote = "".trim();
-  const expectedNote = `workflow:${challenge.metadata.workflowId}`;
-  if (decodedNote !== expectedNote) {
+  const expectedWei = BigInt(Math.max(1, Math.ceil(challenge.amount * 1e18)));
+  if (!weiWithinTolerance(amountWei, expectedWei, 1)) {
     return {
       success: false,
-      error: `Transaction note mismatch. Expected '${expectedNote}', got '${decodedNote}'`,
+      error: `Payment amount does not match. Expected ~${expectedWei} wei, got ${amountWei} wei`,
     };
   }
 
-  // 6. Verify Amount Paid
-  const expectedwei = Math.max(1000, Math.ceil(challenge.amount * 1_000_000));
-  if (!weiWithinTolerance(Number(amount), expectedwei, 1)) {
-    return {
-      success: false,
-      error: `Payment amount does not match. Expected ~${expectedwei} wei, got ${amount} wei`,
-    };
-  }
-
-  // 7. Verify Sender Wallet Address (matches user's burner or primary wallet)
   const user = await User.findById(challenge.metadata.userId);
   if (!user) {
     return {
@@ -156,21 +146,12 @@ export async function verifyAndCharge({ paymentProof, challenge, estimatedCredit
   if (user.walletAddress) {
     expectedSenders.push(normalizeEvmAddress(user.walletAddress));
   }
-  if (user.burnerWalletEncrypted) {
-    try {
-      const mnemonic = decryptSecret(user.burnerWalletEncrypted);
-      const keys = Ethsdk.mnemonicToSecretKey(mnemonic.trim());
-      expectedSenders.push(normalizeEvmAddress(keys.addr));
-    } catch (err) {
-      console.error("[verifyAndCharge] Burner wallet decryption error:", err);
-    }
-  }
 
   const actualSender = normalizeEvmAddress(sender);
-  if (!expectedSenders.includes(actualSender)) {
+  if (expectedSenders.length > 0 && !expectedSenders.includes(actualSender)) {
     return {
       success: false,
-      error: "Sender address mismatch. Transaction must be signed by the user's registered wallet or burner wallet.",
+      error: "Sender address mismatch. Transaction must be signed by the user's linked wallet.",
     };
   }
 

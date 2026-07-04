@@ -4,7 +4,7 @@ const withdrawalSchema = new mongoose.Schema(
   {
     creatorWallet: { type: String, required: true, index: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    amountAlgo: { type: Number, required: true, min: 0.001 },
+    amountEth: { type: Number, required: true, min: 0.001 },
     status: {
       type: String,
       enum: ["pending", "completed", "failed"],

@@ -1,5 +1,5 @@
-/** Pera Wallet tutorial — same URL as HowItWorks Step 2 */
-export const PERA_WALLET_VIDEO_URL =
+/** MetaMask tutorial â€” same URL as HowItWorks Step 2 */
+export const METAMASK_TUTORIAL_VIDEO_URL =
   "https://youtu.be/m720vHR8g1U?si=-n0sLN5b0sqMuLBk&t=57";
 
 export const BLOCKED_REPLY =
@@ -27,8 +27,7 @@ export const SENSITIVE_DENYLIST = [
   "bypass",
   "logged in",
   "my balance",
-  "algo balance",
-  "my algo",
+  "eth balance",
   "my wallet",
   "my earnings",
   "my transactions",
@@ -46,11 +45,11 @@ export const SENSITIVE_DENYLIST = [
   "role permission",
 ];
 
-/** Tier 1 chip ids — order preserved for UI */
+/** Tier 1 chip ids â€” order preserved for UI */
 export const TOP_SUGGESTION_IDS = [
   "what-is-sentinal",
   "features",
-  "connect-pera",
+  "connect-metamask",
   "pay-per-call",
   "ai-studio",
   "browse-apis",
@@ -62,7 +61,7 @@ export const ASSISTANT_FAQ = [
     question: "What is Sentinal?",
     aliases: ["what is sentinal", "what is sentinel", "about sentinal", "tell me about sentinal"],
     answer:
-      "Sentinal is a decentralized pay-per-use AI platform built on Algorand. Browse AI APIs in the Marketplace or create content with AI Studio — every call is billed in micro-ALGO with on-chain transparency.",
+      "Sentinal is a decentralized pay-per-use AI platform built on Base Sepolia. Browse AI APIs in the Marketplace or create content with AI Studio â€” every call is billed in ETH with on-chain transparency.",
     action: { type: "route", target: "/docs/how-it-works", label: "Learn how it works" },
   },
   {
@@ -74,19 +73,19 @@ export const ASSISTANT_FAQ = [
     action: { type: "scroll", target: "products", label: "Compare products" },
   },
   {
-    id: "connect-pera",
-    question: "How do I connect Pera Wallet?",
-    aliases: ["connect pera", "pera wallet", "link wallet", "connect wallet", "how to connect wallet"],
+    id: "connect-metamask",
+    question: "How do I connect MetaMask?",
+    aliases: ["connect metamask", "metamask wallet", "link wallet", "connect wallet", "how to connect wallet"],
     answer:
-      "Click Connect Wallet in the top-right nav bar, select Pera Wallet, and approve the connection. Your ALGO balance will appear in the wallet bar once linked.",
-    action: { type: "external", target: PERA_WALLET_VIDEO_URL, label: "Watch Pera Wallet tutorial" },
+      "Click Connect Wallet in the top-right nav bar, select MetaMask, and approve the connection. Your ETH balance will appear in the wallet bar once linked.",
+    action: { type: "external", target: METAMASK_TUTORIAL_VIDEO_URL, label: "Watch MetaMask tutorial" },
   },
   {
     id: "pay-per-call",
     question: "How does pay-per-call work?",
-    aliases: ["pay per call", "pay-per-call", "micro payment", "micro algo", "billing model", "how does billing work"],
+    aliases: ["pay per call", "pay-per-call", "micro payment", "micro eth", "billing model", "how does billing work"],
     answer:
-      "Each API call is metered by our backend. Micro-ALGO is deducted from your wallet and settled on Algorand TestNet — no subscriptions, no credit cards, no middleman.",
+      "Each API call is metered by our backend. Micro-ETH is deducted from your wallet and settled on Base Sepolia â€” no subscriptions, no credit cards, no middleman.",
     action: { type: "route", target: "/docs/how-it-works", label: "See payment flow" },
   },
   {
@@ -94,7 +93,7 @@ export const ASSISTANT_FAQ = [
     question: "What is AI Studio?",
     aliases: ["ai studio", "what is studio", "studio features", "content creator tools"],
     answer:
-      "AI Studio is Sentinal's creator workspace — draft blogs, generate prompts, run workflows, edit clips, and schedule publishing across platforms.",
+      "AI Studio is Sentinal's creator workspace â€” draft blogs, generate prompts, run workflows, edit clips, and schedule publishing across platforms.",
     action: { type: "route", target: "/studio", label: "Open AI Studio" },
   },
   {
@@ -110,7 +109,7 @@ export const ASSISTANT_FAQ = [
     question: "What is the x402 protocol?",
     aliases: ["what is x402", "http 402", "machine payments", "x402 payments", "x402 protocol"],
     answer:
-      "x402 extends HTTP 402 Payment Required so autonomous agents can negotiate prices and pay for API access programmatically on Algorand.",
+      "x402 extends HTTP 402 Payment Required so autonomous agents can negotiate prices and pay for API access programmatically on Base Sepolia.",
     action: { type: "route", target: "/docs/x402", label: "Read x402 docs" },
   },
   {
@@ -132,9 +131,9 @@ export const ASSISTANT_FAQ = [
   {
     id: "pricing",
     question: "How much does it cost?",
-    aliases: ["how much", "pricing", "algo cost", "fees", "cost per call", "price"],
+    aliases: ["how much", "pricing", "eth cost", "fees", "cost per call", "price"],
     answer:
-      "You pay per API call in micro-ALGO. Standard Algorand network fees apply (~0.001 ALGO per on-chain transaction).",
+      "You pay per API call in ETH. Standard Base Sepolia network fees apply (~0.001 ETH per on-chain transaction).",
     action: { type: "route", target: "/docs/pricing", label: "View pricing" },
   },
   {
@@ -142,7 +141,7 @@ export const ASSISTANT_FAQ = [
     question: "What is a burner wallet?",
     aliases: ["burner", "burner wallet", "micro payments wallet", "top up burner"],
     answer:
-      "A browser-local burner wallet helps fund small payments without repeated Pera pop-ups. See the FAQ for a high-level overview.",
+      "A browser-local burner wallet helps fund small payments without repeated MetaMask pop-ups. See the FAQ for a high-level overview.",
     action: { type: "route", target: "/docs/faq#burner-wallets", label: "Read burner wallet FAQ" },
   },
   {
@@ -166,7 +165,7 @@ export const ASSISTANT_FAQ = [
     question: "How do I become a creator?",
     aliases: ["publish api", "sell api", "creator dashboard", "earn", "become creator", "publish apis"],
     answer:
-      "Connect Pera as a creator, publish your AI services on the Marketplace, and track on-chain earnings from your creator dashboard.",
+      "Connect MetaMask as a creator, publish your AI services on the Marketplace, and track on-chain earnings from your creator dashboard.",
     action: { type: "route", target: "/creator", label: "Creator dashboard" },
   },
   {
@@ -182,7 +181,7 @@ export const ASSISTANT_FAQ = [
     question: "What are workflows?",
     aliases: ["workflow builder", "agentic pipeline", "automation", "workflows", "workflow studio"],
     answer:
-      "Workflow Studio lets you build multi-step AI pipelines — connect prompts, image gen, and logic nodes in a visual canvas.",
+      "Workflow Studio lets you build multi-step AI pipelines â€” connect prompts, image gen, and logic nodes in a visual canvas.",
     action: { type: "route", target: "/studio/workflows", label: "Open Workflow Studio" },
   },
   {
@@ -190,7 +189,7 @@ export const ASSISTANT_FAQ = [
     question: "What are Studio execution rates?",
     aliases: ["studio pricing", "plan limits", "upgrade studio", "studio plan", "studio rates"],
     answer:
-      "Sentinel AI Studio operates on a pay-per-call model. Every tool execution (such as Blogging Agent, Prompt Generator, or Creative Workflow) requires a simple on-demand ALGO payment signed in Pera Wallet.",
+      "Sentinel AI Studio operates on a pay-per-call model. Every tool execution (such as Blogging Agent, Prompt Generator, or Creative Workflow) requires a simple on-demand ETH payment signed in MetaMask.",
     action: { type: "route", target: "/studio/plan", label: "View execution rates" },
   },
   {
@@ -219,7 +218,7 @@ function normalize(text) {
     .replace(/\s+/g, " ");
 }
 
-/** Detect pasted secrets — never echo or FAQ-match these */
+/** Detect pasted secrets â€” never echo or FAQ-match these */
 export function looksLikeSecret(text) {
   const raw = text.trim();
   if (!raw) return false;

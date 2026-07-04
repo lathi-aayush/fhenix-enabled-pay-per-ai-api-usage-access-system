@@ -1,5 +1,5 @@
 /**
- * Gateway route stub — ALGO deposit/payout flow removed.
+ * Gateway route stub — ETH deposit/payout flow removed.
  * Retained for future EVM gateway implementation.
  *
  * GET /api/gateway/status  → current gateway config

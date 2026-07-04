@@ -47,7 +47,7 @@ export function checkStudioCredits(defaultRunType) {
       req.x402Required = true;
       req.x402RunType = runType;
       req.x402OverageTier = RUNTYPE_TO_OVERAGE[runType] ?? "lite";
-      req.x402AmountMicro = OVERAGE_PRICES[req.x402OverageTier];
+      req.x402AmountWei = OVERAGE_PRICES[req.x402OverageTier];
       req.creditsRemaining = 0;
       req.studioCreditPool = 0;
       return next();

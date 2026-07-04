@@ -100,7 +100,7 @@ async function aggregateByMonth(userWallet, monthsBack = 6) {
  *   historyMonths – how many past months to use as training data (default: 6)
  *   forecastMonths– how many months to predict ahead             (default: 3)
  *   model         – "linear" | "weighted"                        (default: "linear")
- *   algoCostUSD   – cost of 1 ALGO in USD                        (default: 0.15)
+ *   ethCostUSD   – cost of 1 ETH in USD                        (default: 0.15)
  *   usdToInr      – USD→INR conversion rate                      (default: 84)
  */
 router.get("/usage", async (req, res) => {
@@ -110,13 +110,13 @@ router.get("/usage", async (req, res) => {
       historyMonths  = 6,
       forecastMonths = 3,
       model          = "linear",
-      algoCostUSD    = 0.15,
+      ethCostUSD    = 0.15,
       usdToInr       = 84,
     } = req.query;
 
     const hMonths = Math.min(Math.max(parseInt(historyMonths), 2), 24);
     const fMonths = Math.min(Math.max(parseInt(forecastMonths), 1), 12);
-    const algoUSD = parseFloat(algoCostUSD);
+    const ethUSD = parseFloat(ethCostUSD);
     const inrRate = parseFloat(usdToInr);
 
     // ── 1. Pull historical data ──────────────────────────────────────────────
@@ -162,17 +162,17 @@ router.get("/usage", async (req, res) => {
       const d = new Date(lastEntry.year, lastEntry.month - 1 + i + 1, 1);
       return {
         label:         monthNames[d.getMonth()] + " " + d.getFullYear(),
-        predictedAlgo: predictedAmounts[i],
-        predictedUSD:  parseFloat((predictedAmounts[i] * algoUSD).toFixed(4)),
-        predictedINR:  parseFloat((predictedAmounts[i] * algoUSD * inrRate).toFixed(2)),
+        predictedEth: predictedAmounts[i],
+        predictedUSD:  parseFloat((predictedAmounts[i] * ethUSD).toFixed(4)),
+        predictedINR:  parseFloat((predictedAmounts[i] * ethUSD * inrRate).toFixed(2)),
       };
     });
 
     // ── 4. Wallet top-up recommendation ──────────────────────────────────────
-    const next30dAlgo = forecastPeriods[0].predictedAlgo;
+    const next30dEth = forecastPeriods[0].predictedEth;
     const bufferPct   = 0.15;  // 15% safety buffer
-    const topupAlgo   = Math.ceil(next30dAlgo * (1 + bufferPct));
-    const topupINR    = parseFloat((topupAlgo * algoUSD * inrRate).toFixed(2));
+    const topupEth   = Math.ceil(next30dEth * (1 + bufferPct));
+    const topupINR    = parseFloat((topupEth * ethUSD * inrRate).toFixed(2));
 
     // ── 5. Trend summary ─────────────────────────────────────────────────────
     const avgHistory  = amounts.reduce((a, b) => a + b, 0) / amounts.length;
@@ -187,21 +187,21 @@ router.get("/usage", async (req, res) => {
       confidence,   // 0-100, how reliable the prediction is
       history: history.map((h) => ({
         label:       h.label,
-        totalAlgo:   h.totalAmount,
+        totalEth:   h.totalAmount,
         txCount:     h.txCount,
-        totalINR:    parseFloat((h.totalAmount * algoUSD * inrRate).toFixed(2)),
+        totalINR:    parseFloat((h.totalAmount * ethUSD * inrRate).toFixed(2)),
       })),
       forecast: forecastPeriods,
       recommendation: {
-        next30dAlgo,
-        topupAlgo,
+        next30dEth,
+        topupEth,
         topupINR,
         bufferPct: bufferPct * 100,
-        message: `Top up ~${topupAlgo} ALGO (₹${topupINR}) to cover the next 30 days with a ${bufferPct * 100}% safety buffer.`,
+        message: `Top up ~${topupEth} ETH (₹${topupINR}) to cover the next 30 days with a ${bufferPct * 100}% safety buffer.`,
       },
       summary: {
-        avgHistoricalAlgo: parseFloat(avgHistory.toFixed(4)),
-        avgForecastAlgo:   parseFloat(avgForecast.toFixed(4)),
+        avgHistoricalEth: parseFloat(avgHistory.toFixed(4)),
+        avgForecastEth:   parseFloat(avgForecast.toFixed(4)),
         trendDirection:    trendPct > 2 ? "increasing" : trendPct < -2 ? "decreasing" : "stable",
         trendPercent:      trendPct,
       },
@@ -221,7 +221,7 @@ router.get("/usage", async (req, res) => {
  * Query params:
  *   wallet        – filter to a specific userWallet (optional)
  *   historyMonths – how many past months (default: 12)
- *   algoCostUSD   – cost of 1 ALGO in USD (default: 0.15)
+ *   ethCostUSD   – cost of 1 ETH in USD (default: 0.15)
  *   usdToInr      – USD→INR conversion rate (default: 84)
  */
 router.get("/history", async (req, res) => {
@@ -229,30 +229,30 @@ router.get("/history", async (req, res) => {
     const {
       wallet,
       historyMonths = 12,
-      algoCostUSD   = 0.15,
+      ethCostUSD   = 0.15,
       usdToInr      = 84,
     } = req.query;
 
     const hMonths = Math.min(Math.max(parseInt(historyMonths), 1), 24);
-    const algoUSD = parseFloat(algoCostUSD);
+    const ethUSD = parseFloat(ethCostUSD);
     const inrRate = parseFloat(usdToInr);
 
     const history = await aggregateByMonth(wallet || null, hMonths);
 
     const data = history.map((h) => ({
       label:     h.label,
-      totalAlgo: h.totalAmount,
+      totalEth: h.totalAmount,
       txCount:   h.txCount,
-      totalINR:  parseFloat((h.totalAmount * algoUSD * inrRate).toFixed(2)),
+      totalINR:  parseFloat((h.totalAmount * ethUSD * inrRate).toFixed(2)),
     }));
 
-    const totalAlgo = data.reduce((acc, d) => acc + d.totalAlgo, 0);
+    const totalEth = data.reduce((acc, d) => acc + d.totalEth, 0);
 
     res.json({
       periods: data,
       total: {
-        algo: parseFloat(totalAlgo.toFixed(4)),
-        inr:  parseFloat((totalAlgo * algoUSD * inrRate).toFixed(2)),
+        eth: parseFloat(totalEth.toFixed(4)),
+        inr:  parseFloat((totalEth * ethUSD * inrRate).toFixed(2)),
         txs:  data.reduce((acc, d) => acc + d.txCount, 0),
       },
     });

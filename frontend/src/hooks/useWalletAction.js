@@ -6,7 +6,7 @@ import { useMetaMaskLogin } from "../context/MetaMaskLoginContext.jsx";
 /**
  * Run an action only when the user has a wallet session.
  * Guests are prompted to connect MetaMask first; on success the action runs immediately.
- * Replaces the Pera-based version.
+ * Replaces the MetaMask-based version.
  */
 export function useWalletAction() {
   const { isAuthenticated } = useAuth();

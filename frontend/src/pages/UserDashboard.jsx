@@ -21,7 +21,7 @@ export default function UserDashboard() {
   const [profileData, setProfileData] = useState(null);
   const [txSummary, setTxSummary] = useState(null);
   const [txItems, setTxItems] = useState([]);
-  const [walletBalanceAlgo, setWalletBalanceAlgo] = useState(null);
+  const [walletBalanceEth, setWalletBalanceEth] = useState(null);
   const [creatorStats, setCreatorStats] = useState(null);
 
   const applyKeysPayload = useCallback((data) => {
@@ -53,9 +53,9 @@ export default function UserDashboard() {
         api.get("/api/user/usage?limit=50"),
         api.get("/api/services/agent-context"),
         api.get("/api/user/transactions?limit=500").catch(() => ({
-          data: { items: [], summary: { totalCalls: 0, totalTokensConsumed: 0, totalAlgoSpent: 0 } },
+          data: { items: [], summary: { totalCalls: 0, totalTokensConsumed: 0, totalEthSpent: 0 } },
         })),
-        api.get("/api/user/algo-balance").catch(() => ({ data: null })),
+        api.get("/api/user/eth-balance").catch(() => ({ data: null })),
         api.get("/api/gateway/consumer/dashboard").catch(() => ({ data: null })),
         api.get("/api/profile/summary").catch(() => ({ data: null })),
       ];
@@ -72,7 +72,7 @@ export default function UserDashboard() {
       setAgentJson(ctx.data ?? null);
       setTxSummary(tx.data?.summary ?? null);
       setTxItems(tx.data?.items ?? []);
-      setWalletBalanceAlgo(bal.data?.balanceAlgo ?? null);
+      setWalletBalanceEth(bal.data?.balanceEth ?? null);
       setGatewayData(gw.data ?? null);
       setProfileData(profile.data ?? null);
       setCreatorStats(creator?.data ?? null);
@@ -136,9 +136,9 @@ export default function UserDashboard() {
     txSummary?.totalTokensConsumed ?? 0
   );
 
-  const onChainBalance = walletBalanceAlgo;
+  const onChainBalance = walletBalanceEth;
   const gatewayPrepaidCents = gw.balanceCents ?? gwSummary.balanceCents ?? 0;
-  const gatewayPrepaidAlgo = gw.balanceAlgo ?? gwSummary.balanceAlgo ?? 0;
+  const gatewayPrepaidEth = gw.balanceEth ?? gwSummary.balanceEth ?? 0;
 
   const recentLogs = gw.recentLogs?.length
     ? gw.recentLogs
@@ -149,7 +149,7 @@ export default function UserDashboard() {
             id: row.id,
             apiName: row.serviceTitle,
             timestamp: row.createdAt,
-            costAlgo: row.amountAlgo,
+            costEth: row.amountEth,
             tokensTotal: row.totalTokens,
             requestStatus: row.success === false ? "failed" : "success",
             source: "legacy",
@@ -160,7 +160,7 @@ export default function UserDashboard() {
               id: row.id,
               apiName: row.serviceTitle,
               timestamp: row.createdAt,
-              costAlgo: row.amountAlgo ?? row.chargeAlgo,
+              costEth: row.amountEth ?? row.chargeEth,
               tokensTotal: row.totalTokens,
               requestStatus: row.success === false ? "failed" : "success",
               source: "legacy",
@@ -170,7 +170,7 @@ export default function UserDashboard() {
               id: row.id,
               apiName: row.serviceTitle,
               timestamp: row.createdAt,
-              costAlgo: row.amountAlgo,
+              costEth: row.amountEth,
               tokensTotal: row.totalTokens,
               requestStatus: row.success === false ? "failed" : "success",
               source: "creator",
@@ -206,8 +206,8 @@ export default function UserDashboard() {
                   </span>
                 </div>
                 <p className="text-on-surface-variant text-xs">
-                  {row.aiProvider} · {row.modelName || "model"} ·{" "}
-                  {Number(row.pricePerUnitAlgo ?? 0).toFixed(6)} ALGO · {row.callCount ?? 0} calls
+                  {row.aiProvider} Â· {row.modelName || "model"} Â·{" "}
+                  {Number(row.pricePerUnitEth ?? 0).toFixed(6)} ETH Â· {row.callCount ?? 0} calls
                 </p>
                 <p className="font-mono text-xs break-all mt-2 text-primary">{row.proxyUrl}</p>
                 {row.legacyServiceId && (
@@ -215,7 +215,7 @@ export default function UserDashboard() {
                     to={`/marketplace/services/${row.legacyServiceId}`}
                     className="text-xs text-secondary hover:underline mt-1 w-fit"
                   >
-                    View marketplace listing →
+                    View marketplace listing â†’
                   </Link>
                 )}
               </div>
@@ -228,10 +228,10 @@ export default function UserDashboard() {
         <h2 className="font-semibold text-primary mb-1">Proxy API keys</h2>
         <p className="text-sm text-on-surface-variant mb-4">
           Keys you generated to call marketplace services
-          {user?.walletAddress ? "" : " — connect a wallet to generate keys"}.
+          {user?.walletAddress ? "" : " â€” connect a wallet to generate keys"}.
         </p>
         {loading ? (
-          <p className="text-sm text-on-surface-variant">Loading keys…</p>
+          <p className="text-sm text-on-surface-variant">Loading keysâ€¦</p>
         ) : keys.length === 0 ? (
           <p className="text-sm text-on-surface-variant">
             No proxy keys yet. Open a service in the marketplace and generate one.
@@ -245,9 +245,9 @@ export default function UserDashboard() {
               >
                 <p className="font-semibold">{row.service?.title ?? "Service"}</p>
                 <p className="text-on-surface-variant text-xs">
-                  {row.service?.aiProvider} · {row.service?.modelName} ·{" "}
-                  {Number(row.service?.pricePerThousandTokens ?? 0).toFixed(6)} ALGO/1k tok · min{" "}
-                  {Number(row.service?.minimumChargeAlgo ?? 0).toFixed(6)} ALGO
+                  {row.service?.aiProvider} Â· {row.service?.modelName} Â·{" "}
+                  {Number(row.service?.pricePerThousandTokens ?? 0).toFixed(6)} ETH/1k tok Â· min{" "}
+                  {Number(row.service?.minimumChargeEth ?? 0).toFixed(6)} ETH
                 </p>
                 <p className="font-mono text-xs break-all mt-2">{row.key}</p>
                 {row.createdAt && (
@@ -320,14 +320,14 @@ export default function UserDashboard() {
             {!user?.walletAddress
               ? "No wallet"
               : onChainBalance != null
-                ? `${onChainBalance.toFixed(4)} ALGO`
+                ? `${onChainBalance.toFixed(4)} ETH`
                 : loading
-                  ? "…"
-                  : "—"}
+                  ? "â€¦"
+                  : "â€”"}
           </p>
           {gatewayPrepaidCents > 0 && (
             <p className="text-xs text-on-surface-variant font-mono mt-0.5">
-              + {gatewayPrepaidAlgo.toFixed(4)} ALGO prepaid
+              + {gatewayPrepaidEth.toFixed(4)} ETH prepaid
             </p>
           )}
         </div>
@@ -336,7 +336,7 @@ export default function UserDashboard() {
           <p className="text-2xl font-headline font-semibold text-primary mt-1">{consumerCalls}</p>
           {gw.totals?.legacyCalls > 0 && (
             <p className="text-xs text-on-surface-variant mt-0.5">
-              {gw.totals.gatewayCalls} gateway · {gw.totals.legacyCalls} legacy
+              {gw.totals.gatewayCalls} gateway Â· {gw.totals.legacyCalls} legacy
             </p>
           )}
           {isCreator && (creatorSummary.totalUses ?? creatorStats?.totalUses) > 0 && (
@@ -361,7 +361,7 @@ export default function UserDashboard() {
           {isCreator ? (
             <>
               <p className="text-2xl font-headline font-semibold text-primary mt-1 font-mono">
-                {(creatorSummary.totalRevenue ?? creatorStats?.totalRevenue ?? 0).toFixed(4)} ALGO
+                {(creatorSummary.totalRevenue ?? creatorStats?.totalRevenue ?? 0).toFixed(4)} ETH
               </p>
               <p className="text-xs text-on-surface-variant mt-0.5">
                 {creatorSummary.serviceCount ?? creatorStats?.serviceCount ?? 0} published endpoint
@@ -375,7 +375,7 @@ export default function UserDashboard() {
       </section>
 
       {loading ? (
-        <p className="text-on-surface-variant">Loading…</p>
+        <p className="text-on-surface-variant">Loadingâ€¦</p>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           <section id="usage" className="bg-white border border-surface-variant rounded-md p-5">
@@ -388,14 +388,14 @@ export default function UserDashboard() {
               <li className="flex justify-between">
                 <span>On-chain wallet</span>
                 <span className="font-mono">
-                  {onChainBalance != null ? `${onChainBalance.toFixed(4)} ALGO` : "—"}
+                  {onChainBalance != null ? `${onChainBalance.toFixed(4)} ETH` : "â€”"}
                 </span>
               </li>
               {isCreator && (
                 <li className="flex justify-between">
                   <span>Creator revenue</span>
                   <span className="font-mono">
-                    {(creatorSummary.totalRevenue ?? creatorStats?.totalRevenue ?? 0).toFixed(4)} ALGO
+                    {(creatorSummary.totalRevenue ?? creatorStats?.totalRevenue ?? 0).toFixed(4)} ETH
                   </span>
                 </li>
               )}
@@ -435,7 +435,7 @@ export default function UserDashboard() {
                   }
                 >
                   {gw.lowBalance || (onChainBalance != null && onChainBalance < 0.5)
-                    ? "⚠ Low balance"
+                    ? "âš  Low balance"
                     : "OK"}
                 </span>
               </li>
@@ -451,7 +451,7 @@ export default function UserDashboard() {
                   <div key={sub.id} className="bg-white border border-surface-variant rounded-md p-4 text-sm">
                     <p className="font-semibold">{sub.apiName || "API"}</p>
                     <p className="text-on-surface-variant text-xs mt-1">
-                      {sub.pricingModel} · {sub.pricePerUnitAlgo?.toFixed(6) || "?"} ALGO/unit
+                      {sub.pricingModel} Â· {sub.pricePerUnitEth?.toFixed(6) || "?"} ETH/unit
                     </p>
                     {sub.proxyUrl && (
                       <p className="font-mono text-xs break-all mt-2 text-primary">{sub.proxyUrl}</p>
@@ -491,7 +491,7 @@ export default function UserDashboard() {
                       className="bg-white border border-surface-variant rounded-md px-4 py-3 flex flex-wrap justify-between gap-2 items-center"
                     >
                       <span className="text-on-surface-variant">
-                        {row.apiName || row.serviceTitle || "—"}
+                        {row.apiName || row.serviceTitle || "â€”"}
                         {row.source && (
                           <span className={`ml-1 text-[9px] px-1 py-0.5 rounded ${
                             row.source === "gateway" ? "bg-blue-50 text-blue-700" : "bg-amber-50 text-amber-700"
@@ -510,13 +510,13 @@ export default function UserDashboard() {
                         {row.requestStatus === "failed" || row.success === false ? "Failed" : "Completed"}
                       </span>
                       <span className="font-mono shrink-0 text-xs">
-                        {row.costAlgo != null
-                          ? `${Number(row.costAlgo).toFixed(6)} ALGO`
-                          : row.amountAlgo != null
-                            ? `${Number(row.amountAlgo).toFixed(6)} ALGO`
-                            : `${row.costCents || 0}¢`
+                        {row.costEth != null
+                          ? `${Number(row.costEth).toFixed(6)} ETH`
+                          : row.amountEth != null
+                            ? `${Number(row.amountEth).toFixed(6)} ETH`
+                            : `${row.costCents || 0}Â¢`
                         }
-                        {(row.tokensTotal || row.totalTokens) != null ? ` · ${row.tokensTotal || row.totalTokens} tok` : ""}
+                        {(row.tokensTotal || row.totalTokens) != null ? ` Â· ${row.tokensTotal || row.totalTokens} tok` : ""}
                       </span>
                       {row.responseTimeMs && (
                         <span className="text-xs text-on-surface-variant">{row.responseTimeMs}ms</span>
@@ -615,7 +615,7 @@ export default function UserDashboard() {
           {agentJson
             ? JSON.stringify(agentJson, null, 2)
             : loading
-              ? "Loading agent context…"
+              ? "Loading agent contextâ€¦"
               : "No active services found."}
         </pre>
 

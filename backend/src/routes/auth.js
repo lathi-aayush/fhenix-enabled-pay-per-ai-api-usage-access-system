@@ -43,7 +43,7 @@ function userPayload(user) {
 
 /**
  * Cryptographically verifies a MetaMask personal_sign challenge signature.
- * Uses ethers.verifyMessage — recovers the signer address and compares to walletAddress.
+ * Uses ethers.verifyMessage â€” recovers the signer address and compares to walletAddress.
  */
 async function verifyChallenge(walletAddress, nonce, signature) {
   if (!walletAddress || !nonce || !signature) {
@@ -144,7 +144,7 @@ router.post(
 
 /**
  * POST /api/auth/login
- * Pera Wallet login — verified via challenge signature
+ * MetaMask login â€” verified via challenge signature
  */
 router.post(
   "/login",
@@ -242,7 +242,7 @@ router.post(
       try {
         canonical = canonicalWalletAddress(rawWallet);
       } catch (e) {
-        return res.status(400).json({ error: "Invalid Algorand wallet address" });
+        return res.status(400).json({ error: "Invalid MetaMask wallet address" });
       }
 
       // Verify challenge signature
@@ -288,7 +288,7 @@ router.post(
 
 /**
  * POST /api/auth/link-wallet
- * Links an Algorand wallet address to the logged-in profile after verified challenge
+ * Links an MetaMask wallet address to the logged-in profile after verified challenge
  */
 router.post(
   "/link-wallet",
@@ -340,7 +340,7 @@ router.post(
 
 /**
  * POST /api/auth/become-creator
- * Switch the logged-in account to creator role (requires linked Pera wallet).
+ * Switch the logged-in account to creator role (requires linked MetaMask wallet).
  */
 router.post("/become-creator", requireAuth, async (req, res) => {
   try {
@@ -350,7 +350,7 @@ router.post("/become-creator", requireAuth, async (req, res) => {
     }
     if (!user.walletAddress?.trim()) {
       return res.status(400).json({
-        error: "Link your Pera wallet first (Profile or home → Connect as Creator).",
+        error: "Link your MetaMask wallet first (Profile or home â†’ Connect as Creator).",
         code: "WALLET_REQUIRED",
       });
     }

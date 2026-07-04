@@ -13,7 +13,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, "../backend/.env") });
 
 const FLOW = [
-  "1. Deposit: POST /api/gateway/deposit/confirm (vault ALGO → walletBalanceCents)",
+  "1. Deposit: POST /api/gateway/deposit/confirm (vault ETH → walletBalanceCents)",
   "2. Subscribe: POST /api/gateway/subscribe → developerIssuedKey",
   "3. Proxy: POST /proxy/:slug/* with Bearer key",
   "4. Usage: UsageRecord + apiKeyPrefix + subscriptionId",

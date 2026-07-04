@@ -1,5 +1,5 @@
 /**
- * Gateway deposit service stub — Algorand deposit flow removed.
+ * Gateway deposit service stub ï¿½ Base Sepolia deposit flow removed.
  * EVM deposit via SentinelPayment contract instead.
  */
 export async function pollRecentVaultDeposits() {

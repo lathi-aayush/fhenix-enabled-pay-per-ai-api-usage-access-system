@@ -36,7 +36,7 @@ const itemVariants = {
 
 const MARQUEE_ITEMS = [
   { name: "Base Sepolia", icon: "hub", color: "text-indigo-500" },
-  { name: "0.001 ALGO / tx", icon: "toll", color: "text-emerald-500" },
+  { name: "0.001 ETH / tx", icon: "toll", color: "text-emerald-500" },
   { name: "MetaMask", icon: "account_balance_wallet", color: "text-violet-500" },
   { name: "DeepSeek V3", icon: "psychology", color: "text-indigo-500" },
   { name: "Groq Inference", icon: "bolt", color: "text-amber-500" },
@@ -131,10 +131,10 @@ export default function Home() {
                 <span className="inline-flex items-center gap-1.5 py-1.5 px-4 rounded-full bg-white/80 backdrop-blur-sm border border-slate-200/80 shadow-sm text-[10px] font-bold tracking-[0.15em] uppercase text-slate-600">
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
                   <span className="text-indigo-600">Marketplace</span>
-                  <span className="text-slate-300">·</span>
+                  <span className="text-slate-300">Â·</span>
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   <span className="text-emerald-600">AI Studio</span>
-                  <span className="text-slate-300">·</span>
+                  <span className="text-slate-300">Â·</span>
                   <span className="flex h-1.5 w-1.5 relative">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
@@ -158,11 +158,11 @@ export default function Home() {
                 variants={itemVariants}
                 className="font-body text-[16px] text-slate-500 max-w-2xl leading-relaxed text-center"
               >
-                A <strong className="text-slate-700">decentralized API marketplace</strong> — pay per call, no subscription. An{" "}
-                <strong className="text-slate-700">AI creative Studio</strong> for creators with pay-per-call micropayments. Both settled on Algorand.
+                A <strong className="text-slate-700">decentralized API marketplace</strong> â€” pay per call, no subscription. An{" "}
+                <strong className="text-slate-700">AI creative Studio</strong> for creators with pay-per-call micropayments. Both settled on Base Sepolia.
               </motion.p>
 
-              {/* 3 value pillars — centered row */}
+              {/* 3 value pillars â€” centered row */}
               <motion.div
                 variants={itemVariants}
                 className="flex flex-wrap items-center justify-center gap-6"
@@ -229,7 +229,7 @@ export default function Home() {
             <p className="text-[10px] font-bold tracking-[0.15em] text-indigo-600 uppercase mb-2">For Developers</p>
             <h3 className="font-headline text-2xl font-bold text-slate-900">Marketplace</h3>
             <p className="text-sm text-slate-500 mt-3 leading-relaxed">
-              Browse AI APIs, pay per call with MetaMask, and integrate x402 payments on Algorand.
+              Browse AI APIs, pay per call with MetaMask, and integrate x402 payments on Base Sepolia.
             </p>
             <div className="mt-6 flex flex-col items-start gap-2">
               <span className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 group-hover:text-indigo-700 transition-colors">
@@ -243,7 +243,7 @@ export default function Home() {
                 }}
                 className="text-xs font-semibold text-slate-500 hover:text-[#031634] transition-colors"
               >
-                Publish APIs and earn →
+                Publish APIs and earn â†’
               </button>
             </div>
           </motion.div>
@@ -322,7 +322,7 @@ export default function Home() {
             <div>
               <span className="text-xl font-bold tracking-tight font-headline text-slate-900">Sentinal</span>
               <p className="text-sm text-slate-400 mt-3 leading-relaxed max-w-xs">
-                Pay-per-use AI APIs on Algorand. No subscriptions, no lock-in.
+                Pay-per-use AI APIs on Base Sepolia. No subscriptions, no lock-in.
               </p>
             </div>
             <div>
@@ -368,7 +368,7 @@ export default function Home() {
                 </li>
                 <li>
                   <a
-                    href="https://github.com/lathi-aayush/pay-per-usage-ai-api-access-system-using-algorand/tree/main"
+                    href="https://github.com/lathi-aayush/fhenix-enabled-pay-per-ai-api-usage-access-system/tree/main"
                     className="text-slate-500 hover:text-indigo-600 transition-colors duration-300 font-medium cursor-pointer"
                     target="_blank"
                     rel="noreferrer"
@@ -456,7 +456,7 @@ export default function Home() {
             </div>
           </div>
           <p className="text-[10px] text-slate-400 font-semibold tracking-wider font-body uppercase mt-12 pt-8 border-t border-slate-100">
-            © 2026 Sentinal Infrastructure
+            Â© 2026 Sentinal Infrastructure
           </p>
         </div>
       </footer>
@@ -517,7 +517,7 @@ export default function Home() {
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-1">1. Acceptance of Terms</h4>
                     <p>
-                      By connecting your wallet to Sentinal, you agree to comply with these terms. The platform serves as a peer-to-peer developer marketplace mapping AI APIs to Algorand smart contracts.
+                      By connecting your wallet to Sentinal, you agree to comply with these terms. The platform serves as a peer-to-peer developer marketplace mapping AI APIs to Base Sepolia smart contracts.
                     </p>
                   </div>
                   <div>
@@ -529,7 +529,7 @@ export default function Home() {
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-1">3. Protocol Fees</h4>
                     <p>
-                      Transactions may involve smart contract executing fees and standard network gas charges paid directly to the Algorand blockchain. Sentinal does not custody or hold user funds.
+                      Transactions may involve smart contract executing fees and standard network gas charges paid directly to the Base Sepolia. Sentinal does not custody or hold user funds.
                     </p>
                   </div>
                 </div>
@@ -540,7 +540,7 @@ export default function Home() {
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-1">1. Decentralized & Self-Custodial</h4>
                     <p>
-                      Sentinal does not collect or store personal data, passwords, or emails. All authorization relies on cryptographic signatures from your Algorand wallet.
+                      Sentinal does not collect or store personal data, passwords, or emails. All authorization relies on cryptographic signatures from your MetaMask wallet.
                     </p>
                   </div>
                   <div>
@@ -552,7 +552,7 @@ export default function Home() {
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-1">3. On-Chain Transparency</h4>
                     <p>
-                      All pay-per-usage API call counts and wallet interaction metrics are logged publicly and permanently on the Algorand blockchain.
+                      All pay-per-usage API call counts and wallet interaction metrics are logged publicly and permanently on the Base Sepolia.
                     </p>
                   </div>
                 </div>
@@ -563,7 +563,7 @@ export default function Home() {
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-1">1. On-Chain Settlements & Non-Refundability</h4>
                     <p>
-                      All pay-per-usage transactions are processed and settled directly on the Algorand blockchain. Once a transaction is broadcasted, it is irreversible. Sentinal cannot refund ALGO or custom tokens spent on API keys or requests.
+                      All pay-per-usage transactions are processed and settled directly on the Base Sepolia. Once a transaction is broadcasted, it is irreversible. Sentinal cannot refund ETH or custom tokens spent on API keys or requests.
                     </p>
                   </div>
                   <div>
@@ -581,7 +581,7 @@ export default function Home() {
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-white mb-1">4. Smart Contract Execution & Logging</h4>
                     <p>
-                      By using this platform, you interact with Algorand Smart Contracts. Transaction details, including masked wallet addresses, transaction IDs, and call logs, are publicly recorded on the blockchain forever.
+                      By using this platform, you interact with Base Sepolia Smart Contracts. Transaction details, including masked wallet addresses, transaction IDs, and call logs, are publicly recorded on the blockchain forever.
                     </p>
                   </div>
                 </div>

@@ -6,8 +6,8 @@ import { api } from "../../api/client.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import GuestConnectBanner from "../../components/GuestConnectBanner.jsx";
 import {
-  algoDisplayToInr,
-  algoDisplayToUsd,
+  ethDisplayToInr,
+  ethDisplayToUsd,
 } from "../../constants/studioPlans.js";
 
 const RATES = [
@@ -80,10 +80,10 @@ export default function StudioPlan() {
           All features (cinematic Veo video generation, text-to-speech, infinite projects, and platform publishing) are fully unlocked.
         </p>
         <p className="text-xs text-slate-500 mt-2 font-semibold text-[#031634]">
-          Status: Pay-per-Call Mode Active · Micropayments Enabled
+          Status: Pay-per-Call Mode Active Â· Micropayments Enabled
         </p>
         {!isAuthenticated && (
-          <GuestConnectBanner message="Connect Pera Wallet to view usage details." className="mt-4" />
+          <GuestConnectBanner message="Connect MetaMask to view usage details." className="mt-4" />
         )}
       </header>
 
@@ -108,9 +108,9 @@ export default function StudioPlan() {
               </div>
 
               <div className="mt-4 pt-4 border-t border-slate-100">
-                <p className="text-2xl font-bold font-mono text-[#031634]">{rate.price} ALGO</p>
+                <p className="text-2xl font-bold font-mono text-[#031634]">{rate.price} ETH</p>
                 <p className="text-[10px] text-slate-500 mt-0.5">
-                  ≈ ₹{algoDisplayToInr(rate.price)} · ≈ ${algoDisplayToUsd(rate.price)} per execution
+                  â‰ˆ â‚¹{ethDisplayToInr(rate.price)} Â· â‰ˆ ${ethDisplayToUsd(rate.price)} per execution
                 </p>
               </div>
             </motion.div>
@@ -124,17 +124,17 @@ export default function StudioPlan() {
           <div className="space-y-1.5">
             <div className="w-8 h-8 rounded-full bg-slate-100 text-[#031634] flex items-center justify-center font-bold">1</div>
             <p className="font-semibold text-slate-900 text-xs">Link Wallet</p>
-            <p className="text-xs text-slate-500">Ensure your Pera Wallet is linked under your Profile menu.</p>
+            <p className="text-xs text-slate-500">Ensure your MetaMask is linked under your Profile menu.</p>
           </div>
           <div className="space-y-1.5">
             <div className="w-8 h-8 rounded-full bg-slate-100 text-[#031634] flex items-center justify-center font-bold">2</div>
             <p className="font-semibold text-slate-900 text-xs">Trigger Run</p>
-            <p className="text-xs text-slate-500">When you trigger a run, a payment consent popup displays the exact ALGO cost.</p>
+            <p className="text-xs text-slate-500">When you trigger a run, a payment consent popup displays the exact ETH cost.</p>
           </div>
           <div className="space-y-1.5">
             <div className="w-8 h-8 rounded-full bg-slate-100 text-[#031634] flex items-center justify-center font-bold">3</div>
             <p className="font-semibold text-slate-900 text-xs">Confirm On-chain</p>
-            <p className="text-xs text-slate-500">Sign the transaction in Pera. Once verified on-chain, execution proceeds immediately.</p>
+            <p className="text-xs text-slate-500">Sign the transaction in MetaMask. Once verified on-chain, execution proceeds immediately.</p>
           </div>
         </div>
       </section>

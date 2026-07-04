@@ -25,7 +25,7 @@ export default function WorkflowToolbar({
         {isSaving ? "Saving…" : lastSavedAt ? `Saved ${lastSavedAt.toLocaleTimeString()}` : "Unsaved"}
       </span>
       <span className="text-[10px] text-on-surface-variant ml-auto font-mono">
-        Burner: {walletBalance != null ? `${Number(walletBalance).toFixed(4)} ALGO` : "—"}
+        Burner: {walletBalance != null ? `${Number(walletBalance).toFixed(4)} ETH` : "—"}
       </span>
       <button
         type="button"

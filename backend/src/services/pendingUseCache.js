@@ -11,7 +11,7 @@ async function logPaymentTimeout(payload) {
       serviceId: payload.serviceId,
       accessTokenId: payload.accessTokenId,
       developerWallet: payload.developerWallet,
-      amountAlgo: payload.chargeAlgo,
+      amountEth: payload.chargeEth,
       aiProvider: payload.aiProvider,
       modelName: payload.modelName,
       paymentRef: payload.paymentRef,
@@ -20,7 +20,7 @@ async function logPaymentTimeout(payload) {
       promptTokens: payload.promptTokens,
       completionTokens: payload.completionTokens,
       totalTokens: payload.totalTokens,
-      chargeAlgo: payload.chargeAlgo,
+      chargeEth: payload.chargeEth,
       pricePerThousandTokens: payload.pricePerThousandTokens,
     });
   } catch (e) {

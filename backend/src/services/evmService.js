@@ -1,5 +1,5 @@
 /**
- * evmService.js — EVM/Base Sepolia equivalent of algorandService.js
+ * evmService.js — EVM/Base Sepolia equivalent of evmService.js
  *
  * Provides RPC interaction, tx receipt polling, address normalization,
  * and balance queries for Base Sepolia (chainId 84532).
@@ -66,7 +66,7 @@ export function sameEvmAddress(a, b) {
 
 /**
  * Poll for a confirmed transaction receipt with retries.
- * Equivalent of lookupTransactionByIDWithRetry from algorandService.
+ * Equivalent of lookupTransactionByIDWithRetry from evmService.
  */
 export async function getReceiptWithRetry(txHash, { tries = 12, delayMs = 2000 } = {}) {
   const provider = getProvider();
@@ -146,7 +146,7 @@ export function weiToEth(wei) {
 
 /**
  * Check if a paid wei amount is within tolerance of expected wei.
- * Equivalent of microAlgosWithinTolerance from billing.js.
+ * Equivalent of amountWeisWithinTolerance from billing.js.
  */
 export function weiWithinTolerance(paidWei, expectedWei, tolerancePercent = 1) {
   const paid = BigInt(paidWei);

@@ -198,7 +198,7 @@ export default function StudioLayout() {
   const isStudioHome = pathname === "/studio" || pathname === "/studio/";
 
   return (
-    <StudioOverageProvider rpcUrl={rpcUrl}>
+    <StudioOverageProvider>
     <div className="antialiased min-h-screen bg-[#f9f9f9]">
       <MegaNav />
 

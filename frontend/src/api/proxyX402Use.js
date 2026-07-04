@@ -1,6 +1,6 @@
 /**
- * proxyX402Use.js — EVM/Base Sepolia x402 payment for /api/use proxy calls.
- * Replaces the Algorand version (burner wallet + algosdk).
+ * proxyX402Use.js â€” EVM/Base Sepolia x402 payment for /api/use proxy calls.
+ * Replaces the Base Sepolia version (burner wallet + viem).
  *
  * Uses the session key wallet to sign and submit ETH transfers for x402 calls.
  */

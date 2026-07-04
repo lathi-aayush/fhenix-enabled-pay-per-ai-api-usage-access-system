@@ -10,7 +10,7 @@
 ```
 frontend/          React + Vite + TailwindCSS
   wallet/
-    metamask.js        EVM wallet (replaces Pera)
+    metamask.js        EVM wallet (MetaMask)
     sessionKey.js      Local encrypted EVM key for headless x402 payments
   context/
     MetaMaskLoginContext.jsx   Login/registration flow
@@ -203,26 +203,6 @@ npm run deploy           # needs DEPLOYER_PRIVATE_KEY + RPC_URL in .env
    - Currency: `ETH`
    - Explorer: `https://sepolia.basescan.org`
 2. Get testnet ETH: https://faucet.base.org
-
----
-
-## Key name renames from Algorand version
-
-| Old (Algorand) | New (Fhenix/EVM) |
-|---|---|
-| `computeChargeAlgo` | `computeChargeEth` |
-| `minimumChargeAlgo` | `minimumChargeEth` |
-| `microAlgosWithinTolerance` | `weiWithinTolerance` |
-| `algoToMicroAlgos` | `ethers.parseEther` / `ethToWei` |
-| `normalizeAlgoAddress` | `normalizeEvmAddress` |
-| `algosdk.isValidAddress` | `ethers.isAddress` / `isValidEvmAddress` |
-| `algosdk.verifyBytes` | `ethers.verifyMessage` |
-| `lora.algokit.io` | `sepolia.basescan.org` |
-| `ALGO_NETWORK=testnet` | `CHAIN_ID=84532` |
-| `studioOverageLog.algoAmount` | `studioOverageLog.ethAmount` |
-| Pera Wallet | MetaMask |
-| Burner wallet mnemonic | Session key (EVM private key, AES-encrypted) |
-| `PeraLoginContext` | `MetaMaskLoginContext` |
 
 ---
 

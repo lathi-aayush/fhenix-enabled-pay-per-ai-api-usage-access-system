@@ -11,21 +11,21 @@ import { canonicalWalletAddress } from "../utils/userWallet.js";
 
 const router = Router();
 
-router.get("/algo-balance", requireAuth, requireRole("user", "creator"), async (req, res) => {
+router.get("/eth-balance", requireAuth, requireRole("user", "creator"), async (req, res) => {
   try {
     if (!req.user.walletAddress) {
-      return res.json({ balanceWei: '0', balanceEth: 0 });
+      return res.json({ balanceWei: "0", balanceEth: 0 });
     }
     const userWallet = canonicalWalletAddress(req.user.walletAddress);
-    const micro = await getBalanceEth(userWallet);
+    const balanceEth = await getBalanceEth(userWallet);
     res.json({
-      balanceMicroAlgos: micro,
-      balanceAlgo: micro / 1e6,
+      balanceWei: String(Math.round(balanceEth * 1e18)),
+      balanceEth,
     });
   } catch (e) {
-    console.error("[algo-balance]", e);
+    console.error("[eth-balance]", e);
     res.status(502).json({
-      error: "Could not load on-chain balance from indexer",
+      error: "Could not load on-chain balance from Base Sepolia",
       detail: process.env.NODE_ENV === "development" ? e.message : undefined,
     });
   }
@@ -50,7 +50,7 @@ router.get("/proxy-keys", requireAuth, requireRole("user", "creator"), async (re
         .sort({ createdAt: -1 })
         .populate(
           "serviceId",
-          "title pricePerThousandTokens minimumChargeAlgo aiProvider modelName totalUses creatorWallet"
+          "title pricePerThousandTokens minimumChargeEth aiProvider modelName totalUses creatorWallet"
         )
         .lean();
 
@@ -75,7 +75,7 @@ router.get("/proxy-keys", requireAuth, requireRole("user", "creator"), async (re
                 id: t.serviceId._id,
                 title: t.serviceId.title,
                 pricePerThousandTokens: t.serviceId.pricePerThousandTokens,
-                minimumChargeAlgo: t.serviceId.minimumChargeAlgo,
+                minimumChargeEth: t.serviceId.minimumChargeEth,
                 aiProvider: t.serviceId.aiProvider,
                 modelName: t.serviceId.modelName,
                 totalUses: t.serviceId.totalUses,
@@ -107,7 +107,7 @@ router.get("/proxy-keys", requireAuth, requireRole("user", "creator"), async (re
       aiProvider: api.aiProvider,
       modelName: api.modelName,
       pricingModel: api.pricingModel,
-      pricePerUnitAlgo: (api.pricePerUnit || 0) / rate,
+      pricePerUnitEth: (api.pricePerUnit || 0) / rate,
       callCount: api.callCount || 0,
       legacyServiceId: api.legacyServiceId,
     }));
@@ -119,7 +119,7 @@ router.get("/proxy-keys", requireAuth, requireRole("user", "creator"), async (re
       apiName: sub.apiId?.name,
       proxySlug: sub.apiId?.proxySlug,
       proxyUrl: sub.apiId ? `/proxy/${sub.apiId.proxySlug}/chat/completions` : null,
-      pricePerUnitAlgo: (sub.apiId?.pricePerUnit || 0) / rate,
+      pricePerUnitEth: (sub.apiId?.pricePerUnit || 0) / rate,
       pricingModel: sub.apiId?.pricingModel,
     }));
 
@@ -151,7 +151,7 @@ router.get("/transactions", requireAuth, requireRole("user", "creator"), async (
         summary: {
           totalCalls: 0,
           totalTokensConsumed: 0,
-          totalAlgoSpent: 0,
+          totalEthSpent: 0,
         },
       });
     }
@@ -181,8 +181,8 @@ router.get("/transactions", requireAuth, requireRole("user", "creator"), async (
 
     let sort = { createdAt: -1 };
     if (sortBy === "oldest") sort = { createdAt: 1 };
-    if (sortBy === "charge_desc" || sortBy === "highest_charge") sort = { amountAlgo: -1 };
-    if (sortBy === "charge_asc" || sortBy === "lowest_charge") sort = { amountAlgo: 1 };
+    if (sortBy === "charge_desc" || sortBy === "highest_charge") sort = { amountEth: -1 };
+    if (sortBy === "charge_asc" || sortBy === "lowest_charge") sort = { amountEth: 1 };
 
     const logs = await ApiUsageLog.find(filter)
       .sort(sort)
@@ -198,8 +198,8 @@ router.get("/transactions", requireAuth, requireRole("user", "creator"), async (
       promptTokens: l.promptTokens ?? null,
       completionTokens: l.completionTokens ?? null,
       totalTokens: l.totalTokens ?? null,
-      amountAlgo: l.amountAlgo,
-      chargeAlgo: l.chargeAlgo ?? l.amountAlgo,
+      amountEth: l.amountEth,
+      chargeEth: l.chargeEth ?? l.amountEth,
       proofTxId: l.proofTxId ?? null,
       success: l.success !== false,
       paymentTxId: l.paymentTxId ?? null,
@@ -210,14 +210,14 @@ router.get("/transactions", requireAuth, requireRole("user", "creator"), async (
       (s, x) => s + (Number(x.totalTokens) || 0),
       0
     );
-    const totalAlgoSpent = items.reduce((s, x) => s + Number(x.amountAlgo || 0), 0);
+    const totalEthSpent = items.reduce((s, x) => s + Number(x.amountEth || 0), 0);
 
     return res.json({
       items,
       summary: {
         totalCalls,
         totalTokensConsumed,
-        totalAlgoSpent,
+        totalEthSpent,
       },
     });
   } catch (e) {
@@ -242,7 +242,7 @@ router.get("/usage", requireAuth, requireRole("user", "creator"), async (req, re
       logs.map((l) => ({
         id: l._id,
         createdAt: l.createdAt,
-        amountAlgo: l.amountAlgo,
+        amountEth: l.amountEth,
         totalTokens: l.totalTokens,
         promptTokens: l.promptTokens,
         completionTokens: l.completionTokens,

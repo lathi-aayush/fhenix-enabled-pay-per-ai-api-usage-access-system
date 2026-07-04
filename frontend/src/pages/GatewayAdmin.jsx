@@ -18,7 +18,7 @@ export default function GatewayAdmin() {
       .catch((err) => toast.error(err?.response?.data?.error || "Admin access denied"));
   }, []);
 
-  if (!dash) return <div className="p-8 text-slate-500">Loading admin control center…</div>;
+  if (!dash) return <div className="p-8 text-slate-500">Loading admin control centerâ€¦</div>;
 
   const s = dash.summary || {};
 
@@ -31,10 +31,10 @@ export default function GatewayAdmin() {
         <Metric label="Active APIs" value={s.activeApis} />
         <Metric label="Subscriptions" value={s.activeSubscriptions} />
         <Metric label="Calls today" value={s.callsToday} />
-        <Metric label="Spend today" value={`${(s.spendTodayAlgo ?? 0).toFixed(4)} ALGO`} />
+        <Metric label="Spend today" value={`${(s.spendTodayEth ?? 0).toFixed(4)} ETH`} />
         <Metric label="Deposits today" value={s.depositsToday} />
         <Metric label="Failed today" value={s.failedRequestsToday} />
-        <Metric label="Platform fees (total)" value={`${(s.platformFeeAlgoTotal ?? 0).toFixed(4)} ALGO`} />
+        <Metric label="Platform fees (total)" value={`${(s.platformFeeEthTotal ?? 0).toFixed(4)} ETH`} />
       </div>
 
       <section className="rounded-xl border bg-white p-6">
@@ -67,7 +67,7 @@ export default function GatewayAdmin() {
         <ul className="text-xs text-slate-600 space-y-1">
           {(audit?.checks ?? []).map((c) => (
             <li key={c.name}>
-              {c.ok ? "✓" : "✗"} {c.name}
+              {c.ok ? "âœ“" : "âœ—"} {c.name}
             </li>
           ))}
         </ul>

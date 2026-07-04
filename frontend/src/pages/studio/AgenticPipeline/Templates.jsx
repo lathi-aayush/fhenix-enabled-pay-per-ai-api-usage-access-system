@@ -14,25 +14,25 @@ const TEMPLATES = [
     title: "Product launch kit",
     category: "Marketing",
     icon: "rocket_launch",
-    description: "Script → hero images → cinematic launch video",
+    description: "Script â†’ hero images â†’ cinematic launch video",
     chain: ["text", "image", "video"],
     prompt:
-      "Create a product launch kit for a pay-per-use AI API marketplace on Algorand: launch script, 3 hero keyframes, and a 20-second cinematic promo video",
+      "Create a product launch kit for a pay-per-use AI API marketplace on Base Sepolia: launch script, 3 hero keyframes, and a 20-second cinematic promo video",
   },
   {
     title: "Brand mood board",
     category: "Creative",
     icon: "palette",
-    description: "Creative brief → styled image series",
+    description: "Creative brief â†’ styled image series",
     chain: ["text", "image"],
     prompt:
-      "Generate a brand mood board for a fintech AI gateway: deep navy + electric teal palette, glassmorphism UI, trust and speed themes — 4 cinematic 16:9 images",
+      "Generate a brand mood board for a fintech AI gateway: deep navy + electric teal palette, glassmorphism UI, trust and speed themes â€” 4 cinematic 16:9 images",
   },
   {
     title: "Explainer video",
     category: "Video",
     icon: "movie",
-    description: "Script → keyframes → motion clip with voiceover",
+    description: "Script â†’ keyframes â†’ motion clip with voiceover",
     chain: ["text", "image", "video", "audio"],
     prompt:
       "Write a 45-second explainer for how micropayments unlock AI APIs. Generate 3 storyboard frames, animate a cinematic clip, and narrate in a confident professional tone",
@@ -41,7 +41,7 @@ const TEMPLATES = [
     title: "Podcast voiceover",
     category: "Audio",
     icon: "mic",
-    description: "Script → TTS narration",
+    description: "Script â†’ TTS narration",
     chain: ["text", "audio"],
     prompt:
       "Write and narrate a 2-minute podcast intro about why developers are moving from subscriptions to pay-per-use AI APIs",
@@ -62,7 +62,7 @@ const TEMPLATES = [
     description: "Investor-ready storyline with slide outlines",
     chain: ["text"],
     prompt:
-      "Write an investor pitch deck narrative for Sentinel — a pay-per-use AI API gateway on Algorand. Include problem, solution, market, business model, traction, and ask. Format as slide-by-slide outlines",
+      "Write an investor pitch deck narrative for Sentinel â€” a pay-per-use AI API gateway on Base Sepolia. Include problem, solution, market, business model, traction, and ask. Format as slide-by-slide outlines",
   },
   {
     title: "API docs draft",
@@ -89,25 +89,25 @@ const TEMPLATES = [
     description: "Research and write SEO content",
     chain: ["text"],
     prompt:
-      "Write a comprehensive SEO blog post about pay-per-use AI APIs vs monthly subscriptions — include real-world use cases for indie developers and startups",
+      "Write a comprehensive SEO blog post about pay-per-use AI APIs vs monthly subscriptions â€” include real-world use cases for indie developers and startups",
   },
   {
     title: "Wildlife cinematic",
     category: "Video",
     icon: "landscape",
-    description: "Nature brief → keyframes → Veo motion clip",
+    description: "Nature brief â†’ keyframes â†’ Veo motion clip",
     chain: ["text", "image", "video"],
     prompt:
-      "A majestic eagle soaring over misty mountains at golden hour — write a cinematic script, generate 3 keyframes, and produce a slow-motion video clip",
+      "A majestic eagle soaring over misty mountains at golden hour â€” write a cinematic script, generate 3 keyframes, and produce a slow-motion video clip",
   },
   {
     title: "Image series",
     category: "Creative",
     icon: "photo_library",
-    description: "Creative brief → styled image set",
+    description: "Creative brief â†’ styled image set",
     chain: ["text", "image"],
     prompt:
-      "Generate a cinematic image series showing the journey of an AI request: wallet payment → proxy gateway → LLM response → on-chain receipt. Cyberpunk fintech aesthetic",
+      "Generate a cinematic image series showing the journey of an AI request: wallet payment â†’ proxy gateway â†’ LLM response â†’ on-chain receipt. Cyberpunk fintech aesthetic",
   },
 ];
 
@@ -134,7 +134,7 @@ export default function Templates({ onUse }) {
   return (
     <div>
       <p className="text-sm text-on-surface-variant mb-4 max-w-2xl">
-        Pick a starter prompt — the router picks the best agent chain (text, image, video, audio, code)
+        Pick a starter prompt â€” the router picks the best agent chain (text, image, video, audio, code)
         automatically.
       </p>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

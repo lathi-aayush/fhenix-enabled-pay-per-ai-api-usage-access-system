@@ -46,7 +46,7 @@ export default function FaqDocs() {
 
         <h1 className="text-3xl font-bold text-slate-900 mb-6 tracking-tight">Frequently Asked Questions</h1>
         <p className="text-[15px] text-slate-600 mb-8 leading-relaxed">
-          Quick answers to common questions about using Algorand micro-payments, burner wallets, and building machine-payable AI pipelines.
+          Quick answers to common questions about using EVM micro-payments, burner wallets, and building machine-payable AI pipelines.
         </p>
 
         <div className="space-y-12 text-slate-800">
@@ -56,7 +56,7 @@ export default function FaqDocs() {
               <div>
                 <h3 id="what-is-x402" className="text-[17px] font-bold text-slate-900 mb-2">What is the x402 Protocol?</h3>
                 <p className="text-[14px] text-slate-600 leading-relaxed">
-                  x402 is an extension of the standard HTTP `402 Payment Required` code. It maps API calls directly to smart contracts on the Algorand blockchain, allowing autonomous AI agents to negotiate prices and pay for computation programmatically.
+                  x402 is an extension of the standard HTTP `402 Payment Required` code. It maps API calls directly to smart contracts on the Base Sepolia, allowing autonomous AI agents to negotiate prices and pay for computation programmatically.
                 </p>
               </div>
 
@@ -82,7 +82,7 @@ export default function FaqDocs() {
               <div>
                 <h3 id="network-fees" className="text-[17px] font-bold text-slate-900 mb-2">What are the transaction fees?</h3>
                 <p className="text-[14px] text-slate-600 leading-relaxed">
-                  Every payout or call logs event relies on standard Algorand network fees (typically 0.001 ALGO per transaction).
+                  Every payout or call logs event relies on standard Base Sepolia network fees (typically 0.001 ETH per transaction).
                 </p>
               </div>
             </div>

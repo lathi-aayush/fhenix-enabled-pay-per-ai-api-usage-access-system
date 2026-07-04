@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import MegaNav from "../components/MegaNav.jsx";
 
-const INSTALL_CMD = "npm install @sentinalapi/sdk algosdk";
+const INSTALL_CMD = "npm install @sentinalapi/sdk viem";
 
 const CODE_SNIPPETS = {
   node: {
@@ -14,51 +14,40 @@ const CODE_SNIPPETS = {
 const client = new SentinelClient({
   apiKey: process.env.SENTINEL_API_KEY,  // sk-sentinel-...
   baseUrl: "https://your-sentinel-api.example",
-  network: "testnet",
+  network: "eip155:84532",
 });
 
-// Server-side signing — never expose mnemonic in browser
-const signer = new MnemonicSigner(process.env.ALGORAND_MNEMONIC);
+// Server-side signing — never expose private key in browser
+const signer = new EvmPrivateKeySigner(process.env.EVM_PRIVATE_KEY);
 
 const response = await client.chat(
-  [{ role: "user", content: "Explain Algorand briefly." }],
+  [{ role: "user", content: "Explain Base Sepolia briefly." }],
   signer
 );
 
 console.log(SentinelClient.getAssistantText(response));
-// → "Algorand is a pure proof-of-stake blockchain..."
+// â†’ "Base Sepolia is a pure proof-of-stake blockchain..."
 
 console.log(response.sentinelReceipt);
-// → { paymentTxId: "ABCD...", chargeAlgo: 0.001, totalTokens: 38 }`,
+// â†’ { paymentTxId: "ABCD...", chargeEth: 0.001, totalTokens: 38 }`,
   },
   browser: {
-    label: "Browser + Pera",
+    label: "Browser + MetaMask",
     lang: "TypeScript",
     icon: "account_balance_wallet",
-    code: `import { PeraWalletConnect } from "@perawallet/connect";
-import { BYOSigner, SentinelClient } from "@sentinalapi/sdk";
+    code: `import { connectMetaMask } from "./wallet/metamask.js";
+import { callProxyX402Use } from "./api/proxyX402Use.js";
 
-const pera = new PeraWalletConnect();
-const [address] = await pera.connect();
+const address = await connectMetaMask();
 
-const client = new SentinelClient({
+const { aiResponse, txHash, explorerUrl } = await callProxyX402Use({
   apiKey: "sk-sentinel-...",
-  baseUrl: "https://your-api.example.com",
-  network: "testnet",
+  serviceId: "...",
+  body: { messages: [{ role: "user", content: "Hello from the browser!" }] },
 });
 
-// BYOSigner: plug in any wallet — Pera, Defly, or raw algosdk
-const signer = new BYOSigner(address, async (txn) => {
-  const signed = await pera.signTransaction([[{ txn }]]);
-  return signed[0]; // Uint8Array
-});
-
-const response = await client.chat(
-  [{ role: "user", content: "Hello from the browser!" }],
-  signer
-);
-
-console.log(SentinelClient.getAssistantText(response));`,
+console.log(aiResponse);
+console.log(explorerUrl);`,
   },
   manual: {
     label: "Manual Flow",
@@ -72,27 +61,27 @@ console.log(SentinelClient.getAssistantText(response));`,
 
 const client = new SentinelClient({ apiKey, network: "testnet" });
 
-// Phase 1 — get AI response + payment quote
+// Phase 1 â€” get AI response + payment quote
 const quote = await client.invoke([
   { role: "user", content: "Hello!" }
 ]);
-console.log(\`Pay \${quote.chargeAlgo} ALGO to \${quote.developerWallet}\`);
+console.log(\`Pay \${quote.chargeEth} ETH to \${quote.developerWallet}\`);
 
-// Phase 2 — build, sign, submit the Algorand payment
+// Phase 2 â€” build, sign, submit the Base Sepolia payment
 const txn = await buildPaymentTx({
   from: signer.address,
   to: quote.developerWallet,
-  microAlgos: quote.expectedMicroAlgos,
-  paymentRef: quote.paymentRef, // ← goes in txn note
-  algodClient: client.algodClient,
+  amountWeis: quote.expectedWei,
+  paymentRef: quote.paymentRef, // â† goes in txn note
+  rpcClient: client.rpcClient,
 });
 const signed = await signer.sign(txn);
 const txId = await submitSignedPayment({
   signedTxn: signed,
-  algodClient: client.algodClient,
+  rpcClient: client.rpcClient,
 });
 
-// Phase 3 — unlock AI response after on-chain verification
+// Phase 3 â€” unlock AI response after on-chain verification
 const response = await client.complete(quote.paymentRef, txId);
 console.log(SentinelClient.getAssistantText(response));`,
   },
@@ -100,19 +89,19 @@ console.log(SentinelClient.getAssistantText(response));`,
     label: "Next.js",
     lang: "TypeScript",
     icon: "web",
-    code: `// app/api/ask/route.ts — Next.js App Router server action
+    code: `// app/api/ask/route.ts â€” Next.js App Router server action
 import { MnemonicSigner, SentinelClient } from "@sentinalapi/sdk";
 import { NextResponse } from "next/server";
 
 const client = new SentinelClient({
   apiKey: process.env.SENTINEL_API_KEY!,
   baseUrl: process.env.SENTINEL_BASE_URL!,
-  network: "testnet",
+  network: "eip155:84532",
 });
 
 export async function POST(req: Request) {
   const { prompt } = await req.json();
-  const signer = new MnemonicSigner(process.env.ALGORAND_MNEMONIC!);
+  const signer = new EvmPrivateKeySigner(process.env.EVM_PRIVATE_KEY!);
 
   const response = await client.chat(
     [{ role: "user", content: prompt }],
@@ -132,7 +121,7 @@ const ERRORS = [
   { name: "SentinelPaymentError", http: "402", desc: "Payment not verified" },
   { name: "SentinelSessionExpired", http: "410", desc: "Quote expired (>60s)" },
   { name: "SentinelUpstreamError", http: "502", desc: "AI provider failed" },
-  { name: "SentinelNetworkError", http: "—", desc: "Fetch / timeout failure" },
+  { name: "SentinelNetworkError", http: "â€”", desc: "Fetch / timeout failure" },
 ];
 
 const FLOW_STEPS = [
@@ -140,13 +129,13 @@ const FLOW_STEPS = [
     num: "01",
     icon: "send",
     title: "Invoke",
-    desc: "Send your prompt → AI runs → receive a payment quote with chargeAlgo and paymentRef",
+    desc: "Send your prompt â†’ AI runs â†’ receive a payment quote with chargeEth and paymentRef",
   },
   {
     num: "02",
     icon: "account_balance_wallet",
-    title: "Pay on Algorand",
-    desc: "SDK signs a micro-payment transaction and submits it to the Algorand network",
+    title: "Pay on Base Sepolia",
+    desc: "SDK signs a micro-payment transaction and submits it to the Base Sepolia network",
   },
   {
     num: "03",
@@ -195,7 +184,7 @@ export default function SdkDemo() {
     <div className="antialiased min-h-screen bg-white">
       <MegaNav />
 
-      {/* ── Hero ───────────────────────────────────── */}
+      {/* â”€â”€ Hero â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="pt-28 pb-16 px-6 relative overflow-hidden">
         {/* Background blobs */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-br from-indigo-500/8 via-violet-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
@@ -205,7 +194,7 @@ export default function SdkDemo() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold mb-6">
             <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-            Developer SDK — v1.0.0 · TypeScript + ESM + CJS
+            Developer SDK â€” v1.0.0 Â· TypeScript + ESM + CJS
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-bold text-slate-900 tracking-tight leading-tight font-headline">
@@ -215,13 +204,13 @@ export default function SdkDemo() {
             </span>
           </h1>
           <p className="mt-4 text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
-            The official JavaScript SDK for pay-per-use AI APIs on Algorand. One method.
+            The official JavaScript SDK for pay-per-use AI APIs on Base Sepolia. One method.
             Full TypeScript types. Works in Node.js, browsers, and Next.js.
           </p>
 
           <div className="flex flex-wrap justify-center gap-3 mt-8">
             <a
-              href="https://github.com/lathi-aayush/pay-per-usage-ai-api-access-system-using-algorand/tree/main/sdk"
+              href="https://github.com/lathi-aayush/fhenix-enabled-pay-per-ai-api-usage-access-system/tree/main/sdk"
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#031634] text-white rounded-full text-sm font-semibold hover:bg-[#0a2855] transition-colors shadow-sm"
@@ -242,7 +231,7 @@ export default function SdkDemo() {
         </div>
       </section>
 
-      {/* ── Install ─────────────────────────────────── */}
+      {/* â”€â”€ Install â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="px-6 pb-12">
         <div className="max-w-4xl mx-auto">
           <div className="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
@@ -273,7 +262,7 @@ export default function SdkDemo() {
         </div>
       </section>
 
-      {/* ── How it works flow ───────────────────────── */}
+      {/* â”€â”€ How it works flow â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="px-6 pb-16" ref={flowRef}>
         <div className="max-w-4xl mx-auto">
           <h2 className="text-xl font-bold text-slate-900 mb-8 text-center">
@@ -306,7 +295,7 @@ export default function SdkDemo() {
         </div>
       </section>
 
-      {/* ── Code Examples ───────────────────────────── */}
+      {/* â”€â”€ Code Examples â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="px-6 pb-16">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-xl font-bold text-slate-900 mb-6">Code Examples</h2>
@@ -352,12 +341,12 @@ export default function SdkDemo() {
         </div>
       </section>
 
-      {/* ── Error classes ───────────────────────────── */}
+      {/* â”€â”€ Error classes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="px-6 pb-16" ref={errorsRef}>
         <div className="max-w-4xl mx-auto">
           <h2 className="text-xl font-bold text-slate-900 mb-2">Typed Error Classes</h2>
           <p className="text-sm text-slate-500 mb-6">
-            Every failure throws a typed subclass — catch exactly what you need.
+            Every failure throws a typed subclass â€” catch exactly what you need.
           </p>
           <div className="overflow-hidden border border-slate-200 rounded-2xl">
             <table className="w-full text-sm">
@@ -393,16 +382,16 @@ export default function SdkDemo() {
         </div>
       </section>
 
-      {/* ── Links grid ──────────────────────────────── */}
+      {/* â”€â”€ Links grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="px-6 pb-20">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-xl font-bold text-slate-900 mb-6">Documentation</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { icon: "rocket_launch", title: "Quickstart", sub: "Get running in 5 min", to: null, href: "https://github.com/lathi-aayush/pay-per-usage-ai-api-access-system-using-algorand/blob/main/sdk/docs/quickstart.md" },
-              { icon: "menu_book", title: "API Reference", sub: "Full SentinelClient docs", to: null, href: "https://github.com/lathi-aayush/pay-per-usage-ai-api-access-system-using-algorand/blob/main/sdk/docs/api-reference.md" },
-              { icon: "error_outline", title: "Error Handling", sub: "Typed error hierarchy", to: null, href: "https://github.com/lathi-aayush/pay-per-usage-ai-api-access-system-using-algorand/blob/main/sdk/docs/error-handling.md" },
-              { icon: "account_balance_wallet", title: "Wallet Guides", sub: "Pera, Defly & more", to: null, href: "https://github.com/lathi-aayush/pay-per-usage-ai-api-access-system-using-algorand/blob/main/sdk/docs/algorand-wallets.md" },
+              { icon: "rocket_launch", title: "Quickstart", sub: "Get running in 5 min", to: null, href: "https://github.com/lathi-aayush/fhenix-enabled-pay-per-ai-api-usage-access-system/blob/main/sdk/docs/quickstart.md" },
+              { icon: "menu_book", title: "API Reference", sub: "Full SentinelClient docs", to: null, href: "https://github.com/lathi-aayush/fhenix-enabled-pay-per-ai-api-usage-access-system/blob/main/sdk/docs/api-reference.md" },
+              { icon: "error_outline", title: "Error Handling", sub: "Typed error hierarchy", to: null, href: "https://github.com/lathi-aayush/fhenix-enabled-pay-per-ai-api-usage-access-system/blob/main/sdk/docs/error-handling.md" },
+              { icon: "account_balance_wallet", title: "Wallet Guides", sub: "MetaMask, Defly & more", to: null, href: "https://github.com/lathi-aayush/fhenix-enabled-pay-per-ai-api-usage-access-system/blob/main/sdk/docs/metamask-wallets.md" },
             ].map((item) => (
               <a
                 key={item.title}
@@ -422,7 +411,7 @@ export default function SdkDemo() {
         </div>
       </section>
 
-      {/* ── CTA footer ──────────────────────────────── */}
+      {/* â”€â”€ CTA footer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="px-6 pb-20">
         <div className="max-w-4xl mx-auto">
           <div className="relative bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-10 text-center overflow-hidden">
@@ -450,7 +439,7 @@ export default function SdkDemo() {
                   Browse APIs
                 </Link>
                 <a
-                  href="https://github.com/lathi-aayush/pay-per-usage-ai-api-access-system-using-algorand/tree/main/sdk"
+                  href="https://github.com/lathi-aayush/fhenix-enabled-pay-per-ai-api-usage-access-system/tree/main/sdk"
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-500/40 text-white border border-white/20 rounded-full text-sm font-semibold hover:bg-indigo-500/60 transition-colors"

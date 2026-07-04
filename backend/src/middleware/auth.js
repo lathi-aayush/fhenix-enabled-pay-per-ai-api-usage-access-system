@@ -56,7 +56,7 @@ export function requireCreator(req, res, next) {
     return res.status(403).json({
       error: "Forbidden",
       code: "CREATOR_ROLE_REQUIRED",
-      message: "Connect your Pera wallet and sign in as Creator, or switch to creator mode.",
+      message: "Connect your MetaMask wallet and sign in as Creator, or switch to creator mode.",
     });
   }
 

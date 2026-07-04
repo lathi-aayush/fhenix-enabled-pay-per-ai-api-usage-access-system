@@ -78,7 +78,7 @@ router.get("/cogs-report", requireAuth, requireAdmin, async (req, res) => {
   for (const u of users) {
     for (const entry of u.studioOverageLog || []) {
       if (entry.timestamp && new Date(entry.timestamp) >= since && entry.settled) {
-        overageRevenueMicro += entry.algoAmount || 0;
+        overageRevenueMicro += entry.ethAmount || 0;
         overageCount += 1;
       }
     }
@@ -96,8 +96,8 @@ router.get("/cogs-report", requireAuth, requireAdmin, async (req, res) => {
   }, 0);
 
   const totalRevenueMicro = subscriptionRevenueMicroEstimate + overageRevenueMicro;
-  const inrPerAlgo = Number(process.env.ALGO_USD_RATE || 0.129) * Number(process.env.INR_USD_RATE || 84.5);
-  const estimatedCogsMicro = Math.round((estimatedCogsInr / inrPerAlgo) * 1_000_000);
+  const inrPerEth = Number(process.env.ETH_USD_RATE || 0.129) * Number(process.env.INR_USD_RATE || 84.5);
+  const estimatedCogsMicro = Math.round((estimatedCogsInr / inrPerEth) * 1_000_000);
   const grossMargin =
     totalRevenueMicro > 0
       ? ((totalRevenueMicro - estimatedCogsMicro) / totalRevenueMicro) * 100
@@ -111,10 +111,10 @@ router.get("/cogs-report", requireAuth, requireAdmin, async (req, res) => {
     estimatedCogsInr,
     estimatedCogsMicro,
     overageRevenueMicro,
-    overageRevenueAlgo: overageRevenueMicro / 1_000_000,
+    overageRevenueEth: overageRevenueMicro / 1_000_000,
     overageCount,
     subscriptionRevenueMicroEstimate,
-    subscriptionRevenueAlgo: subscriptionRevenueMicroEstimate / 1_000_000,
+    subscriptionRevenueEth: subscriptionRevenueMicroEstimate / 1_000_000,
     totalRevenueMicro,
     grossMarginPercent: Number(grossMargin.toFixed(2)),
     creditPools: getPlanCredits("creator"),

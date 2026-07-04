@@ -1,6 +1,6 @@
 /**
  * sessionKey.js — Local EVM session key wallet for headless payments.
- * Replaces burner.js (Algorand mnemonic burner wallet).
+ * Replaces burner.js (Base Sepolia mnemonic burner wallet).
  *
  * Generates a random EVM private key per user, stores it AES-256-GCM encrypted
  * in localStorage, and syncs it to the backend profile. Used for:

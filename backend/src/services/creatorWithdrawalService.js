@@ -1,6 +1,6 @@
 /** 
- * Creator withdrawal service — EVM implementation pending.
- * Stub to prevent import errors after Algorand removal.
+ * Creator withdrawal service ï¿½ EVM implementation pending.
+ * Stub to prevent import errors after Base Sepolia removal.
  */
 export const MIN_WITHDRAWAL_ETH = 0.001;
 

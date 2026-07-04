@@ -81,29 +81,29 @@ router.get("/agent-context", async (_req, res) => {
       ai_provider: s.aiProvider,
       model: s.modelName,
       pricing: {
-        per_1k_tokens_algo: Number(s.pricePerThousandTokens),
-        minimum_charge_algo: Number(s.minimumChargeAlgo),
+        per_1k_tokens_eth: Number(s.pricePerThousandTokens),
+        minimum_charge_eth: Number(s.minimumChargeEth),
         billing_notes:
           "Pay-per-use via Base Sepolia. No subscription required. " +
           "Each call is charged based on actual token usage, floored to the minimum charge.",
       },
       usage: {
         total_calls: s.totalUses || 0,
-        total_revenue_algo: Number((s.totalRevenue || 0).toFixed(6)),
+        total_revenue_eth: Number((s.totalRevenue || 0).toFixed(6)),
       },
       how_to_use: {
         step_1_generate_key: `POST /api/access/generate  body: { "serviceId": "${s._id}" }  (requires Sentinel JWT)`,
         step_2_call_api: `POST /api/use  headers: { "Authorization": "Bearer <api_key>" }  body: { "messages": [{ "role": "user", "content": "<your prompt>" }] }`,
-        step_3_pay: "Respond to the returned paymentRef by sending the specified microAlgo amount on Base Sepolia to the developerWallet address with the paymentRef in the transaction note.",
-        step_4_claim: `POST /api/use  headers: { "Authorization": "Bearer <api_key>" }  body: { "txId": "<algorand_txid>", "paymentRef": "<payment_ref_uuid>" }`,
+        step_3_pay: "Respond to the returned paymentRef by sending the specified amountWei on Base Sepolia to the developerWallet address.",
+        step_4_claim: `POST /api/use  headers: { "Authorization": "Bearer <api_key>" }  body: { "txId": "<evm_tx_hash>", "paymentRef": "<payment_ref_uuid>" }`,
       },
       how_to_use_x402: s.x402Enabled ? {
-        description: "This service supports x402 — a single-round-trip HTTP payment standard. No API key or manual wallet signing needed.",
+        description: "This service supports x402 â€” a single-round-trip HTTP payment standard. No API key or manual wallet signing needed.",
         endpoint: `/api/x402/use/${s._id}`,
-        step_1: "Send a POST request without any payment headers — server returns HTTP 402 with payment details.",
+        step_1: "Send a POST request without any payment headers â€” server returns HTTP 402 with payment details.",
         step_2: "Your x402-compatible client (e.g. @x402/fetch) auto-pays with your burner wallet and retries.",
         step_3: "Server verifies on-chain and returns 200 + AI response.",
-        client_package: "npm install @x402/fetch @x402/avm",
+        client_package: "npm install @x402/fetch viem",
       } : null,
       creator_wallet: s.creatorWallet,
       last_updated: s.updatedAt,
@@ -116,15 +116,15 @@ router.get("/agent-context", async (_req, res) => {
     network: "base-sepolia",
     base_url: "http://localhost:5000",
     description:
-      "This is the Sentinel AI API Marketplace — a pay-per-use AI API platform built on Algorand. " +
-      "Users pay micro-transactions in ALGO for each AI call. No subscriptions, no lock-in. " +
+      "This is the Sentinel AI API Marketplace â€” a pay-per-use AI API platform built on Base Sepolia. " +
+      "Users pay micro-transactions in ETH for each AI call. No subscriptions, no lock-in. " +
       "Use this JSON to identify which service best fits a given task and budget.",
     instructions_for_ai_agent:
       "Compare services by model, provider, pricing, and use count. " +
       "Recommend the service with the best model for the user's task at the lowest cost. " +
       "Official services (badge: 'official') are maintained by Sentinel and are the safest default. " +
       "Community services are contributed by third-party creators. " +
-      "If the user wants the cheapest option, pick the lowest minimum_charge_algo. " +
+      "If the user wants the cheapest option, pick the lowest minimum_charge_eth. " +
       "If the user wants the best quality, prefer larger models (e.g. llama-3.3-70b, gpt-4, claude-3) at a slightly higher price.",
     total_active_services: activeServices.length,
     services: activeServices,
@@ -146,7 +146,7 @@ router.get("/:id/public", async (req, res) => {
     name: service.title,
     description: service.description || "",
     pricePerThousandTokens: Number(service.pricePerThousandTokens),
-    minimumChargeAlgo: Number(service.minimumChargeAlgo),
+    minimumChargeEth: Number(service.minimumChargeEth),
     aiProvider: service.aiProvider ?? null,
     modelName: service.modelName || "",
     averageRating: Number(service.averageRating) || 0,
@@ -173,7 +173,7 @@ router.post(
   body("title").isString().trim().notEmpty(),
   body("description").optional().isString(),
   body("pricePerThousandTokens").isFloat({ min: 0 }),
-  body("minimumChargeAlgo").isFloat({ min: 0.000001 }),
+  body("minimumChargeEth").isFloat({ min: 0.000001 }),
   body("aiProvider").isIn(AI_PROVIDERS),
   body("providerApiKey").isString().trim().notEmpty(),
   body("modelName").isString().trim().notEmpty(),
@@ -187,7 +187,7 @@ router.post(
       title,
       description = "",
       pricePerThousandTokens,
-      minimumChargeAlgo,
+      minimumChargeEth,
       aiProvider,
       providerApiKey,
       modelName,
@@ -210,7 +210,7 @@ router.post(
       creatorWallet = canonicalWalletAddress(req.user.walletAddress);
     } catch (e) {
       return res.status(400).json({
-        error: "Creator wallet address is required to publish a service. Please click your profile avatar at the top right, scan your Pera Wallet to link it, then try again."
+        error: "Creator wallet address is required to publish a service. Please click your profile avatar at the top right, scan your MetaMask to link it, then try again."
       });
     }
 
@@ -226,7 +226,7 @@ router.post(
       title,
       description,
       pricePerThousandTokens: Number(pricePerThousandTokens),
-      minimumChargeAlgo: Number(minimumChargeAlgo),
+      minimumChargeEth: Number(minimumChargeEth),
       creatorWallet,
       aiProvider,
       encryptedApiKey,
@@ -254,7 +254,7 @@ router.patch(
   body("title").optional().isString().trim().notEmpty(),
   body("description").optional().isString(),
   body("pricePerThousandTokens").optional().isFloat({ min: 0 }),
-  body("minimumChargeAlgo").optional().isFloat({ min: 0.000001 }),
+  body("minimumChargeEth").optional().isFloat({ min: 0.000001 }),
   body("modelName").optional().isString().trim().notEmpty(),
   body("aiProvider").optional().isIn(AI_PROVIDERS),
   body("providerApiKey").optional().isString().trim().notEmpty(),
@@ -275,7 +275,7 @@ router.patch(
       title,
       description,
       pricePerThousandTokens,
-      minimumChargeAlgo,
+      minimumChargeEth,
       modelName,
       aiProvider,
       providerApiKey,
@@ -288,8 +288,8 @@ router.patch(
     if (pricePerThousandTokens !== undefined) {
       service.pricePerThousandTokens = Number(pricePerThousandTokens);
     }
-    if (minimumChargeAlgo !== undefined) {
-      service.minimumChargeAlgo = Number(minimumChargeAlgo);
+    if (minimumChargeEth !== undefined) {
+      service.minimumChargeEth = Number(minimumChargeEth);
     }
     if (modelName !== undefined) service.modelName = modelName;
     if (aiProvider !== undefined) service.aiProvider = aiProvider;

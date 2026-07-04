@@ -70,7 +70,7 @@ export async function getConsumerDashboard(userId) {
     ]);
 
   // --- Merge legacy ApiUsageLog data ---
-  let legacyStats = { calls: 0, spentAlgo: 0, tokens: 0 };
+  let legacyStats = { calls: 0, spentEth: 0, tokens: 0 };
   let legacyRecentLogs = [];
   try {
     const user = await User.findById(userId).select("walletAddress").lean();
@@ -84,7 +84,7 @@ export async function getConsumerDashboard(userId) {
             $group: {
               _id: null,
               calls: { $sum: 1 },
-              algoSpent: { $sum: { $ifNull: ["$amountAlgo", 0] } },
+              ethSpent: { $sum: { $ifNull: ["$amountEth", 0] } },
               tokens: { $sum: { $ifNull: ["$totalTokens", 0] } },
             },
           },
@@ -98,7 +98,7 @@ export async function getConsumerDashboard(userId) {
       const agg = legacyAgg[0] || {};
       legacyStats = {
         calls: agg.calls || 0,
-        spentAlgo: agg.algoSpent || 0,
+        spentEth: agg.ethSpent || 0,
         tokens: agg.tokens || 0,
       };
       legacyRecentLogs = legacyLogs;
@@ -116,13 +116,13 @@ export async function getConsumerDashboard(userId) {
     rate,
     balanceCents,
     balanceUsd: (balanceCents / 100).toFixed(2),
-    balanceAlgo: balanceCents / rate,
+    balanceEth: balanceCents / rate,
     lowBalance: balanceCents <= LOW_BALANCE_CENTS,
     lowBalanceThresholdCents: LOW_BALANCE_CENTS,
     period: {
       calls,
       spendCents: spend,
-      spendAlgo: {
+      spendEth: {
         today: (spend.today || 0) / rate,
         week: (spend.week || 0) / rate,
         month: (spend.month || 0) / rate,
@@ -134,7 +134,7 @@ export async function getConsumerDashboard(userId) {
       gatewayCalls: totalCalls,
       legacyCalls: legacyStats.calls,
       tokens: (totalTokens[0]?.t || 0) + legacyStats.tokens,
-      legacySpentAlgo: legacyStats.spentAlgo,
+      legacySpentEth: legacyStats.spentEth,
       gatewaySpentCents: spend.month || 0,
     },
     trend: trend.reverse(),
@@ -144,7 +144,7 @@ export async function getConsumerDashboard(userId) {
       proxySlug: s.apiId?.proxySlug,
       proxyUrl: s.apiId ? `/proxy/${s.apiId.proxySlug}` : null,
       pricePerUnitCents: s.apiId?.pricePerUnit,
-      pricePerUnitAlgo: (s.apiId?.pricePerUnit || 0) / rate,
+      pricePerUnitEth: (s.apiId?.pricePerUnit || 0) / rate,
       pricingModel: s.apiId?.pricingModel,
     })),
     recentLogs: [
@@ -159,7 +159,7 @@ export async function getConsumerDashboard(userId) {
         method: l.method,
         httpStatus: l.httpStatus,
         costCents: l.costCents,
-        costAlgo: (l.costCents || 0) / rate,
+        costEth: (l.costCents || 0) / rate,
         tokensTotal: l.tokensTotal,
         requestStatus: l.requestStatus,
         responseTimeMs: l.responseTimeMs,
@@ -175,8 +175,8 @@ export async function getConsumerDashboard(userId) {
         timestamp: l.createdAt,
         method: "POST",
         httpStatus: l.success === false ? 500 : 200,
-        costCents: Math.round((l.amountAlgo || 0) * rate),
-        costAlgo: l.amountAlgo || l.chargeAlgo || 0,
+        costCents: Math.round((l.amountEth || 0) * rate),
+        costEth: l.amountEth || l.chargeEth || 0,
         tokensTotal: l.totalTokens || 0,
         requestStatus: l.success === false ? "failed" : "success",
         responseTimeMs: null,
@@ -186,17 +186,17 @@ export async function getConsumerDashboard(userId) {
     ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 30),
     recentTransactions: recentTx.map((tx) => ({
       ...tx,
-      amountAlgo: (tx.amountCents || 0) / rate,
-      balanceAfterAlgo: tx.balanceAfterCents != null ? tx.balanceAfterCents / rate : undefined,
+      amountEth: (tx.amountCents || 0) / rate,
+      balanceAfterEth: tx.balanceAfterCents != null ? tx.balanceAfterCents / rate : undefined,
     })),
     billingHistory: billingTx.map((tx) => ({
       ...tx,
-      amountAlgo: (tx.amountCents || 0) / rate,
-      balanceAfterAlgo: tx.balanceAfterCents != null ? tx.balanceAfterCents / rate : undefined,
+      amountEth: (tx.amountCents || 0) / rate,
+      balanceAfterEth: tx.balanceAfterCents != null ? tx.balanceAfterCents / rate : undefined,
     })),
     projectAnalytics: projectAgg.map((p) => ({
       ...p,
-      spendAlgo: (p.spendCents || 0) / rate,
+      spendEth: (p.spendCents || 0) / rate,
     })),
     activeAlerts: alerts,
   };
@@ -285,15 +285,15 @@ export async function getDeveloperDashboard(userId) {
     rate,
     earnings: {
       ...earnings,
-      availableAlgo: (earnings.availableCents || 0) / rate,
-      pendingAlgo: (earnings.pendingCents || 0) / rate,
-      paidOutAlgo: (earnings.paidOutCents || 0) / rate,
-      minPayoutAlgo: (earnings.minPayoutCents || 0) / rate,
+      availableEth: (earnings.availableCents || 0) / rate,
+      pendingEth: (earnings.pendingCents || 0) / rate,
+      paidOutEth: (earnings.paidOutCents || 0) / rate,
+      minPayoutEth: (earnings.minPayoutCents || 0) / rate,
     },
     period: {
       calls,
       revenueCents: revenue,
-      revenueAlgo: {
+      revenueEth: {
         today: (revenue.today || 0) / rate,
         week: (revenue.week || 0) / rate,
         month: (revenue.month || 0) / rate,
@@ -304,9 +304,9 @@ export async function getDeveloperDashboard(userId) {
       legacyCalls,
       totalCalls: gatewayTotalCalls + legacyCalls,
       gatewayRevenueCents: gatewayTotalRevenueCents,
-      gatewayRevenueAlgo: gatewayTotalRevenueCents / rate,
-      legacyRevenueAlgo: legacyRevenue,
-      totalRevenueAlgo: (gatewayTotalRevenueCents / rate) + legacyRevenue,
+      gatewayRevenueEth: gatewayTotalRevenueCents / rate,
+      legacyRevenueEth: legacyRevenue,
+      totalRevenueEth: (gatewayTotalRevenueCents / rate) + legacyRevenue,
       legacyTokensServed,
     },
     activeConsumers: consumers.length,
@@ -321,10 +321,10 @@ export async function getDeveloperDashboard(userId) {
       return {
         ...a,
         proxyUrl: `/proxy/${a.proxySlug}`,
-        pricePerUnitAlgo: (a.pricePerUnit || 0) / rate,
+        pricePerUnitEth: (a.pricePerUnit || 0) / rate,
         stats: {
           ...stats,
-          revenueAlgo: (stats.revenueCents || 0) / rate,
+          revenueEth: (stats.revenueCents || 0) / rate,
           errorRatePct: Math.round(errorRate * 1000) / 10,
           health: errorRate > 0.15 ? "degraded" : "healthy",
         },
@@ -342,7 +342,7 @@ export async function getDeveloperDashboard(userId) {
     })),
     trend: trend.reverse().map((t) => ({
       ...t,
-      revenueAlgo: (t.revenueCents || 0) / rate,
+      revenueEth: (t.revenueCents || 0) / rate,
     })),
     recentErrors: recentErrors.map((r) => ({
       requestId: r.requestId,
@@ -391,7 +391,7 @@ export async function getUsageLogs(userId, { role, page = 1, limit = 25, apiId }
       responseTimeMs: l.responseTimeMs,
       tokensTotal: l.tokensTotal,
       costCents: l.costCents,
-      costAlgo: (l.costCents || 0) / rate,
+      costEth: (l.costCents || 0) / rate,
       requestStatus: l.requestStatus,
       billingStatus: l.billingStatus,
       errorMessage: l.errorMessage,

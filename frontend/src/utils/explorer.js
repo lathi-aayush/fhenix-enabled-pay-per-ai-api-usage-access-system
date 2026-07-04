@@ -1,6 +1,6 @@
 /**
  * BaseScan explorer URLs for Base Sepolia.
- * Replaces explorer.js (Lora / Algorand).
+ * Replaces explorer.js (Lora / Base Sepolia).
  */
 
 const BASESCAN_BASE = "https://sepolia.basescan.org";

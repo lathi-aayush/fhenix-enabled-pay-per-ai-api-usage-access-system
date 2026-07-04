@@ -11,7 +11,7 @@ const ledgerTransactionSchema = new mongoose.Schema(
     amountCents: { type: Number, required: true },
     balanceAfterCents: { type: Number },
     referenceId: { type: String, index: true },
-    algoTxId: { type: String, sparse: true },
+    chainTxId: { type: String, sparse: true },
     description: { type: String, default: "" },
     status: {
       type: String,

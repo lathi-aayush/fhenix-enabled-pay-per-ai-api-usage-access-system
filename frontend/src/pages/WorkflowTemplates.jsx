@@ -40,7 +40,7 @@ export default function WorkflowTemplates() {
     <div className="pt-6">
       <header className="mb-6">
         <Link to="/studio/workflows" className="text-xs text-secondary hover:underline font-semibold">
-          ← Workflows
+          â† Workflows
         </Link>
         <h1 className="font-headline text-2xl font-semibold text-primary mt-2">Template marketplace</h1>
         <p className="text-sm text-on-surface-variant mt-1">One-click duplicate into your workflow library.</p>
@@ -64,7 +64,7 @@ export default function WorkflowTemplates() {
       </div>
 
       {!isAuthenticated && (
-        <GuestConnectBanner message="Browse templates freely. Connect Pera Wallet to add one to your workflow library." className="mb-4" />
+        <GuestConnectBanner message="Browse templates freely. Connect MetaMask to add one to your workflow library." className="mb-4" />
       )}
 
       {error && (
@@ -74,7 +74,7 @@ export default function WorkflowTemplates() {
       )}
 
       {isLoading ? (
-        <p className="text-sm text-slate-500">Loading templates…</p>
+        <p className="text-sm text-slate-500">Loading templatesâ€¦</p>
       ) : templates.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-slate-600 text-sm">
           No templates yet. Open the backend once to seed defaults, or create a workflow from scratch.
@@ -90,7 +90,7 @@ export default function WorkflowTemplates() {
               <h3 className="text-lg font-semibold text-primary mt-1">{t.name}</h3>
               <p className="text-xs text-on-surface-variant mt-2 flex-1">{t.description}</p>
               <p className="text-[10px] text-slate-500 mt-2">
-                ~{t.estimatedCreditsPerRun} ALGO/run · {t.usageCount} uses · ★ {t.rating}
+                ~{t.estimatedCreditsPerRun} ETH/run Â· {t.usageCount} uses Â· â˜… {t.rating}
               </p>
               <button
                 type="button"

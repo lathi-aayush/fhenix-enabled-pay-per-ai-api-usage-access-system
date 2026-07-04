@@ -40,10 +40,10 @@ export default function GatewayDeveloper() {
   }
 
   async function requestPayout() {
-    const algo = parseFloat(payoutAmount);
-    if (isNaN(algo) || algo <= 0) return toast.error("Enter a valid ALGO amount");
+    const amountEth = parseFloat(payoutAmount);
+    if (isNaN(amountEth) || amountEth <= 0) return toast.error("Enter a valid ETH amount");
     try {
-      const { data } = await api.post("/api/gateway/developer/payout", { amountAlgo: algo });
+      const { data } = await api.post("/api/gateway/developer/payout", { amountEth });
       toast.success(`Payout submitted: ${data.txId || "queued"}`);
       setPayoutAmount("");
       refresh();
@@ -65,37 +65,37 @@ export default function GatewayDeveloper() {
     }
   }
 
-  if (loading) return <div className="p-8 text-slate-500">Loading developer studio…</div>;
+  if (loading) return <div className="p-8 text-slate-500">Loading developer studioâ€¦</div>;
 
   const e = dashboard?.earnings || {};
-  const rev = dashboard?.period?.revenueAlgo || {};
+  const rev = dashboard?.period?.revenueEth || {};
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">API Gateway — Developer Studio</h1>
+        <h1 className="text-2xl font-bold text-slate-900">API Gateway â€” Developer Studio</h1>
         <p className="text-slate-600 text-sm mt-1">Revenue, API health, payouts, and migration tools.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card label="Available earnings" value={`${(e.availableAlgo ?? 0).toFixed(4)} ALGO`} />
+        <Card label="Available earnings" value={`${(e.availableEth ?? 0).toFixed(4)} ETH`} />
         <Card
           label="Revenue today / week / month"
-          value={`${(rev.today ?? 0).toFixed(4)} / ${(rev.week ?? 0).toFixed(4)} / ${(rev.month ?? 0).toFixed(4)} ALGO`}
+          value={`${(rev.today ?? 0).toFixed(4)} / ${(rev.week ?? 0).toFixed(4)} / ${(rev.month ?? 0).toFixed(4)} ETH`}
         />
         <Card label="Active consumers" value={dashboard?.activeConsumers ?? 0} />
-        <Card label="Pending payout" value={`${(e.pendingAlgo ?? 0).toFixed(4)} ALGO`} />
+        <Card label="Pending payout" value={`${(e.pendingEth ?? 0).toFixed(4)} ETH`} />
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="font-semibold text-slate-900 mb-4">Revenue trend</h2>
-        <UsageTrendChart data={dashboard?.trend} valueKey="revenueAlgo" label="Revenue (ALGO)" />
+        <UsageTrendChart data={dashboard?.trend} valueKey="revenueEth" label="Revenue (ETH)" />
       </div>
 
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
         <h2 className="font-semibold text-slate-900">Your proxied APIs</h2>
         {(dashboard?.apis ?? []).length === 0 ? (
-          <p className="text-sm text-slate-500">No ProxyApi records — run migration from Services.</p>
+          <p className="text-sm text-slate-500">No ProxyApi records â€” run migration from Services.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -117,7 +117,7 @@ export default function GatewayDeveloper() {
                       <code className="text-xs text-slate-500">{a.proxySlug}</code>
                     </td>
                     <td className="py-2">{a.stats?.calls ?? 0}</td>
-                    <td className="py-2">{(a.stats?.revenueAlgo ?? 0).toFixed(4)} ALGO</td>
+                    <td className="py-2">{(a.stats?.revenueEth ?? 0).toFixed(4)} ETH</td>
                     <td className="py-2">{Math.round(a.stats?.avgLatency ?? 0)}ms</td>
                     <td className="py-2">
                       <span
@@ -127,7 +127,7 @@ export default function GatewayDeveloper() {
                             : "text-emerald-600"
                         }
                       >
-                        {a.stats?.health ?? "—"} ({a.stats?.errorRatePct ?? 0}% err)
+                        {a.stats?.health ?? "â€”"} ({a.stats?.errorRatePct ?? 0}% err)
                       </span>
                     </td>
                   </tr>
@@ -141,11 +141,11 @@ export default function GatewayDeveloper() {
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-3">
           <h2 className="font-semibold text-slate-900">Request payout</h2>
-          <p className="text-xs text-slate-500">Min: {(e.minPayoutAlgo ?? 15).toFixed(4)} ALGO</p>
+          <p className="text-xs text-slate-500">Min: {(e.minPayoutEth ?? 15).toFixed(4)} ETH</p>
           <div className="flex gap-2">
             <input
               className="border rounded-lg px-3 py-2 text-sm flex-1"
-              placeholder="Amount (ALGO)"
+              placeholder="Amount (ETH)"
               value={payoutAmount}
               onChange={(ev) => setPayoutAmount(ev.target.value)}
             />
@@ -175,7 +175,7 @@ export default function GatewayDeveloper() {
             <ul className="text-xs text-slate-600 space-y-1 max-h-32 overflow-y-auto">
               {dashboard.recentErrors.map((r) => (
                 <li key={r.requestId}>
-                  {r.apiName}: HTTP {r.httpStatus} — {new Date(r.timestamp).toLocaleString()}
+                  {r.apiName}: HTTP {r.httpStatus} â€” {new Date(r.timestamp).toLocaleString()}
                 </li>
               ))}
             </ul>
@@ -184,7 +184,7 @@ export default function GatewayDeveloper() {
       </div>
 
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-3">
-        <h2 className="font-semibold text-slate-900">Migrate Services → ProxyApi</h2>
+        <h2 className="font-semibold text-slate-900">Migrate Services â†’ ProxyApi</h2>
         <input
           className="border rounded-lg px-3 py-2 text-sm w-full max-w-md"
           placeholder="GATEWAY_MIGRATION_SECRET (optional)"

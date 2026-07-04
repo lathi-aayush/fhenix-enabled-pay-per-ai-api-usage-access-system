@@ -1,5 +1,5 @@
 /**
- * Gateway payout service stub — Algorand-based payout removed.
+ * Gateway payout service stub ï¿½ Base Sepolia-based payout removed.
  * EVM payout pending.
  */
 export async function getDeveloperEarningsSummary(userId) {

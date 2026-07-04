@@ -1,11 +1,11 @@
 /** Studio plan prices — keep in sync with backend/src/constants/studioPlans.js */
 
-const ALGO_USD = Number(import.meta.env.VITE_ALGO_USD_RATE) || 0.129;
+const ETH_USD = Number(import.meta.env.VITE_ETH_USD_RATE) || 3200;
 const INR_USD = Number(import.meta.env.VITE_INR_USD_RATE) || 84.5;
-export const ALGO_INR_RATE = ALGO_USD * INR_USD;
+export const ETH_INR_RATE = ETH_USD * INR_USD;
 
 export const RATE_NOTE =
-  "INR/USD equivalents are indicative; ALGO amount is fixed at checkout. Rate updates weekly.";
+  "INR/USD equivalents are indicative; ETH amount is fixed at checkout. Rate updates weekly.";
 
 export const PLAN_PRICES = {
   free: 0,
@@ -14,7 +14,7 @@ export const PLAN_PRICES = {
   enterprise: 350_000_000,
 };
 
-export const PLAN_PRICE_ALGO = {
+export const PLAN_PRICE_ETH = {
   free: 0,
   creator: 45,
   pro: 120,
@@ -93,24 +93,26 @@ export const FEATURE_GATES = {
 
 export const PAID_TIERS = ["creator", "pro", "enterprise"];
 
-/** @param {number} microAlgos */
-export function algoToInr(microAlgos) {
-  return Math.round((microAlgos / 1_000_000) * ALGO_INR_RATE);
+/** @param {number|string|bigint} wei */
+export function weiToInr(wei) {
+  const eth = Number(wei) / 1e18;
+  return Math.round(eth * ETH_INR_RATE);
 }
 
-/** @param {number} microAlgos */
-export function algoToUsd(microAlgos) {
-  return ((microAlgos / 1_000_000) * ALGO_USD).toFixed(2);
+/** @param {number|string|bigint} wei */
+export function weiToUsd(wei) {
+  const eth = Number(wei) / 1e18;
+  return (eth * ETH_USD).toFixed(2);
 }
 
-/** @param {number} algo */
-export function algoDisplayToInr(algo) {
-  return Math.round(algo * ALGO_INR_RATE);
+/** @param {number} eth */
+export function ethDisplayToInr(eth) {
+  return Math.round(eth * ETH_INR_RATE);
 }
 
-/** @param {number} algo */
-export function algoDisplayToUsd(algo) {
-  return (algo * ALGO_USD).toFixed(2);
+/** @param {number} eth */
+export function ethDisplayToUsd(eth) {
+  return (eth * ETH_USD).toFixed(2);
 }
 
 export function upgradeNote(tier, userId) {

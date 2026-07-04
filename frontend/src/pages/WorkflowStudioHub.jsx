@@ -42,7 +42,7 @@ export default function WorkflowStudioHub() {
         <div>
           <h1 className="font-headline text-2xl font-semibold text-primary">Workflow Studio</h1>
           <p className="text-sm text-on-surface-variant mt-1">
-            Build pipelines with Groq AI, Blog Agent, and Studio creative nodes — Prompt Generator → Image
+            Build pipelines with Groq AI, Blog Agent, and Studio creative nodes â€” Prompt Generator â†’ Image
             Generator (Gemini).
           </p>
         </div>
@@ -71,7 +71,7 @@ export default function WorkflowStudioHub() {
 
       {!isAuthenticated && (
         <GuestConnectBanner
-          message="Connect Pera Wallet to create and run workflows."
+          message="Connect MetaMask to create and run workflows."
           className="mb-4"
         />
       )}
@@ -85,7 +85,7 @@ export default function WorkflowStudioHub() {
       )}
 
       {isLoading ? (
-        <p className="text-sm text-slate-500">Loading workflows…</p>
+        <p className="text-sm text-slate-500">Loading workflowsâ€¦</p>
       ) : items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 p-12 text-center">
           <p className="text-slate-600 mb-4">No workflows yet. Start from a template or create one.</p>
@@ -108,7 +108,7 @@ export default function WorkflowStudioHub() {
               <h3 className="font-semibold text-primary">{w.name}</h3>
               <p className="text-xs text-slate-500 mt-1 line-clamp-2">{w.description || "No description"}</p>
               <p className="text-[10px] text-slate-400 mt-3">
-                {w.nodes?.length ?? 0} nodes · {w.status} · updated {new Date(w.updatedAt).toLocaleDateString()}
+                {w.nodes?.length ?? 0} nodes Â· {w.status} Â· updated {new Date(w.updatedAt).toLocaleDateString()}
               </p>
             </Link>
           ))}

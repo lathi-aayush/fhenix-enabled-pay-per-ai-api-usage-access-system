@@ -14,6 +14,8 @@ import {
   isValidEvmAddress,
   weiWithinTolerance,
   explorerTxUrl,
+  getReceiptWithRetry,
+  parseEthTransferFromTx,
 } from "../services/evmService.js";
 import {
   computeChargeEth,
@@ -149,9 +151,9 @@ async function invokeFlow(req, res) {
   const ppt = Number(service.pricePerThousandTokens);
   const minC = Number(service.minimumChargeEth);
   const chargeEth = computeChargeEth(estimatedTotalTokens, ppt, minC);
-  const expectedMicroAlgos = ethers.parseEther(String(chargeEth);
+  const expectedWei = ethers.parseEther(String(chargeEth);
 
-  if (expectedMicroAlgos <= 0) {
+  if (expectedWei <= 0) {
     return res.status(500).json({ error: "Invalid computed charge for this call" });
   }
 
@@ -162,7 +164,7 @@ async function invokeFlow(req, res) {
   registerPending(paymentRef, {
     paymentRef,
     aiBody, // Cached prompt/messages payload to be executed once paid
-    expectedMicroAlgos,
+    expectedWei,
     chargeEth,
     promptTokens,
     completionTokens: estimatedCompletionTokens,
@@ -182,7 +184,7 @@ async function invokeFlow(req, res) {
     awaitingPayment: true,
     paymentRef,
     chargeEth,
-    expectedMicroAlgos,
+    expectedWei,
     promptTokens,
     completionTokens: estimatedCompletionTokens,
     totalTokens: estimatedTotalTokens,
@@ -235,50 +237,46 @@ async function completeFlow(req, res) {
     return res.status(400).json({ error: "Payment session does not match this wallet" });
   }
 
-  let txInfo;
+  let receipt;
   try {
-    txInfo = await lookupConfirmedTransactionOnIndexer(txId, {
-      maxAttempts: 10,
-      delayMs: 2000,
-    });
+    receipt = await getReceiptWithRetry(txId, { tries: 10, delayMs: 2000 });
   } catch {
     return res.status(402).json({
       error:
-        "Payment not visible on the Algorand indexer yet or not confirmed. Wait a moment and try again.",
+        "Payment not visible on the block explorer yet or not confirmed. Wait a moment and try again.",
       detail:
-        "The indexer can lag behind the network on TestNet; your transaction may still be valid.",
+        "Base Sepolia RPC can lag behind the network; your transaction may still be valid.",
     });
   }
 
-  const parsed = parsePaymentFromIndexer(txInfo);
+  if (!receipt || receipt.status !== 1) {
+    return res.status(400).json({ error: "Transaction failed or not confirmed on-chain" });
+  }
+
+  const parsed = await parseEthTransferFromTx(txId);
   if (!parsed) {
-    return res.status(400).json({ error: "Invalid transaction type (expected payment)" });
+    return res.status(400).json({ error: "Invalid transaction type (expected ETH payment)" });
   }
 
   const creatorWallet = normalizeEvmAddress(String(service.creatorWallet || "").trim());
-  const { sender, receiver, amount, note } = parsed;
+  const { sender, receiver, amountWei } = parsed;
   const senderN = normalizeEvmAddress(sender);
   const receiverN = normalizeEvmAddress(receiver);
   const userN = normalizeEvmAddress(userWallet);
   const creatorN = normalizeEvmAddress(creatorWallet);
 
-  // Allow any sender (like a Burner Wallet) to fund the AI request, as long as it matches the paymentRef UUID.
+  // Allow any sender (like a session key wallet) to fund the AI request.
   if (receiverN !== creatorN) {
     return res.status(400).json({ error: "Payment receiver does not match the service developer wallet" });
   }
-  if (!weiWithinTolerance(Number(amount), Number(pending.expectedMicroAlgos), 1)) {
+  if (!weiWithinTolerance(amountWei, BigInt(pending.expectedWei), 1)) {
     return res.status(400).json({
       error: "Payment amount does not match the quoted charge for this call",
-      detail: `Expected about ${pending.chargeEth} ALGO (±1%).`,
+      detail: `Expected about ${pending.chargeEth} ETH (±1%).`,
     });
   }
 
-  const noteStr = decodeNote(note).trim();
-  if (noteStr !== paymentRef) {
-    return res.status(400).json({ error: "Transaction note does not match payment reference" });
-  }
-
-  // ── ON-CHAIN PAYMENT SECURED! DECRYPT KEY AND INITIATE AI RESOLUTION ──
+  // â”€â”€ ON-CHAIN PAYMENT SECURED! DECRYPT KEY AND INITIATE AI RESOLUTION â”€â”€
 
   let providerKey;
   try {
@@ -394,7 +392,7 @@ async function completeFlow(req, res) {
     // --- Cross-link: write a UsageRecord so gateway dashboard shows legacy calls ---
     void (async () => {
       try {
-        const rate = Number(process.env.ALGO_USD_CENTS_PER_ALGO || 35);
+        const rate = Number(process.env.ETH_USD || 35);
         const costCents = Math.round(chargeEth * rate);
 
         // Find the user's MongoDB _id and developer's _id for proper linking
@@ -464,8 +462,8 @@ async function x402ChallengeFlow(req, res, auth) {
   }
 
   const chargeEth = Number(service.minimumChargeEth);
-  const expectedMicroAlgos = ethers.parseEther(String(chargeEth);
-  if (expectedMicroAlgos <= 0) {
+  const expectedWei = ethers.parseEther(String(chargeEth);
+  if (expectedWei <= 0) {
     return res.status(500).json({ error: "Invalid minimum charge for this service" });
   }
 
@@ -473,9 +471,9 @@ async function x402ChallengeFlow(req, res, auth) {
   const paymentRequirements = await Promise.resolve(
     buildPaymentRequirements({
       payTo: creatorWallet,
-      amountMicroAlgos: expectedMicroAlgos,
+      amountWei: expectedWei,
       resource,
-      description: `SentinelAI: ${service.title} — pay-per-use via proxy API (${chargeEth} ALGO)`,
+      description: `SentinelAI: ${service.title} â€” pay-per-use via proxy API (${chargeEth} ETH)`,
     })
   );
   return send402Response(res, paymentRequirements);
@@ -502,16 +500,16 @@ async function x402CompleteFlow(req, res, auth) {
   }
 
   const chargeEth = Number(service.minimumChargeEth);
-  const expectedMicroAlgos = ethers.parseEther(String(chargeEth);
+  const expectedWei = ethers.parseEther(String(chargeEth);
 
   const resource = `${req.protocol}://${req.get("host")}/api/use`;
   const verification = await verifyX402Payment({
     payload: paymentPayload,
     xPaymentHeader: req.headers["x-payment"],
     expectedReceiver: creatorWallet,
-    expectedMicroAlgos,
+    expectedWei,
     resource,
-    description: `SentinelAI: ${service.title} — pay-per-use via proxy API (${chargeEth} ALGO)`,
+    description: `SentinelAI: ${service.title} â€” pay-per-use via proxy API (${chargeEth} ETH)`,
   });
 
   if (!verification.valid) {
@@ -640,7 +638,7 @@ async function x402CompleteFlow(req, res, auth) {
 
     void (async () => {
       try {
-        const rate = Number(process.env.ALGO_USD_CENTS_PER_ALGO || 35);
+        const rate = Number(process.env.ETH_USD || 35);
         const costCents = Math.round(chargeEth * rate);
         const consumer = await User.findOne({ walletAddress: userWallet }).select("_id").lean();
         const developer = await User.findOne({ walletAddress: creatorWallet }).select("_id").lean();

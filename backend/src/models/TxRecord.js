@@ -9,7 +9,7 @@ const txRecordSchema = new mongoose.Schema(
       enum: ["creator", "pro", "enterprise"],
       required: true,
     },
-    amountMicroAlgo: { type: Number, required: true },
+    amountWei: { type: Number, required: true },
     confirmedAt: { type: Date, default: Date.now },
   },
   { timestamps: true }

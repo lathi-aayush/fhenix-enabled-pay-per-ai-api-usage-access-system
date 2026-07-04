@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
 
-/* ── tiny hook: fires once when element enters viewport ── */
+/* â”€â”€ tiny hook: fires once when element enters viewport â”€â”€ */
 function useInView(threshold = 0.15) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -19,7 +19,7 @@ function useInView(threshold = 0.15) {
   return [ref, visible];
 }
 
-/* ── animated counter (re-runs when live stats update) ── */
+/* â”€â”€ animated counter (re-runs when live stats update) â”€â”€ */
 function Counter({ to, suffix = "", duration = 1800 }) {
   const [val, setVal] = useState(0);
   const [ref, visible] = useInView();
@@ -82,7 +82,7 @@ function useLivePlatformStats() {
   return stats;
 }
 
-/* ── Marketplace steps ── */
+/* â”€â”€ Marketplace steps â”€â”€ */
 const marketplaceSteps = [
   {
     icon: "storefront",
@@ -90,7 +90,7 @@ const marketplaceSteps = [
     bg: "from-[#031634]/10 to-[#031634]/5",
     border: "border-[#031634]/20",
     title: "Browse the Marketplace",
-    desc: "Discover hundreds of AI APIs — image generation, NLP, speech, and more — published by verified creators.",
+    desc: "Discover hundreds of AI APIs â€” image generation, NLP, speech, and more â€” published by verified creators.",
     pill: "Step 1",
     pillColor: "bg-[#031634] text-white",
     link: "/marketplace/browse",
@@ -100,8 +100,8 @@ const marketplaceSteps = [
     color: "#059669",
     bg: "from-emerald-500/10 to-emerald-400/5",
     border: "border-emerald-500/20",
-    title: "Connect Pera Wallet",
-    desc: "Link your Algorand Pera Wallet in one click. No credit card. No subscription. Just ALGO.",
+    title: "Connect MetaMask",
+    desc: "Link your Base Sepolia MetaMask in one click. No credit card. No subscription. Just ETH.",
     pill: "Step 2",
     pillColor: "bg-emerald-600 text-white",
     videoEmbed: "https://www.youtube.com/embed/m720vHR8g1U?si=SmBaluRmj19-_yO2&start=57",
@@ -113,7 +113,7 @@ const marketplaceSteps = [
     bg: "from-violet-500/10 to-violet-400/5",
     border: "border-violet-500/20",
     title: "Call an API Instantly",
-    desc: "Send a request. Our backend meters every token. Each call deducts micro-ALGO directly to the creator's wallet — no middleman.",
+    desc: "Send a request. Our backend meters every token. Each call deducts ETH directly to the creator's wallet â€” no middleman.",
     pill: "Step 3",
     pillColor: "bg-violet-600 text-white",
   },
@@ -123,13 +123,13 @@ const marketplaceSteps = [
     bg: "from-orange-500/10 to-orange-400/5",
     border: "border-orange-500/20",
     title: "View Live Billing",
-    desc: "See every transaction on-chain via Algorand TestNet. Full transparency. Zero hidden fees.",
+    desc: "See every transaction on-chain via Base Sepolia. Full transparency. Zero hidden fees.",
     pill: "Step 4",
     pillColor: "bg-orange-600 text-white",
   },
 ];
 
-/* ── Studio steps ── */
+/* â”€â”€ Studio steps â”€â”€ */
 const studioSteps = [
   {
     icon: "edit_note",
@@ -147,7 +147,7 @@ const studioSteps = [
     icon: "schedule",
     color: "#7C3AED",
     title: "Schedule Publishing",
-    desc: "Pick a date and platforms — Hashnode, Dev.to, Medium. Our BullMQ worker handles queued publishing behind the scenes.",
+    desc: "Pick a date and platforms â€” Hashnode, Dev.to, Medium. Our BullMQ worker handles queued publishing behind the scenes.",
   },
   {
     icon: "bar_chart",
@@ -157,7 +157,7 @@ const studioSteps = [
   },
 ];
 
-/* ── Flow arrow connector ── */
+/* â”€â”€ Flow arrow connector â”€â”€ */
 function FlowArrow({ visible, delay }) {
   return (
     <div
@@ -174,7 +174,7 @@ function FlowArrow({ visible, delay }) {
 
 const VIDEO_HOVER_MIN_MS = 2000;
 
-/* ── Marketplace card ── */
+/* â”€â”€ Marketplace card â”€â”€ */
 function MarketplaceCard({ step, index, visible }) {
   const navigate = useNavigate();
   const [hovered, setHovered] = useState(false);
@@ -258,7 +258,7 @@ function MarketplaceCard({ step, index, visible }) {
               <iframe
                 className="w-full h-full"
                 src={step.videoEmbed}
-                title="Connect Pera Wallet demo"
+                title="Connect MetaMask demo"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 referrerPolicy="strict-origin-when-cross-origin"
@@ -298,7 +298,7 @@ function MarketplaceCard({ step, index, visible }) {
   );
 }
 
-/* ── Studio timeline item ── */
+/* â”€â”€ Studio timeline item â”€â”€ */
 function StudioTimelineItem({ step, index, visible }) {
   const delay = 0.1 + index * 0.18;
   const isEven = index % 2 === 0;
@@ -337,16 +337,16 @@ function StudioTimelineItem({ step, index, visible }) {
   );
 }
 
-/* ── Live API Demo mini-widget ── */
+/* â”€â”€ Live API Demo mini-widget â”€â”€ */
 function LiveApiDemo({ visible }) {
   const [active, setActive] = useState(false);
   const [lines, setLines] = useState([]);
   const mockLines = [
     { t: 0,   txt: '> POST /api/use/image-gen', c: "text-slate-400" },
-    { t: 400, txt: '  Authorization: Bearer ••••jwt••••', c: "text-yellow-400" },
+    { t: 400, txt: '  Authorization: Bearer â€¢â€¢â€¢â€¢jwtâ€¢â€¢â€¢â€¢', c: "text-yellow-400" },
     { t: 800, txt: '  { "prompt": "astronaut on mars" }', c: "text-slate-300" },
-    { t: 1200, txt: '← 200 OK  |  tokens: 842  |  cost: 0.0012 ALGO', c: "text-emerald-400" },
-    { t: 1600, txt: '← on-chain txn: HX8T…K2J confirmed ✓', c: "text-blue-400" },
+    { t: 1200, txt: 'â† 200 OK  |  tokens: 842  |  cost: 0.0012 ETH', c: "text-emerald-400" },
+    { t: 1600, txt: 'â† on-chain txn: HX8Tâ€¦K2J confirmed âœ“', c: "text-blue-400" },
   ];
 
   function run() {
@@ -379,13 +379,13 @@ function LiveApiDemo({ visible }) {
           disabled={active}
           className="ml-auto text-[10px] font-bold px-3 py-1 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white transition-colors disabled:opacity-50 cursor-pointer"
         >
-          {active ? "running…" : "▶ Run"}
+          {active ? "runningâ€¦" : "â–¶ Run"}
         </button>
       </div>
       {/* output */}
       <div className="px-4 py-4 font-mono text-[11px] min-h-[130px] flex flex-col gap-1.5">
         {lines.length === 0 && !active && (
-          <span className="text-slate-600 italic">Click ▶ Run to simulate an API call…</span>
+          <span className="text-slate-600 italic">Click â–¶ Run to simulate an API callâ€¦</span>
         )}
         {lines.map((l, i) => (
           <span key={i} className={`${l.c} animate-[fadeInUp_0.25s_ease_both]`}>{l.txt}</span>
@@ -395,7 +395,7 @@ function LiveApiDemo({ visible }) {
   );
 }
 
-/* ── Main export ── */
+/* â”€â”€ Main export â”€â”€ */
 export default function HowItWorks() {
   const liveStats = useLivePlatformStats();
 
@@ -410,7 +410,7 @@ export default function HowItWorks() {
       ref={sectionRef}
       className="max-w-[1100px] mx-auto px-8 py-24 flex flex-col gap-24"
     >
-      {/* ── Section header ── */}
+      {/* â”€â”€ Section header â”€â”€ */}
       <div
         className="flex flex-col items-center text-center gap-4"
         style={{
@@ -429,7 +429,7 @@ export default function HowItWorks() {
           </span>
         </h2>
         <p className="text-slate-500 text-base max-w-xl leading-relaxed">
-          SentinalAI combines a decentralized <strong className="text-slate-700">API Marketplace</strong> powered by Algorand payments with an AI-first <strong className="text-slate-700">Studio</strong> for content creators.
+          SentinalAI combines a decentralized <strong className="text-slate-700">API Marketplace</strong> powered by Base Sepolia payments with an AI-first <strong className="text-slate-700">Studio</strong> for content creators.
         </p>
 
         {/* animated stats */}
@@ -448,7 +448,7 @@ export default function HowItWorks() {
         </div>
       </div>
 
-      {/* ══════════ MARKETPLACE ══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â• MARKETPLACE â•â•â•â•â•â•â•â•â•â• */}
       <div ref={marketRef} className="flex flex-col gap-8">
         {/* heading */}
         <div
@@ -468,7 +468,7 @@ export default function HowItWorks() {
           </div>
           <div className="ml-auto hidden md:flex items-center gap-2 text-[11px] text-slate-400 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-full">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Algorand TestNet Live
+            Base Sepolia Live
           </div>
         </div>
 
@@ -502,7 +502,7 @@ export default function HowItWorks() {
         </div>
       </div>
 
-      {/* ══════════ STUDIO ══════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â• STUDIO â•â•â•â•â•â•â•â•â•â• */}
       <div ref={studioRef} className="flex flex-col gap-8">
         {/* heading */}
         <div
@@ -552,7 +552,7 @@ export default function HowItWorks() {
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-900 text-[14px]">Blog Agent</h4>
-                  <p className="text-[11px] text-slate-500">Groq LLM · SSE streaming · Markdown output</p>
+                  <p className="text-[11px] text-slate-500">Groq LLM Â· SSE streaming Â· Markdown output</p>
                 </div>
               </div>
               <div className="bg-white/80 rounded-xl p-3 border border-indigo-100 font-mono text-[11px] text-slate-600">
@@ -568,7 +568,7 @@ export default function HowItWorks() {
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-900 text-[14px]">Multi-Platform Publishing</h4>
-                  <p className="text-[11px] text-slate-500">Hashnode · Dev.to · Medium</p>
+                  <p className="text-[11px] text-slate-500">Hashnode Â· Dev.to Â· Medium</p>
                 </div>
               </div>
               <div className="flex gap-2 flex-wrap">
@@ -588,7 +588,7 @@ export default function HowItWorks() {
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-900 text-[14px]">BullMQ Job Queue</h4>
-                  <p className="text-[11px] text-slate-500">Redis-backed · async · scheduled publishing</p>
+                  <p className="text-[11px] text-slate-500">Redis-backed Â· async Â· scheduled publishing</p>
                 </div>
               </div>
             </div>
