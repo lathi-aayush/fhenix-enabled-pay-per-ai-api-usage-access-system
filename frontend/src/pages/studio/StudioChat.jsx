@@ -6,7 +6,7 @@ import { getSessionKeyWallet } from "../../wallet/sessionKey.js";
 import ReactMarkdown from "react-markdown";
 import { toast } from "react-hot-toast";
 
-import { getNetworkConfig } from "../config/chain.js";
+import { getNetworkConfig } from "../../config/chain.js";
 
 function buildXPaymentHeader({ txHash, accept }) {
   const payload = {
